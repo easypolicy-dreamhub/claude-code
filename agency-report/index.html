@@ -505,14 +505,14 @@ const FIELD_GROUPS=[
     {k:'rec_int',label:'Recruits this year, internal',src:'rec',dec:0},{k:'rec_ext',label:'Recruits this year, external',src:'rec',dec:0},{k:'rec_rejoin',label:'Rejoined this year',src:'rec',dec:0}]},
   {title:'Facts & Figures targets',fields:[
     {k:'t_active',label:'Active agents target',src:'set',dec:0},{k:'t_mp',label:'Manpower target',src:'set',dec:0},
-    {k:'t_ratio',label:'Active ratio target (%)',src:'set',dec:2},{k:'t_prod',label:'Productivity target',src:'set',dec:2},
+    {k:'t_ratio',label:'Active ratio target (%)',src:'set',dec:2},{k:'t_prod',label:'Productivity target',src:'rule',dec:2},
     {k:'t_case',label:'Average case size target',src:'set',dec:2}]}
 ];
 const DEFAULT_SETTINGS={
   theme:'teal',title:'SGPJ Agency Report',agency:'SG-PJ',rows:'7',
   msg1Title:'The Power of One',msg1:'+10%',msg2Title:'',newRemoved:[],
   guide:DEFAULT_GUIDE.slice(),hidden:[],
-  ov:{t_active:132,t_mp:330,t_ratio:40,t_prod:24,t_case:4300},
+  ov:{t_active:132,t_mp:330,t_ratio:40,t_case:4300},
   awards:[{name:'Starlight 1000',measure:'PS',min:100000,target:80},{name:'Star Producer',measure:'FYC',min:36000,target:50},{name:'MDRT',measure:'PS',min:398000,target:7}],
   newcomers:[],quote:'',quoteBy:'',celebCap:'SG Top 3 Agency\n冠軍模範代理社'
 };
@@ -520,6 +520,8 @@ const DEFAULT_SETTINGS={
 /* ---------- state ---------- */
 const LS_KEY='agencyReport.v1';
 let S=load();
+/* The productivity target now follows the month (3 x month). Drop the old fixed 24 once, so saved browsers pick up the rule. */
+if(!S._tprodRule){if(parseFloat(String(S.ov.t_prod).replace(/,/g,''))===24)delete S.ov.t_prod;S._tprodRule=1;}
 let excel=S._excel||null, pdfData=S._pdf||null, recData=S._rec||null;
 if(!S.awards)S.awards=structuredClone(DEFAULT_SETTINGS.awards);
 S.awards.forEach(w=>{if(/^MDRT$/i.test(String(w.name).trim())&&(w.min===''||w.min==null||Number(String(w.min).replace(/,/g,''))===387000)){w.min=398000;w.measure='PS';}});
@@ -637,6 +639,7 @@ async function pdfToPages(buf){
 function allAgents(){if(!excel)return[];return Object.values(excel.sections).flat();}
 function auto(){
   const a={};
+  if(reportMonth())a.t_prod=3*reportMonth();
   if(excel){
     const g=excel.grand||{};
     a.q_m_ty=g.PS_M;a.q_y_ty=g.PS_ACC;a.a_m_ty=g.ANP_M;a.a_y_ty=g.ANP_ACC;a.mp_ty=excel.manpower;a.noc=g.NOC_ACC;
@@ -946,11 +949,11 @@ function slideEl(id){return `<div class="slide t-${S.theme}">${slideHTML(id)}</d
 function renderFields(){
   const a=auto();
   $('#fieldGroups').innerHTML=FIELD_GROUPS.map(g=>`<div class="group"><h2>${g.title}</h2>${g.fields.map(f=>{
-    const av=a[f.k];if(av!=null&&S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null&&Math.abs(num(S.ov[f.k])-av)<0.005&&(f.src==='xlsx'||f.src==='pdf'||f.src==='rec'))delete S.ov[f.k];const ov=S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null;
+    const av=a[f.k];if(av!=null&&S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null&&Math.abs(num(S.ov[f.k])-av)<0.005&&(f.src==='xlsx'||f.src==='pdf'||f.src==='rec'||f.src==='rule'))delete S.ov[f.k];const ov=S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null;
     const dec=f.dec??2, raw=ov?S.ov[f.k]:av, show=raw==null||raw===''?'':fmtIn(raw,dec);
-    let src=f.src==='xlsx'?'From Excel':f.src==='pdf'?'From regional PDF':f.src==='rec'?'From recruitment file':f.src==='set'?'Target, keep until it changes':'Key in';
+    let src=f.src==='xlsx'?'From Excel':f.src==='pdf'?'From regional PDF':f.src==='rec'?'From recruitment file':f.src==='set'?'Target, keep until it changes':f.src==='rule'?'Auto: 3 × month number':'Key in';
     let cls=f.src==='key'?'key':'';
-    const fromFile=f.src==='xlsx'||f.src==='pdf'||f.src==='rec';
+    const fromFile=f.src==='xlsx'||f.src==='pdf'||f.src==='rec'||f.src==='rule';
     if(ov&&fromFile){src='Changed by you';cls='mine';}
     if(fromFile&&av==null&&!ov){src+=' (not loaded)';}
     const reset=ov&&fromFile?`<button class="reset" data-reset="${f.k}" title="Use the file’s value" aria-label="Use the file’s value">↺</button>`:'';
