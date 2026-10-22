@@ -839,19 +839,17 @@ function tblSlide(kind){
     ${call?`<div class="callout">${call}</div>`:''}`;
 }
 function factsSlide(){
-  const M=metrics(),t=k=>V(k),X=mapa(),mon=MONTH_NAMES[(reportMonth()||1)-1].slice(0,3);
+  const M=metrics(),t=k=>V(k),X=mapa();
   const bar=(a,b)=>a!=null&&b?`<div class="bar"><i style="width:${Math.min(100,a/b*100)}%"></i></div>`:'';
   const box=(l,v,tv,b)=>`<div class="ff"><div class="l">${l}</div><div class="n">${v}<small>/ ${tv}</small></div>${b}</div>`;
   const tile=(k,l,v,tv,a,b)=>`<div class="mt"><div class="mh"><span class="lt">${k}</span>${l}</div><div class="n">${v}<small>/ ${tv}</small></div>${bar(a,b)}</div>`;
   const n2=v=>v==null?'—':String(+Number(v).toFixed(2));
-  const rm=v=>v==null?'—':'RM '+(v/1e6).toFixed(2)+'M';
   const awardList=S.awards.filter(c=>c.name),nA=awardList.length,dense=nA>=6;
   /* columns by count: 4 -> 4, 5 -> 5, 6 -> 3x2, 7-8 -> 4 per row, 9 -> 3x3, more -> 5 per row; 6+ awards also tighten the slide */
   const cols=nA<=3?3:nA===4?4:nA===5?5:nA===6?3:nA<=8?4:nA===9?3:5;
   const clubs=awardList.map(c=>{const st=awardStats(c),t=num(c.target);if(st.ach==null)return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">—<small>/ ${t}</small></div></div>`;return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">(${st.ach} + ${st.on})<small>/ ${t}</small></div>${bar(st.ach,t)}<div class="pc">${st.pct==null?'':st.pct.toFixed(0)+'% achieved'}</div></div>`;}).join('');
   return `<div class="s-pad${dense?' dense':''}${nA>=9?' dense2':''}" style="inset:56px 110px"><div class="ff-title">Facts &amp; Figures</div>
   <div class="mapa">${tile('M','Manpower',f0(X.M),f0(X.Mt),X.M,X.Mt)}<div class="op">×</div>${tile('A','Active ratio',X.A==null?'—':X.A.toFixed(2)+'%',n2(X.At)+'%',X.A,X.At)}<div class="op">×</div>${tile('P','Productivity (cases)',X.P==null?'—':X.P.toFixed(2),n2(X.Pt),X.P,X.Pt)}<div class="op">×</div>${tile('A','Avg case size',f0(X.C),f0(X.Ct),X.C,X.Ct)}</div>
-  <div class="mapa-res"><span>ANP year to date <b>${rm(X.anp)}</b></span><span>Target by ${mon} <b>${rm(X.anpT)}</b></span><span>Year-end goal <b>${rm(X.anpEnd)}</b></span></div>
   <div class="ff-grid mid">
     ${box('Active agents (M × A)',f0(M.active),f0(t('t_active')),bar(M.active,t('t_active')))}
     ${box('Productivity (ANP) per manpower',X.pm==null?'—':f0(X.pm),f0(X.pmT),bar(X.pm,X.pmT))}
