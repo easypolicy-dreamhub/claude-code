@@ -223,6 +223,44 @@ table.rank tr.gap td{background:none;padding:0;height:8px;color:var(--muted);tex
 .mt .bar i{display:block;height:100%;background:var(--accent)}
 .mapa-res{display:flex;justify-content:space-between;gap:16px;margin-top:16px;font:600 22px var(--display);color:var(--muted)}
 .mapa-res b{color:var(--ink);font-weight:800}
+.ff-grid.mid{margin-top:22px}
+.ff-grid.clubs{margin-top:20px}
+.ff-grid.c4 .ff.club .n{font-size:34px;white-space:nowrap}
+.ff-grid.c4 .ff.club .n small{font-size:20px}
+.ff-grid.c5 .ff.club{padding:24px 18px}
+.ff-grid.c5 .ff.club .l{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ff-grid.c5 .ff.club .n{font-size:28px;white-space:nowrap}
+.ff-grid.c5 .ff.club .n small{font-size:17px}
+/* 6 or more awards: tighter slide so every row fits */
+.dense .ff-title{font-size:74px}
+.dense .mapa{margin-top:16px}
+.dense .mt{padding:14px 20px}
+.dense .mt .n{font-size:34px;margin-top:8px}
+.dense .mt .n small{font-size:20px}
+.dense .mt .bar{margin-top:10px}
+.dense .mapa-res{margin-top:10px;font-size:20px}
+.dense .ff-grid{gap:16px}
+.dense .ff-grid.mid{margin-top:14px}
+.dense .ff-grid.clubs{margin-top:16px}
+.dense .ff{padding:14px 22px;border-radius:20px}
+.dense .ff .l{font-size:19px}
+.dense .ff .n{font-size:38px;margin-top:2px}
+.dense .ff .n small{font-size:20px}
+.dense .ff .bar{margin-top:10px}
+.dense .ff.club .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dense .ff.club .n{font-size:30px;white-space:nowrap}
+.dense .ff.club .n small{font-size:17px}
+.dense .ff .pc{font-size:16px;margin-top:4px}
+.dense .ff-grid.c5 .ff.club .n{font-size:25px}
+.dense .ff-grid.c5 .ff.club{padding:14px 16px}
+.dense2 .ff-title{font-size:62px}
+.dense2 .mapa{margin-top:12px}
+.dense2 .mt{padding:12px 20px}
+.dense2 .ff-grid.mid{margin-top:12px}
+.dense2 .ff-grid.clubs{margin-top:12px;gap:12px}
+.dense2 .ff{padding:12px 20px}
+.dense2 .ff.club .bar{margin-top:6px}
+.dense2 .ff .pc{margin-top:2px}
 .ff .pc{font:700 20px var(--display);color:var(--accent);margin-top:8px}
 .mp-hero{position:absolute;left:96px;top:80px;width:880px;height:240px;border-radius:30px;background:var(--tile);color:var(--tile-ink);padding:36px 48px;font:800 50px/1.18 var(--display)}
 .mp-hero svg{position:absolute;right:46px;bottom:0;width:230px;height:190px}
@@ -807,16 +845,19 @@ function factsSlide(){
   const tile=(k,l,v,tv,a,b)=>`<div class="mt"><div class="mh"><span class="lt">${k}</span>${l}</div><div class="n">${v}<small>/ ${tv}</small></div>${bar(a,b)}</div>`;
   const n2=v=>v==null?'—':String(+Number(v).toFixed(2));
   const rm=v=>v==null?'—':'RM '+(v/1e6).toFixed(2)+'M';
-  const clubs=S.awards.filter(c=>c.name).map(c=>{const st=awardStats(c),t=num(c.target);if(st.ach==null)return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">—<small>/ ${t}</small></div></div>`;return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">(${st.ach} + ${st.on})<small>/ ${t}</small></div>${bar(st.ach,t)}<div class="pc">${st.pct==null?'':st.pct.toFixed(0)+'% achieved'}</div></div>`;}).join('');
-  return `<div class="s-pad" style="inset:56px 110px"><div class="ff-title">Facts &amp; Figures</div>
+  const awardList=S.awards.filter(c=>c.name),nA=awardList.length,dense=nA>=6;
+  /* columns by count: 4 -> 4, 5 -> 5, 6 -> 3x2, 7-8 -> 4 per row, 9 -> 3x3, more -> 5 per row; 6+ awards also tighten the slide */
+  const cols=nA<=3?3:nA===4?4:nA===5?5:nA===6?3:nA<=8?4:nA===9?3:5;
+  const clubs=awardList.map(c=>{const st=awardStats(c),t=num(c.target);if(st.ach==null)return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">—<small>/ ${t}</small></div></div>`;return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">(${st.ach} + ${st.on})<small>/ ${t}</small></div>${bar(st.ach,t)}<div class="pc">${st.pct==null?'':st.pct.toFixed(0)+'% achieved'}</div></div>`;}).join('');
+  return `<div class="s-pad${dense?' dense':''}${nA>=9?' dense2':''}" style="inset:56px 110px"><div class="ff-title">Facts &amp; Figures</div>
   <div class="mapa">${tile('M','Manpower',f0(X.M),f0(X.Mt),X.M,X.Mt)}<div class="op">×</div>${tile('A','Active ratio',X.A==null?'—':X.A.toFixed(2)+'%',n2(X.At)+'%',X.A,X.At)}<div class="op">×</div>${tile('P','Productivity (cases)',X.P==null?'—':X.P.toFixed(2),n2(X.Pt),X.P,X.Pt)}<div class="op">×</div>${tile('A','Avg case size',f0(X.C),f0(X.Ct),X.C,X.Ct)}</div>
   <div class="mapa-res"><span>ANP year to date <b>${rm(X.anp)}</b></span><span>Target by ${mon} <b>${rm(X.anpT)}</b></span><span>Year-end goal <b>${rm(X.anpEnd)}</b></span></div>
-  <div class="ff-grid" style="margin-top:22px">
+  <div class="ff-grid mid">
     ${box('Active agents (M × A)',f0(M.active),f0(t('t_active')),bar(M.active,t('t_active')))}
     ${box('Productivity (ANP) per manpower',X.pm==null?'—':f0(X.pm),f0(X.pmT),bar(X.pm,X.pmT))}
     <div class="ff"><div class="l">Total NOC</div><div class="n">${f0(M.noc)}</div></div>
-    ${clubs}
-  </div></div>`;
+  </div>
+  ${nA?`<div class="ff-grid clubs c${cols}" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${clubs}</div>`:''}</div>`;
 }
 function mpSlide(){
   const sec=k=>(excel&&excel.sections[k]?excel.sections[k].length:0);
