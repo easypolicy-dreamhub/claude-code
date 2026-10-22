@@ -66,6 +66,16 @@ textarea{width:100%;border:1px solid var(--app-line);border-radius:8px;padding:9
 .trio{display:grid;grid-template-columns:1fr 64px 64px 64px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--app-line)}
 .trio input{width:100%;border:1px solid var(--app-line);border-radius:8px;padding:7px 6px;background:var(--app-bg);text-align:right}
 .trio.head{font-size:12px;color:var(--app-muted);border:0;padding-bottom:0}
+.mapa-tbl{display:grid;grid-template-columns:1fr 86px 86px;column-gap:8px;font-size:14px}
+.mapa-tbl>div{padding:7px 0;border-bottom:1px solid var(--app-line);line-height:1.3;font-variant-numeric:tabular-nums}
+.mapa-tbl .hd{font-size:12px;color:var(--app-muted);border-bottom:2px solid var(--app-line)}
+.mapa-tbl .r{text-align:right}
+.mapa-tbl .l.sub{padding-left:30px;white-space:nowrap;color:var(--app-muted)}
+.mapa-tbl .sub.r{color:var(--app-muted)}
+.mapa-tbl .tot{font-weight:700}
+.mk{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--app-chip);font:700 12px Poppins,sans-serif;margin-right:8px;vertical-align:middle}
+.mapa-chain{margin:10px 0 0;font-size:13.5px;line-height:1.45;color:var(--app-muted)}
+.mapa-chain b{color:var(--app-ink)}
 .checks{list-style:none;margin:0;padding:0}
 .checks li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--app-line);font-size:14px;line-height:1.35}
 .checks li::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--app-good)}
@@ -202,6 +212,17 @@ table.rank tr.gap td{background:none;padding:0;height:8px;color:var(--muted);tex
 .ff .bar{height:10px;border-radius:6px;background:var(--panel2);margin-top:14px;overflow:hidden}
 .ff .bar i{display:block;height:100%;background:var(--accent)}
 .ff.club .n{font-size:40px}
+.mapa{display:flex;align-items:stretch;gap:10px;margin-top:30px}
+.mapa .op{align-self:center;font:800 40px var(--display);color:var(--muted)}
+.mt{flex:1;min-width:0;background:var(--panel);border-radius:24px;padding:20px 22px}
+.mt .mh{display:flex;align-items:center;gap:10px;font:700 21px var(--display);color:var(--muted);white-space:nowrap}
+.mt .lt{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--bg);font:800 20px var(--display);flex:none}
+.mt .n{font:800 40px/1.1 var(--display);margin-top:12px;letter-spacing:-.01em;white-space:nowrap}
+.mt .n small{font-size:22px;color:var(--muted);font-weight:700;margin-left:6px}
+.mt .bar{height:10px;border-radius:6px;background:var(--panel2);margin-top:14px;overflow:hidden}
+.mt .bar i{display:block;height:100%;background:var(--accent)}
+.mapa-res{display:flex;justify-content:space-between;gap:16px;margin-top:16px;font:600 22px var(--display);color:var(--muted)}
+.mapa-res b{color:var(--ink);font-weight:800}
 .ff .pc{font:700 20px var(--display);color:var(--accent);margin-top:8px}
 .mp-hero{position:absolute;left:96px;top:80px;width:880px;height:240px;border-radius:30px;background:var(--tile);color:var(--tile-ink);padding:36px 48px;font:800 50px/1.18 var(--display)}
 .mp-hero svg{position:absolute;right:46px;bottom:0;width:230px;height:190px}
@@ -441,6 +462,7 @@ table.rank tr.gap td{background:none;padding:0;height:8px;color:var(--muted);tex
 const MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DEFAULT_GUIDE=[5,6,7,7,7,8,9,9,10,10,11,11];
+const PROD_STEP=3; // productivity target (cases per active agent) rises by 3 each month, 36 by December
 const THEMES=[
   {id:'teal',name:'Midnight Teal',sw:['#15171b','#22d3d8','#0b5866']},
   {id:'light',name:'Boardroom',sw:['#f3f5f8','#1a5fc8','#0f2238']},
@@ -504,15 +526,16 @@ const FIELD_GROUPS=[
     {k:'mp_ly',label:'Manpower, same month last year',src:'key',dec:0},{k:'mp_ty',label:'Manpower, this month',src:'xlsx',dec:0},
     {k:'rec_int',label:'Recruits this year, internal',src:'rec',dec:0},{k:'rec_ext',label:'Recruits this year, external',src:'rec',dec:0},{k:'rec_rejoin',label:'Rejoined this year',src:'rec',dec:0}]},
   {title:'Facts & Figures targets',fields:[
-    {k:'t_active',label:'Active agents target',src:'set',dec:0},{k:'t_mp',label:'Manpower target',src:'set',dec:0},
-    {k:'t_ratio',label:'Active ratio target (%)',src:'set',dec:2},{k:'t_prod',label:'Productivity target',src:'rule',dec:2},
-    {k:'t_case',label:'Average case size target',src:'set',dec:2}]}
+    {k:'t_mp',label:'Manpower target (M)',src:'set',dec:0},{k:'t_ratio',label:'Active ratio target (A, %)',src:'set',dec:2},
+    {k:'t_active',label:'Active agents target (M × A)',src:'rule',note:'Auto: manpower × active ratio',dec:0},
+    {k:'t_prod',label:'Productivity target (P, cases)',src:'rule',note:'Auto: 3 × month number',dec:2},
+    {k:'t_case',label:'Average case size target (A)',src:'set',dec:2}]}
 ];
 const DEFAULT_SETTINGS={
   theme:'teal',title:'SGPJ Agency Report',agency:'SG-PJ',rows:'7',
   msg1Title:'The Power of One',msg1:'+10%',msg2Title:'',newRemoved:[],
   guide:DEFAULT_GUIDE.slice(),hidden:[],
-  ov:{t_active:132,t_mp:330,t_ratio:40,t_case:4300},
+  ov:{t_mp:330,t_ratio:40,t_case:4300},
   awards:[{name:'Starlight 1000',measure:'PS',min:100000,target:80},{name:'Star Producer',measure:'FYC',min:36000,target:50},{name:'MDRT',measure:'PS',min:398000,target:7}],
   newcomers:[],quote:'',quoteBy:'',celebCap:'SG Top 3 Agency\n冠軍模範代理社'
 };
@@ -639,7 +662,9 @@ async function pdfToPages(buf){
 function allAgents(){if(!excel)return[];return Object.values(excel.sections).flat();}
 function auto(){
   const a={};
-  if(reportMonth())a.t_prod=3*reportMonth();
+  if(reportMonth())a.t_prod=PROD_STEP*reportMonth();
+  const own=k=>{const o=S.ov[k];return o!==undefined&&o!==null&&o!==''?num(o):null;};
+  if(own('t_mp')!=null&&own('t_ratio')!=null)a.t_active=Math.round(own('t_mp')*own('t_ratio')/100);
   if(excel){
     const g=excel.grand||{};
     a.q_m_ty=g.PS_M;a.q_y_ty=g.PS_ACC;a.a_m_ty=g.ANP_M;a.a_y_ty=g.ANP_ACC;a.mp_ty=excel.manpower;a.noc=g.NOC_ACC;
@@ -666,6 +691,16 @@ function metrics(){
   return{active,noc,mp,ratio:active!=null&&mp?active/mp*100:null,prod:active?noc/active:null,
     caseSize:noc?V('a_y_ty')/noc:null,cum,goal,ontrack,completion:ontrack?V('q_y_ty')/ontrack*100:null,
     monthTarget:goal!=null?goal*num(S.guide[m-1])/100:null};
+}
+/* MAPA: Manpower x Active ratio x Productivity (cases) x Average case size = ANP.
+   Actuals multiply back to the ANP year to date; targets use this month's productivity target, and year-end uses PROD_STEP x 12. */
+function mapa(){
+  const M=metrics(),Mt=V('t_mp'),At=V('t_ratio'),Pt=V('t_prod'),Ct=V('t_case'),anp=V('a_y_ty'),Pend=PROD_STEP*12;
+  const all=Mt!=null&&At!=null&&Ct!=null;
+  const tgt=p=>all&&p!=null?Mt*At/100*p*Ct:null;
+  const per=p=>At!=null&&Ct!=null&&p!=null?At/100*p*Ct:null;
+  return{M:M.mp,Mt,A:M.ratio,At,act:M.active,actT:V('t_active'),P:M.prod,Pt,C:M.caseSize,Ct,anp,
+    anpT:tgt(Pt),anpEnd:tgt(Pend),pm:anp!=null&&M.mp?anp/M.mp:null,pmT:per(Pt),pmEnd:per(Pend),Pend};
 }
 const MEASURES={PS:'QFYLP',FYC:'FYC',ANP:'ANP',NOC:'No. of cases'};
 function awardStats(w){
@@ -766,17 +801,19 @@ function tblSlide(kind){
     ${call?`<div class="callout">${call}</div>`:''}`;
 }
 function factsSlide(){
-  const M=metrics(),t=k=>V(k);
+  const M=metrics(),t=k=>V(k),X=mapa(),mon=MONTH_NAMES[(reportMonth()||1)-1].slice(0,3);
   const bar=(a,b)=>a!=null&&b?`<div class="bar"><i style="width:${Math.min(100,a/b*100)}%"></i></div>`:'';
   const box=(l,v,tv,b)=>`<div class="ff"><div class="l">${l}</div><div class="n">${v}<small>/ ${tv}</small></div>${b}</div>`;
+  const tile=(k,l,v,tv,a,b)=>`<div class="mt"><div class="mh"><span class="lt">${k}</span>${l}</div><div class="n">${v}<small>/ ${tv}</small></div>${bar(a,b)}</div>`;
+  const n2=v=>v==null?'—':String(+Number(v).toFixed(2));
+  const rm=v=>v==null?'—':'RM '+(v/1e6).toFixed(2)+'M';
   const clubs=S.awards.filter(c=>c.name).map(c=>{const st=awardStats(c),t=num(c.target);if(st.ach==null)return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">—<small>/ ${t}</small></div></div>`;return `<div class="ff club"><div class="l">${esc(c.name)}</div><div class="n">(${st.ach} + ${st.on})<small>/ ${t}</small></div>${bar(st.ach,t)}<div class="pc">${st.pct==null?'':st.pct.toFixed(0)+'% achieved'}</div></div>`;}).join('');
   return `<div class="s-pad" style="inset:56px 110px"><div class="ff-title">Facts &amp; Figures</div>
-  <div class="ff-grid">
-    ${box('Active agents',f0(M.active),f0(t('t_active')),bar(M.active,t('t_active')))}
-    ${box('Manpower',f0(M.mp),f0(t('t_mp')),bar(M.mp,t('t_mp')))}
-    ${box('Active ratio',M.ratio==null?'—':M.ratio.toFixed(2)+'%',num(t('t_ratio')).toFixed(2)+'%',bar(M.ratio,t('t_ratio')))}
-    ${box('Productivity',M.prod==null?'—':M.prod.toFixed(2),f0(t('t_prod')),bar(M.prod,t('t_prod')))}
-    ${box('Average case size',f2(M.caseSize),f2(t('t_case')),bar(M.caseSize,t('t_case')))}
+  <div class="mapa">${tile('M','Manpower',f0(X.M),f0(X.Mt),X.M,X.Mt)}<div class="op">×</div>${tile('A','Active ratio',X.A==null?'—':X.A.toFixed(2)+'%',n2(X.At)+'%',X.A,X.At)}<div class="op">×</div>${tile('P','Productivity (cases)',X.P==null?'—':X.P.toFixed(2),n2(X.Pt),X.P,X.Pt)}<div class="op">×</div>${tile('A','Avg case size',f0(X.C),f0(X.Ct),X.C,X.Ct)}</div>
+  <div class="mapa-res"><span>ANP year to date <b>${rm(X.anp)}</b></span><span>Target by ${mon} <b>${rm(X.anpT)}</b></span><span>Year-end goal <b>${rm(X.anpEnd)}</b></span></div>
+  <div class="ff-grid" style="margin-top:22px">
+    ${box('Active agents (M × A)',f0(M.active),f0(t('t_active')),bar(M.active,t('t_active')))}
+    ${box('Productivity (ANP) per manpower',X.pm==null?'—':f0(X.pm),f0(X.pmT),bar(X.pm,X.pmT))}
     <div class="ff"><div class="l">Total NOC</div><div class="n">${f0(M.noc)}</div></div>
     ${clubs}
   </div></div>`;
@@ -951,16 +988,30 @@ function renderFields(){
   $('#fieldGroups').innerHTML=FIELD_GROUPS.map(g=>`<div class="group"><h2>${g.title}</h2>${g.fields.map(f=>{
     const av=a[f.k];if(av!=null&&S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null&&Math.abs(num(S.ov[f.k])-av)<0.005&&(f.src==='xlsx'||f.src==='pdf'||f.src==='rec'||f.src==='rule'))delete S.ov[f.k];const ov=S.ov[f.k]!==undefined&&S.ov[f.k]!==''&&S.ov[f.k]!==null;
     const dec=f.dec??2, raw=ov?S.ov[f.k]:av, show=raw==null||raw===''?'':fmtIn(raw,dec);
-    let src=f.src==='xlsx'?'From Excel':f.src==='pdf'?'From regional PDF':f.src==='rec'?'From recruitment file':f.src==='set'?'Target, keep until it changes':f.src==='rule'?'Auto: 3 × month number':'Key in';
+    let src=f.src==='xlsx'?'From Excel':f.src==='pdf'?'From regional PDF':f.src==='rec'?'From recruitment file':f.src==='set'?'Target, keep until it changes':f.src==='rule'?(f.note||'Auto'):'Key in';
     let cls=f.src==='key'?'key':'';
     const fromFile=f.src==='xlsx'||f.src==='pdf'||f.src==='rec'||f.src==='rule';
     if(ov&&fromFile){src='Changed by you';cls='mine';}
     if(fromFile&&av==null&&!ov){src+=' (not loaded)';}
     const reset=ov&&fromFile?`<button class="reset" data-reset="${f.k}" title="Use the file’s value" aria-label="Use the file’s value">↺</button>`:'';
     return `<div class="field"><label for="f-${f.k}">${f.label}<em class="${cls}">${src}</em></label><div class="inp">${reset}<input id="f-${f.k}" data-k="${f.k}" data-dec="${dec}" type="text" inputmode="decimal" autocomplete="off" value="${esc(show)}"></div></div>`;}).join('')}</div>`).join('');
-  const M=metrics();
-  $('#fieldGroups').insertAdjacentHTML('beforeend',`<div class="group"><h2>Calculated for you</h2>
-    ${[['Active agents (≥ '+(reportMonth()||'?')+' cases YTD)',f0(M.active)],['Active ratio',M.ratio==null?'—':M.ratio.toFixed(2)+'%'],['Productivity',M.prod==null?'—':M.prod.toFixed(2)],['Average case size',f2(M.caseSize)],['On-track target ('+M.cum+'%)',M.ontrack==null?'—':f2(M.ontrack)],['Goal completion',M.completion==null?'—':M.completion.toFixed(1)+'%'],['This month vs monthly target',M.monthTarget?(V('q_m_ty')/M.monthTarget*100).toFixed(1)+'% of '+f0(M.monthTarget):'—']].map(([l,v])=>`<div class="field"><label>${l}</label><div class="inp" style="justify-content:flex-end;font-weight:700">${v}</div></div>`).join('')}</div>`);
+  const M=metrics(),X=mapa(),mon=MONTH_NAMES[(reportMonth()||12)-1].slice(0,3);
+  const n2=v=>v==null?'—':String(+Number(v).toFixed(2));
+  const row=(tag,label,act,tgt,cls)=>`<div class="l ${cls||''}">${tag?`<span class="mk">${tag}</span>`:''}${label}</div><div class="r ${cls||''}">${act}</div><div class="r ${cls||''}">${tgt}</div>`;
+  const mapaHTML=`<div class="group"><h2>Calculated for you: MAPA</h2>
+    <div class="mapa-tbl"><div class="hd">Manpower × Active ratio × Productivity × Case size</div><div class="hd r">Actual</div><div class="hd r">Target by ${mon}</div>
+    ${row('M','Manpower',f0(X.M),f0(X.Mt))}
+    ${row('A','Active ratio',X.A==null?'—':X.A.toFixed(2)+'%',n2(X.At)+'%')}
+    ${row('','Active agents (M × A)',f0(X.act),f0(X.actT),'sub')}
+    ${row('P','Productivity (cases)',X.P==null?'—':X.P.toFixed(2),n2(X.Pt))}
+    ${row('A','Average case size',f2(X.C),f2(X.Ct))}
+    ${row('','ANP year to date (M × A × P × A)',f0(X.anp),f0(X.anpT),'tot')}
+    ${row('','Productivity (ANP): ANP per manpower',X.pm==null?'—':f0(X.pm),f0(X.pmT),'tot')}
+    </div>
+    <p class="mapa-chain">Active agent means ${reportMonth()||'?'} or more cases year to date.<br>Year-end goal at productivity ${X.Pend}: <b>${f0(X.Mt)} × ${n2(X.At)}% × ${X.Pend} × ${f0(X.Ct)} = RM ${f0(X.anpEnd)}</b>. ANP per manpower at year-end: <b>RM ${f0(X.pmEnd)}</b>.</p></div>`;
+  const goalHTML=`<div class="group"><h2>Goal progress</h2>
+    ${[['On-track target ('+M.cum+'%)',M.ontrack==null?'—':f2(M.ontrack)],['Goal completion',M.completion==null?'—':M.completion.toFixed(1)+'%'],['This month vs monthly target',M.monthTarget?(V('q_m_ty')/M.monthTarget*100).toFixed(1)+'% of '+f0(M.monthTarget):'—']].map(([l,v])=>`<div class="field"><label>${l}</label><div class="inp" style="justify-content:flex-end;font-weight:700">${v}</div></div>`).join('')}</div>`;
+  $('#fieldGroups').insertAdjacentHTML('beforeend',mapaHTML+goalHTML);
 }
 function renderClubs(){
   const cum=S.guide.slice(0,reportMonth()||12).reduce((a,v)=>a+num(v),0);
