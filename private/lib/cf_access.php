@@ -133,9 +133,9 @@ final class CfAccess
     }
 
     /** Production key source: Cloudflare's public certs, cached on disk for an hour. */
-    public static function httpJwksProvider(string $teamDomain, string $cacheDir): \Closure
+    public static function httpJwksProvider(string $teamDomain, string $cacheDir, ?string $url = null): \Closure
     {
-        return static function (bool $forceRefresh = false) use ($teamDomain, $cacheDir): array {
+        return static function (bool $forceRefresh = false) use ($teamDomain, $cacheDir, $url): array {
             $file = rtrim($cacheDir, '/') . '/cf_jwks.json';
             if (!$forceRefresh && is_file($file) && filemtime($file) > time() - 3600) {
                 $cached = json_decode((string)file_get_contents($file), true);
@@ -143,7 +143,7 @@ final class CfAccess
                     return $cached;
                 }
             }
-            $ch = curl_init("https://$teamDomain/cdn-cgi/access/certs");
+            $ch = curl_init($url ?? "https://$teamDomain/cdn-cgi/access/certs");
             curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_FOLLOWLOCATION => false]);
             $body = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -1,0 +1,140 @@
+{
+ "en": {
+  "title": "Advisor notes",
+  "criteria": "Criteria check",
+  "why": "Why",
+  "watch": "Watch-outs",
+  "qs": "Suggested interview questions",
+  "hex": "Hexagon with 25-point line",
+  "disclaimer": "This profile reflects interests, not ability or character. Use it as one input alongside the interview, references and licensing requirements, not as the sole basis for a hiring decision.",
+  "met": "✓ Met",
+  "notMet": "✗ Not met",
+  "notEntered": "Not entered",
+  "rowTotal": "Total {0} (min {1})",
+  "rowAbc": "Parts A+B+C {0} (min {1})",
+  "strong": [
+   "Strong fit",
+   "Meets all three criteria: people orientation (S), drive to persuade (E) and organisation (C). This is the profile most likely to enjoy and sustain an advisory career."
+  ],
+  "good": [
+   "Good fit, needs admin support",
+   "Meets the S and E criteria, which matter most for client-facing work. C is below 25, so paperwork and compliance habits will need structure."
+  ],
+  "review": [
+   "Borderline, interview to confirm",
+   "Meets the {0} criteria but not {1}. Suitability depends on whether the gap can be coached; probe it in the interview."
+  ],
+  "low": [
+   "Not a typical fit",
+   "Neither S nor E meets the criteria. The candidate's interests point to other kinds of work, so they may find the advisory role draining. Consider only with strong evidence from the interview."
+  ],
+  "ab": " (Parts A to C: {0})",
+  "abcNA": "{0} total is {1}, which meets the minimum, but the Part A to C breakdown was not entered so the {2}-point check could not be applied.",
+  "sPass": "Social {0}{1}: genuine interest in people. Likely to build trust easily, enjoy fact-finding conversations and keep clients for the long term.",
+  "ePass": "Enterprising {0}{1}: comfortable persuading, setting targets and taking initiative. A good indicator for prospecting and closing.",
+  "abcLow": "{0} total is {1}, but Parts A to C add up to only {2}. Much of the score comes from self-ratings, so the candidate may see themselves as stronger here than their actual interests and skills show.",
+  "watchS": "Self-image as a people person may be ahead of real experience. Look for concrete examples.",
+  "watchE": "May overestimate sales ability. Real comfort with prospecting is unproven.",
+  "sFail": "Social is {0}, below 25. May find relationship-building and service follow-ups draining; client care and referrals will need a system.",
+  "eFail": "Enterprising is {0}, below 25. Prospecting, asking for the sale and handling rejection are likely to be the biggest hurdles in the first year.",
+  "qE": [
+   "Tell me about a time you convinced someone to change their mind. What exactly did you say?",
+   "How do you feel about approaching people you don't know well? What would you do after three rejections in a row?"
+  ],
+  "qS": [
+   "Describe a time you supported someone through a difficult situation. What did you do?",
+   "What do you enjoy most about meeting new people?"
+  ],
+  "cPass": "Conventional {0}: comfortable with forms, procedures and compliance. Should handle submissions and documentation reliably.",
+  "cFail": "Conventional is {0}, below 25. Likely to find paperwork tedious. Pair with admin support or checklists to avoid submission errors.",
+  "qC": "How do you keep track of deadlines and paperwork today?",
+  "noteI": "Investigative in the top three: analytical and keen to understand how things work. Suits needs analysis, complex products and high-net-worth or estate planning conversations, but may over-research and delay taking action.",
+  "noteA": "Artistic in the top three: creative and independent. Can be an asset for personal branding and social media prospecting, but may resist scripts, routines and activity tracking.",
+  "noteR": "Realistic in the top three: practical and hands-on. May prefer tangible tasks over long conversations, so check comfort with a role that is mostly talking to people.",
+  "lead": "Leads with {0}, which is ideal for front-line advising.",
+  "consistent": "Consistent profile: {0} and {1} sit next to each other on the hexagon, so the candidate's interests point in a clear direction.",
+  "opposite": "{0} and {1} sit opposite each other on the hexagon, so the candidate's interests pull in different directions.",
+  "qOpp": "Of all the jobs and activities you've done, which did you enjoy most and why?",
+  "flat": "Flat profile: highest and lowest scores are only {0} points apart. Interests are not strongly defined yet, which is common in younger candidates. Treat the code as tentative.",
+  "defined": "Well-defined profile: interests are clear and strongly held.",
+  "qFinal": "What attracts you to a commission-based career, and how would you manage your finances in the first six to twelve months?",
+  "pattern": "Score pattern",
+  "and": " and ",
+  "breadthAll": "{0}: all three parts (A, B, C) are 5 or above, so the interest shows in what they like doing, what they can do and the jobs they would consider.",
+  "breadthSome": "{0}: {1} of 3 parts are 5 or above (A {2}, B {3}, C {4}).",
+  "narrow": "{0} interest shows mainly in one part (A {1}, B {2}, C {3}). Check whether it is real interest, real skill or only an attraction to the job titles.",
+  "zero": "{0} has a 0 in Part {1}. The candidate ticked nothing at all there, which is a red flag for this role.",
+  "manyZeros": "{0} of the 18 part scores (A to C across all six types) are 0. The candidate may have rushed or not engaged with the test. Treat the result with caution and consider a retake.",
+  "highAll": "{0} of the 18 part scores are 5 or above. The candidate scored high almost everywhere, so the profile is not well differentiated. Check whether they answered selectively.",
+  "noParts": "Part A to C scores were not entered, so the score pattern checks were skipped."
+ },
+ "zh": {
+  "title": "顾问备注",
+  "criteria": "标准检查",
+  "why": "原因",
+  "watch": "注意事项",
+  "qs": "建议面试问题",
+  "hex": "六边形（虚线为25分）",
+  "disclaimer": "此报告反映的是兴趣，而非能力或品格。请将其作为参考之一，结合面试、推荐人及执照要求一并考虑，不应作为聘用决定的唯一依据。",
+  "met": "✓ 达标",
+  "notMet": "✗ 未达标",
+  "notEntered": "未输入",
+  "rowTotal": "总分 {0}（最低 {1}）",
+  "rowAbc": "A+B+C部分 {0}（最低 {1}）",
+  "strong": [
+   "非常合适",
+   "符合全部三项标准：以人为本（S）、说服动力（E）和组织能力（C）。这是最有可能喜欢并长期投入顾问职业的特质组合。"
+  ],
+  "good": [
+   "合适，需要行政支援",
+   "符合S和E标准，这是面对客户工作最重要的两项。C低于25分，因此文书和合规习惯需要有系统的支援。"
+  ],
+  "review": [
+   "边缘，需面试确认",
+   "符合{0}标准，但未符合{1}标准。是否合适取决于这方面的不足能否通过辅导改善，请在面试中深入了解。"
+  ],
+  "low": [
+   "不太典型的人选",
+   "S和E均未达到标准。候选人的兴趣倾向于其他类型的工作，可能会觉得顾问工作很消耗精力。除非面试中有充分的证据，否则需慎重考虑。"
+  ],
+  "ab": "（A至C部分：{0}）",
+  "abcNA": "{0}总分为{1}，达到最低要求，但未输入A至C部分的分数，因此无法进行{2}分的检查。",
+  "sPass": "社会型{0}分{1}：真心对人感兴趣。很可能容易建立信任、喜欢了解客户需要的对话，并能长期维系客户。",
+  "ePass": "企业型{0}分{1}：善于说服、设定目标并主动出击。这是开发客户和成交能力的良好指标。",
+  "abcLow": "{0}总分为{1}，但A至C部分合计只有{2}。大部分分数来自自我评分，候选人对自己这方面的评价可能高于其实际兴趣和能力所显示的。",
+  "watchS": "自认为很会与人相处，但实际经验可能不足，请寻找具体例子。",
+  "watchE": "可能高估了自己的销售能力，对开发客户的实际适应程度尚未得到证实。",
+  "sFail": "社会型为{0}分，低于25分。可能会觉得建立关系和售后跟进很消耗精力；客户服务和转介绍需要有系统的方法。",
+  "eFail": "企业型为{0}分，低于25分。开发客户、开口成交和面对拒绝，很可能是第一年最大的挑战。",
+  "qE": [
+   "请分享一次你说服别人改变主意的经历。你具体说了什么？",
+   "你对接触不太熟悉的人有什么感觉？如果连续被拒绝三次，你会怎么做？"
+  ],
+  "qS": [
+   "请分享一次你帮助别人度过困难的经历。你做了什么？",
+   "认识新朋友时，你最喜欢的是什么？"
+  ],
+  "cPass": "常规型{0}分：适应表格、程序和合规要求，应能可靠地处理投保申请和文件。",
+  "cFail": "常规型为{0}分，低于25分。可能会觉得文书工作乏味。建议配合行政支援或检查清单，以避免提交错误。",
+  "qC": "你目前如何管理截止日期和文书工作？",
+  "noteI": "研究型位列前三：善于分析，喜欢了解事物如何运作。适合需求分析、复杂产品以及高净值或遗产规划的对话，但可能会过度研究而迟迟不行动。",
+  "noteA": "艺术型位列前三：有创意、独立。有助于建立个人品牌和通过社交媒体开发客户，但可能抗拒话术、例行工作和活动追踪。",
+  "noteR": "实际型位列前三：务实、喜欢动手。可能偏好具体任务多于长时间交谈，请确认他是否适应以与人交谈为主的工作。",
+  "lead": "以{0}为首，非常适合前线顾问工作。",
+  "consistent": "特质一致：{0}和{1}在六边形上相邻，候选人的兴趣方向明确。",
+  "opposite": "{0}和{1}在六边形上处于相对位置，候选人的兴趣朝不同方向拉扯。",
+  "qOpp": "在你做过的所有工作和活动中，你最喜欢哪一项？为什么？",
+  "flat": "特质分布平坦：最高分与最低分只相差{0}分。兴趣尚未明确，这在较年轻的候选人中很常见，请把代码视为参考。",
+  "defined": "特质鲜明：兴趣清晰而强烈。",
+  "qFinal": "佣金制的职业有什么吸引你？在最初的六至十二个月，你会如何安排自己的财务？",
+  "pattern": "分数模式",
+  "and": "和",
+  "breadthAll": "{0}：A、B、C三个部分均达5分或以上，兴趣同时体现在喜欢的活动、具备的能力和会考虑的职业上。",
+  "breadthSome": "{0}：三个部分中有{1}个达5分或以上（A {2}，B {3}，C {4}）。",
+  "narrow": "{0}的兴趣主要集中在一个部分（A {1}，B {2}，C {3}）。请了解这是真正的兴趣、实际的能力，还是只是被职业名称吸引。",
+  "zero": "{0}在{1}部分得0分。候选人在这里完全没有勾选，对这个职位来说是一个警号。",
+  "manyZeros": "18个部分分数（六种类型的A至C部分）中有{0}个为0。候选人可能作答匆忙或不够投入。请谨慎看待结果，并考虑重新测试。",
+  "highAll": "18个部分分数中有{0}个达5分或以上。候选人几乎在所有地方都给了高分，特质不够鲜明。请了解他是否有认真筛选作答。",
+  "noParts": "未输入A至C部分的分数，因此跳过分数模式检查。"
+ }
+}

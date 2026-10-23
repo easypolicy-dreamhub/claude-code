@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Career Code – Holland Interest Profile</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1C2B39; --muted:#5B6B7A; --paper:#F2F5F7; --card:#FFFFFF; --line:#D9E0E6;
+  --brand:#1F5F7A; --brand-ink:#FFFFFF;
+  --R:#B8642A; --I:#3567A8; --A:#8A4FA0; --S:#2E9466; --E:#C8961A; --C:#5E6E80;
+  --ok:#2E9466; --warn:#C8861A; --bad:#B9433A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Lexend","PingFang SC","Microsoft YaHei","Noto Sans SC","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:300;line-height:1.55;font-size:16px;-webkit-text-size-adjust:100%}
+html[lang^=zh] body{font-weight:400;line-height:1.7}
+h1,h2,h3{font-weight:600;line-height:1.25;margin:0 0 .5em}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);letter-spacing:-.01em}
+h2{font-size:1.35rem}
+h3{font-size:1.05rem}
+p{margin:0 0 1em}
+.wrap{max-width:760px;margin:0 auto;padding:20px 18px 64px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:1rem}
+.brand svg{width:28px;height:28px}
+.topright{display:flex;align-items:center;gap:12px}
+.stepinfo{color:var(--muted);font-size:.85rem}
+.langbtn{min-height:38px;padding:6px 14px;border-radius:999px;border:1px solid var(--brand);background:var(--card);color:var(--brand);font-weight:500;font-size:.9rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.panel + .panel{margin-top:16px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+button{font:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 20px;border-radius:10px;border:1px solid var(--brand);background:var(--brand);color:var(--brand-ink);font-weight:500}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn.plain{border-color:var(--line);background:var(--card);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.item:focus-visible,.rate button:focus-visible,.langbtn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #7FB3CC;outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.actions.split{justify-content:space-between}
+label.f{display:block;font-weight:500;font-size:.92rem;margin:14px 0 6px}
+input[type=text],input[type=tel],input[type=email],input[type=number],input[type=password],select{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-weight:400;background:#fff;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.consent{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:.88rem;color:var(--muted)}
+.consent input{width:22px;height:22px;margin-top:2px;flex:none}
+.err{color:var(--bad);font-size:.88rem;margin-top:10px;min-height:1.2em}
+
+.hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-hex{width:200px;height:200px}
+@media (max-width:600px){.hero{grid-template-columns:1fr}.hero-hex{width:170px;height:170px;margin:0 auto;order:-1}}
+.typestrip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.typestrip div{border-left:4px solid;padding:4px 10px;font-size:.85rem}
+.typestrip b{font-weight:600}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.choices{grid-template-columns:1fr}}
+.choice{text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:20px;color:var(--ink)}
+.choice:hover{border-color:var(--brand)}
+.choice h3{margin-bottom:.3em}
+.choice p{margin:0;color:var(--muted);font-size:.9rem}
+
+.progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 18px}
+.progress span{display:block;height:100%;background:var(--brand);transition:width .3s}
+.group{margin-top:22px}
+.group h3{font-size:.9rem;color:var(--muted);font-weight:500;margin-bottom:8px}
+.items{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.items{grid-template-columns:1fr}}
+.item{display:flex;align-items:center;gap:12px;text-align:left;min-height:50px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-weight:400;font-size:.94rem}
+.item::before{content:"";flex:none;width:22px;height:22px;border:2px solid var(--line);border-radius:6px;background:#fff center/14px no-repeat}
+.item[aria-pressed=true]{border-color:var(--brand);background:#EAF2F6}
+.item[aria-pressed=true]::before{background-color:var(--brand);border-color:var(--brand);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.counter{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:22px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px 10px 16px}
+.counter .btn{min-height:42px;background:#fff;color:var(--ink);border-color:#fff}
+.counter .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.rateblock{padding:14px 0;border-top:1px solid var(--line)}
+.rateblock:first-of-type{border-top:0}
+.rate{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+.rate button{min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-weight:500}
+.rate button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.rate button:disabled{background:#EEF1F4;color:#A9B4BE;border-style:dashed;cursor:not-allowed}
+.rateset{margin:20px 0 4px;font-size:.95rem}
+.rateset:first-child{margin-top:4px}
+.ratescale{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-top:4px}
+
+.mtable{width:100%;border-collapse:collapse;min-width:520px}
+.mtable th{font-weight:500;font-size:.82rem;color:var(--muted);text-align:center;padding:6px 4px}
+.mtable th:first-child{text-align:left}
+.mtable td{padding:5px 4px;text-align:center}
+.mtable td:first-child{text-align:left;white-space:nowrap}
+.mtable input{text-align:center;padding:8px 4px;min-height:42px}
+.mtable .tot input{font-weight:600}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tletter{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:600;font-size:.85rem;margin-right:8px}
+.rowwarn{color:var(--warn);font-size:.78rem;text-align:left !important}
+
+.result-head{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:center}
+@media (max-width:640px){.result-head{grid-template-columns:1fr}}
+.code{display:flex;gap:8px;margin:6px 0 14px}
+.code span{display:grid;place-items:center;width:64px;height:64px;border-radius:14px;color:#fff;font-size:2rem;font-weight:700}
+.code span:nth-child(2){opacity:.85}.code span:nth-child(3){opacity:.7}
+.hexchart svg{width:100%;height:auto;display:block}
+.typecard{border-left:5px solid;padding:4px 0 4px 14px;margin:16px 0}
+.typecard h3{margin-bottom:.2em}
+.typecard p{margin:0;font-size:.95rem}
+.orient{margin:12px 0 18px}
+.orient .ends{display:flex;justify-content:space-between;font-size:.85rem;font-weight:500}
+.orient .bar{position:relative;height:10px;border-radius:10px;background:linear-gradient(90deg,#CFE3EC,#E9EEF2 50%,#E8E0CF);margin:6px 0}
+.orient .bar i{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 0 0 1px var(--ink);transform:translate(-50%,-50%)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips span{padding:6px 12px;border-radius:999px;background:#E8EEF2;font-size:.85rem;font-weight:400}
+.scoretable{width:100%;border-collapse:collapse;font-size:.9rem;min-width:420px}
+.scoretable th,.scoretable td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:center}
+.scoretable th{font-weight:500;color:var(--muted);font-size:.8rem}
+.scoretable td:first-child,.scoretable th:first-child{text-align:left}
+
+.lockbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pinrow{display:flex;gap:8px;margin-top:12px;max-width:320px}
+.verdict{border-radius:12px;padding:16px 18px;color:#fff;margin-bottom:16px}
+.verdict h3{font-size:1.25rem;margin-bottom:.25em}
+.verdict p{margin:0}
+.v-strong{background:var(--ok)}.v-good{background:#3F7F5A}.v-review{background:var(--warn)}.v-low{background:var(--bad)}
+.checks{width:100%;border-collapse:collapse;font-size:.9rem;margin-bottom:8px}
+.checks td{padding:8px 6px;border-bottom:1px solid var(--line)}
+.checks td:last-child{text-align:right;font-weight:500;white-space:nowrap}
+.pass{color:var(--ok)}.fail{color:var(--bad)}.na{color:var(--muted)}
+.notes{padding-left:1.1em;margin:0 0 1em}
+.notes li{margin-bottom:.6em}
+.plist{list-style:none;padding-left:0}
+.plist li{position:relative;padding-left:1.6em}
+.plist li::before{position:absolute;left:0;font-weight:700}
+.plist li.pg::before{content:"✓";color:var(--ok)}
+.plist li.pw::before{content:"!";color:var(--warn);left:.35em}
+.disclaimer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:8px}
+.print-head{display:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;font-size:11pt}
+  .no-print,.topbar,.actions,.lockbar,.pinrow{display:none !important}
+  .wrap{max-width:none;padding:0}
+  .panel{border:0;padding:0;margin-top:14px}
+  .print-head{display:block;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  .print-head h2{margin:0 0 4px}
+  .typecard,.verdict,table{break-inside:avoid}
+  .verdict,.code span,.tletter{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.print-candidate #advisorPanel{display:none !important}
+  body.print-advisor #advisorPanel{display:block !important}
+  .result-head{grid-template-columns:1fr 240px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><polygon points="20,3 35,11.5 35,28.5 20,37 5,28.5 5,11.5" fill="none" stroke="#1F5F7A" stroke-width="3"/><circle cx="20" cy="20" r="4" fill="#C8961A"/></svg>
+      <span data-i18n="brand"></span>
+    </div>
+    <div class="topright">
+      <span class="stepinfo" id="stepinfo"></span>
+      <button class="langbtn" id="langBtn" type="button"></button>
+    </div>
+  </div>
+
+  <!-- WELCOME -->
+  <section class="screen" id="s-welcome">
+    <div class="panel">
+      <div class="hero">
+        <div>
+          <h1 data-i18n="wTitle"></h1>
+          <p data-i18n="wP1"></p>
+          <p class="muted small" data-i18n="wP2"></p>
+        </div>
+        <div class="hero-hex" id="heroHex"></div>
+      </div>
+      <div class="typestrip" id="typestrip"></div>
+      <div class="actions"><button class="btn" data-go="s-details" data-i18n="start"></button></div>
+    </div>
+  </section>
+
+  <!-- DETAILS -->
+  <section class="screen" id="s-details" hidden>
+    <div class="panel">
+      <h2 data-i18n="dTitle"></h2>
+      <p class="muted small" data-i18n="dReq"></p>
+      <div class="grid2">
+        <div><label class="f" for="d-name" data-i18n="fName"></label><input type="text" id="d-name" autocomplete="name"></div>
+        <div><label class="f" for="d-mobile" data-i18n="fMobile"></label><input type="tel" id="d-mobile" autocomplete="tel" inputmode="tel"></div>
+        <div><label class="f" for="d-email" data-i18n="fEmail"></label><input type="email" id="d-email" autocomplete="email"></div>
+        <div><label class="f" for="d-age" data-i18n="fAge"></label><select id="d-age" data-opts="age"></select></div>
+        <div><label class="f" for="d-edu" data-i18n="fEdu"></label><select id="d-edu" data-opts="edu"></select></div>
+        <div><label class="f" for="d-status" data-i18n="fStatus"></label><select id="d-status" data-opts="status"></select></div>
+        <div><label class="f" for="d-field" data-i18n="fField"></label><input type="text" id="d-field"></div>
+        <div><label class="f" for="d-advisor" data-i18n="fAdvisor"></label><input type="text" id="d-advisor"></div>
+      </div>
+      <label class="consent"><input type="checkbox" id="d-consent"><span id="consentText"></span></label>
+      <div class="err" id="d-err" role="alert"></div>
+      <div class="actions split"><button class="btn plain" data-go="s-welcome" data-i18n="back"></button><button class="btn" id="d-next" data-i18n="continue"></button></div>
+    </div>
+  </section>
+
+  <!-- CHOOSE -->
+  <section class="screen" id="s-choose" hidden>
+    <div class="panel">
+      <h2 data-i18n="cTitle"></h2>
+      <div class="choices">
+        <button class="choice" id="c-test"><h3 data-i18n="cTest"></h3><p data-i18n="cTestP"></p></button>
+        <button class="choice" id="c-manual"><h3 data-i18n="cManual"></h3><p data-i18n="cManualP"></p></button>
+      </div>
+      <div class="actions"><button class="btn plain" data-go="s-details" data-i18n="back"></button></div>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section class="screen" id="s-test" hidden>
+    <div class="panel">
+      <div class="progress" aria-hidden="true"><span id="t-prog"></span></div>
+      <h2 id="t-title"></h2>
+      <p id="t-intro" class="muted"></p>
+      <div id="t-body"></div>
+      <div class="err" id="t-err" role="alert"></div>
+      <div class="counter">
+        <button class="btn ghost" id="t-back"></button>
+        <span id="t-count" class="small"></span>
+        <button class="btn" id="t-next"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANUAL -->
+  <section class="screen" id="s-manual" hidden>
+    <div class="panel">
+      <h2 data-i18n="mTitle"></h2>
+      <p class="muted small" data-i18n="mIntro"></p>
+      <div class="scroll"><table class="mtable" id="m-table"></table></div>
+      <div class="err" id="m-err" role="alert"></div>
+      <div class="actions split"><button class="btn plain" id="m-back" data-i18n="back"></button><button class="btn" id="m-next" data-i18n="seeResults"></button></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="s-results" hidden>
+    <div class="panel">
+      <div class="print-head" id="printHead"></div>
+      <div class="result-head">
+        <div>
+          <p class="muted small" id="r-for"></p>
+          <h2 data-i18n="rCode"></h2>
+          <div class="code" id="r-code"></div>
+          <p id="r-summary"></p>
+        </div>
+        <div class="hexchart" id="r-hex"></div>
+      </div>
+      <div id="r-types"></div>
+      <h3 style="margin-top:22px" data-i18n="rOrient"></h3>
+      <div id="r-orient"></div>
+      <h3 data-i18n="rStrengths"></h3>
+      <div class="chips" id="r-strengths"></div>
+      <h3 style="margin-top:20px" data-i18n="rFields"></h3>
+      <div class="chips" id="r-fields"></div>
+      <h3 style="margin-top:22px" data-i18n="rScores"></h3>
+      <div class="scroll"><table class="scoretable" id="r-scores"></table></div>
+    </div>
+
+    <div class="panel lockbar no-print" id="lockPanel">
+      <button class="btn plain" id="unlockBtn"></button>
+      <span class="muted small" data-i18n="advOnly"></span>
+      <div class="pinrow" id="pinRow" hidden style="flex-basis:100%">
+        <input type="password" id="pinInput" inputmode="numeric">
+        <button class="btn" id="pinGo" data-i18n="unlock"></button>
+      </div>
+      <div class="err" id="pinErr" style="flex-basis:100%" role="alert"></div>
+    </div>
+
+    <div class="panel" id="advisorPanel" hidden></div>
+
+    <div class="actions no-print">
+      <button class="btn" id="printCand" data-i18n="printCand"></button>
+      <button class="btn ghost" id="printAdv" hidden data-i18n="printAdv"></button>
+      <button class="btn plain" id="editScores" data-i18n="editScores"></button>
+      <button class="btn plain" id="newCand" data-i18n="newCand"></button>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== Settings you can change ===== */
+const CONFIG = {
+  agency: { en:"our agency", zh:"本机构" },   // shown in the consent line
+  pin: "REDACTED",                                 // advisor PIN to unlock the suitability notes
+  defaultLang: "en",                           // "en" or "zh"
+  rules: { S:{total:25, abc:15}, E:{total:25, abc:15}, C:{total:25, abc:null} }
+};
+
+const TYPES = ["R","I","A","S","E","C"];
+let lang = CONFIG.defaultLang;
+
+/* ===== Interface text ===== */
+const STR = {
+en:{
+  docTitle:"Career Code – Holland Interest Profile", brand:"Career Code", langBtn:"中文",
+  wTitle:"Discover your career code",
+  wP1:"This questionnaire maps your interests onto six work personality types. Your top three types form your Holland code, which shows the kind of work you're likely to enjoy and where your strengths lie.",
+  wP2:"Takes about 20 to 25 minutes. There are no right or wrong answers, so answer for yourself rather than for any particular job.",
+  start:"Get started", back:"Back", continue:"Continue",
+  dTitle:"About you", dReq:"Fields marked * are required.",
+  fName:"Full name *", fMobile:"Mobile number *", fEmail:"Email", fAge:"Age group", fEdu:"Highest qualification", fStatus:"Current status", fField:"Current or last job / field of study", fAdvisor:"Advisor conducting",
+  select:"Select",
+  opts:{
+    age:["Below 21","21 to 25","26 to 30","31 to 35","36 to 40","41 to 50","Above 50"],
+    edu:["O / N Level","A Level / IB","Nitec / Higher Nitec","Diploma","Degree","Postgraduate","Other"],
+    status:["Studying","Working full-time","Working part-time","Between jobs","Other"]
+  },
+  consent:a=>`I agree to ${a} collecting and using these details to assess my career interests and to contact me about career opportunities.`,
+  eName:"Enter your full name.", eMobile:"Enter a valid mobile number.", eConsent:"Tick the consent box to continue.",
+  cTitle:"How would you like to continue?", cTest:"Take the test", cTestP:"Answer four short parts. Your code is calculated at the end.",
+  cManual:"I already have my results", cManualP:"Key in the Part A to D scores and totals from a test done earlier.",
+  step:{ "s-details":"Your details","s-choose":"Choose","s-manual":"Enter results","s-results":"Results" },
+  stepTest:n=>`Part ${n} of 4`,
+  parts:[
+    {title:"Part A: Activities", intro:"Tap every activity you would like to do. Leave the rest blank."},
+    {title:"Part B: Skills", intro:"Tap every activity you can do well or competently."},
+    {title:"Part C: Jobs", intro:"Tap every job that interests or appeals to you, even if you have no training for it."},
+    {title:"Part D: Rate yourself", intro:"Compare yourself with other people your age. 1 is low, 7 is high. Within each set, each number can be used only once, so think about where you are strongest and weakest."}
+  ],
+  set:i=>`Set ${i} of 6`, previous:"Previous", next:"Next", seeMine:"See my results",
+  selected:n=>`${n} selected`, rated:n=>`${n} of 12 rated`, eRate:"Rate all 12 items before seeing your results.",
+  low:"Low", avg:"Average", high:"High", rateSets:["Set 1: Abilities","Set 2: Skills"], eDup:"Each number can be used only once within a set.",
+  mTitle:"Enter existing results", mIntro:"Key in each part score. The total fills in automatically when Parts A to D are entered; you can also type a total directly if only totals are available.",
+  type:"Type", part:k=>`Part ${k}`, total:"Total", max:n=>`max ${n}`,
+  mWarn:(s,t)=>`Parts add up to ${s}, but the total says ${t}. The total you entered will be used.`,
+  mErr:l=>`Enter a valid total for: ${l}.`, seeResults:"See results",
+  rCode:"Your career code",
+  summary:(a,b,c)=>`Your strongest interest is <b>${a}</b>, followed by <b>${b}</b> and <b>${c}</b>.`,
+  tie:(a,b,code)=>` Your third letter is tied between ${a} and ${b}, so ${code} describes you equally well.`,
+  rOrient:"Your work orientation", people:"People-focused", task:"Task-focused", data:"Structure and data", ideas:"Ideas and imagination",
+  leanClear:x=>`You lean clearly towards ${x}.`, leanSlight:x=>`You lean slightly towards ${x}.`, balanced:"You are balanced between the two.",
+  pPeople:"working with and through people", pTask:"practical tasks, tools and systems", pData:"clear structure, facts and organised information", pIdeas:"ideas, concepts and creative thinking",
+  rStrengths:"Your career strengths", rFields:"Fields that often suit your code", rScores:"Your scores",
+  advNotes:"🔒 Advisor notes", advHide:"🔓 Hide advisor notes", advOnly:"For the advisor only.", pin:"Advisor PIN", unlock:"Unlock", ePin:"Incorrect PIN.",
+  printCand:"Print candidate summary", printAdv:"Print advisor report", editScores:"Edit scores", newCand:"New candidate",
+  confirmNew:"Clear this candidate's details and answers and start again?",
+  phTitle:n=>`Career Code profile: ${n}`, phAge:a=>`Age ${a}`, phAdvisor:a=>`, advisor: ${a}`, phKeyed:", scores keyed in from an earlier test",
+  fileName:(n,adv)=>`Career Code - ${n}${adv?" (advisor)":""}`, candidate:"candidate",
+  dateLocale:"en-SG", hexLabel:"Holland hexagon chart"
+},
+zh:{
+  docTitle:"职业代码 – 霍兰德职业兴趣测评", brand:"职业代码", langBtn:"EN",
+  wTitle:"发现你的职业代码",
+  wP1:"这份问卷会把你的兴趣对应到六种职业性格类型。得分最高的三种类型组成你的霍兰德代码，显示你可能喜欢的工作类型以及你的优势所在。",
+  wP2:"大约需要20至25分钟。答案没有对错之分，请按照自己的真实想法作答，而不是为了某个职位而作答。",
+  start:"开始", back:"返回", continue:"继续",
+  dTitle:"个人资料", dReq:"标有 * 的栏位为必填。",
+  fName:"姓名 *", fMobile:"手机号码 *", fEmail:"电邮", fAge:"年龄组", fEdu:"最高学历", fStatus:"目前状况", fField:"目前或最近的工作／修读科系", fAdvisor:"负责顾问",
+  select:"请选择",
+  opts:{
+    age:["21岁以下","21至25岁","26至30岁","31至35岁","36至40岁","41至50岁","50岁以上"],
+    edu:["O水准／N水准","A水准／IB","工艺教育局证书（Nitec／Higher Nitec）","专科文凭","学士学位","研究生","其他"],
+    status:["在学","全职工作","兼职工作","待业中","其他"]
+  },
+  consent:a=>`我同意${a}收集和使用以上资料，以评估我的职业兴趣，并就职业机会与我联系。`,
+  eName:"请输入姓名。", eMobile:"请输入有效的手机号码。", eConsent:"请勾选同意栏位以继续。",
+  cTitle:"你想怎样继续？", cTest:"进行测试", cTestP:"回答四个简短部分，系统会在最后计算你的代码。",
+  cManual:"我已有测试结果", cManualP:"输入之前测试的A至D部分分数及总分。",
+  step:{ "s-details":"个人资料","s-choose":"选择","s-manual":"输入结果","s-results":"结果" },
+  stepTest:n=>`第${n}部分，共4部分`,
+  parts:[
+    {title:"A部分：活动", intro:"点选所有你想做的活动，其余的留空即可。"},
+    {title:"B部分：能力", intro:"点选所有你能做得好或能胜任的事情。"},
+    {title:"C部分：职业", intro:"点选所有你感兴趣或吸引你的职业，即使你没有相关训练也可以。"},
+    {title:"D部分：自我评分", intro:"与同龄人相比，为自己评分。1为最低，7为最高。每一组中，每个数字只能使用一次，请想一想自己最强和最弱的是哪一项。"}
+  ],
+  set:i=>`第${i}组（共6组）`, previous:"上一步", next:"下一步", seeMine:"查看我的结果",
+  selected:n=>`已选${n}项`, rated:n=>`已评${n}项（共12项）`, eRate:"请先为全部12项评分，才能查看结果。",
+  low:"低", avg:"一般", high:"高", rateSets:["第1组：能力","第2组：技能"], eDup:"同一组中，每个数字只能使用一次。",
+  mTitle:"输入已有结果", mIntro:"请输入每个部分的分数。填好A至D部分后，总分会自动计算；如果只有总分，也可以直接输入总分。",
+  type:"类型", part:k=>`${k}部分`, total:"总分", max:n=>`最高${n}`,
+  mWarn:(s,t)=>`各部分相加为${s}，但总分为${t}。系统将采用你输入的总分。`,
+  mErr:l=>`请为以下类型输入有效总分：${l}。`, seeResults:"查看结果",
+  rCode:"你的职业代码",
+  summary:(a,b,c)=>`你最强的兴趣是<b>${a}</b>，其次是<b>${b}</b>和<b>${c}</b>。`,
+  tie:(a,b,code)=>`你的第三个字母由${a}和${b}并列，因此${code}同样适合描述你。`,
+  rOrient:"你的工作取向", people:"以人为本", task:"以任务为本", data:"结构与数据", ideas:"创意与想象",
+  leanClear:x=>`你明显偏向${x}。`, leanSlight:x=>`你略为偏向${x}。`, balanced:"你在两者之间较为平衡。",
+  pPeople:"与人合作、通过人来完成工作", pTask:"实际任务、工具和系统", pData:"清晰的结构、事实和有条理的资料", pIdeas:"想法、概念和创意思维",
+  rStrengths:"你的职业优势", rFields:"适合你代码的领域", rScores:"你的分数",
+  advNotes:"🔒 顾问备注", advHide:"🔓 隐藏顾问备注", advOnly:"仅供顾问查看。", pin:"顾问密码", unlock:"解锁", ePin:"密码错误。",
+  printCand:"打印候选人摘要", printAdv:"打印顾问报告", editScores:"修改分数", newCand:"新候选人",
+  confirmNew:"要清除此候选人的资料和答案并重新开始吗？",
+  phTitle:n=>`职业代码报告：${n}`, phAge:a=>`年龄：${a}`, phAdvisor:a=>`，顾问：${a}`, phKeyed:"，分数取自之前的测试",
+  fileName:(n,adv)=>`职业代码 - ${n}${adv?"（顾问）":""}`, candidate:"候选人",
+  dateLocale:"zh-CN", hexLabel:"霍兰德六边形图"
+}};
+const L = () => STR[lang];
+
+/* ===== Holland types ===== */
+const INFO = {
+en:{
+  R:{name:"Realistic", tag:"The Doer", desc:"Practical and hands-on. You like working with tools, machines, the outdoors or anything you can see and touch, and you prefer clear, tangible results.", strengths:["Practical problem-solving","Hands-on skills","Getting things done","Dependability"], fields:["Engineering","Technical trades","Logistics","Outdoor and physical work"]},
+  I:{name:"Investigative", tag:"The Thinker", desc:"Curious and analytical. You enjoy understanding how things work, solving complex problems and making decisions based on evidence.", strengths:["Analytical thinking","Research","Complex problem-solving","Fast learning"], fields:["Science and research","Data and technology","Healthcare","Finance and analysis"]},
+  A:{name:"Artistic", tag:"The Creator", desc:"Imaginative and expressive. You value originality and enjoy work where you can create, design or communicate ideas in your own way.", strengths:["Creativity","Original ideas","Visual and written expression","Adaptability"], fields:["Design","Media and content","Marketing and branding","The arts"]},
+  S:{name:"Social", tag:"The Helper", desc:"Warm and people-focused. You enjoy helping, teaching and supporting others, and you are good at building trust and understanding what people need.", strengths:["Building relationships","Listening","Empathy","Teamwork"], fields:["Education and training","Healthcare and wellness","Advisory and counselling","Community services"]},
+  E:{name:"Enterprising", tag:"The Persuader", desc:"Energetic and ambitious. You enjoy leading, influencing and persuading others, and you are motivated by goals, rewards and new opportunities.", strengths:["Persuasion","Leadership","Initiative","Resilience"], fields:["Sales and business development","Entrepreneurship","Management","Financial services"]},
+  C:{name:"Conventional", tag:"The Organiser", desc:"Organised and dependable. You like clear procedures, accuracy and order, and you take pride in doing things properly and on time.", strengths:["Organisation","Attention to detail","Reliability","Working with numbers and data"], fields:["Finance and accounting","Administration","Operations","Compliance and risk"]}
+},
+zh:{
+  R:{name:"实际型", tag:"实干者", desc:"务实、喜欢动手。你喜欢使用工具、机器，或在户外工作，喜欢看得见、摸得着的事物，并偏好清晰具体的成果。", strengths:["实际解决问题","动手能力","执行力","可靠"], fields:["工程","技术行业","物流","户外及体力工作"]},
+  I:{name:"研究型", tag:"思考者", desc:"好奇、善于分析。你喜欢了解事物如何运作、解决复杂问题，并根据证据做决定。", strengths:["分析思维","研究能力","解决复杂问题","学习能力强"], fields:["科学与研究","数据与科技","医疗保健","金融与分析"]},
+  A:{name:"艺术型", tag:"创作者", desc:"富有想象力、善于表达。你重视原创性，喜欢能以自己的方式创作、设计或传达想法的工作。", strengths:["创造力","原创想法","视觉与文字表达","适应力"], fields:["设计","媒体与内容创作","市场营销与品牌","艺术"]},
+  S:{name:"社会型", tag:"助人者", desc:"热情、以人为本。你喜欢帮助、教导和支持他人，善于建立信任并了解别人的需要。", strengths:["建立关系","倾听","同理心","团队合作"], fields:["教育与培训","医疗与保健","咨询与辅导","社区服务"]},
+  E:{name:"企业型", tag:"说服者", desc:"精力充沛、有抱负。你喜欢领导、影响和说服他人，并以目标、回报和新机会为动力。", strengths:["说服力","领导力","主动性","抗压能力"], fields:["销售与业务拓展","创业","管理","金融服务"]},
+  C:{name:"常规型", tag:"组织者", desc:"有条理、可靠。你喜欢清晰的程序、准确和秩序，并以把事情做好、准时完成为荣。", strengths:["组织能力","注重细节","可靠","处理数字与数据"], fields:["金融与会计","行政","营运","合规与风险管理"]}
+}};
+const I_ = t => INFO[lang][t];
+const COLOR = t => getComputedStyle(document.documentElement).getPropertyValue("--"+t).trim();
+
+/* ===== Questionnaire (original items) ===== */
+const PART_KEYS = ["A","B","C","D"];
+const ITEMS = {
+en:{
+  A:{
+    R:["Fix a leaking tap or do a small home repair","Assemble furniture from instructions","Work on a car or motorbike engine","Use power tools for a woodworking project","Grow vegetables or look after a garden","Go hiking, camping or on an outdoor expedition","Repair a broken electrical appliance","Build a model or something with my hands","Operate machinery or heavy equipment","Set up and wire home electronics","Take a course in carpentry, welding or mechanics"],
+    I:["Read about new scientific discoveries","Solve puzzles, riddles or brain teasers","Run an experiment to test an idea","Analyse data to find patterns","Learn how the human body works","Study how computers or software work","Investigate what caused a problem","Read about astronomy or space","Work through a challenging maths problem","Research a topic in depth before deciding","Watch documentaries on science or nature"],
+    A:["Sketch, draw or paint","Write stories, poems or a blog","Play a musical instrument or sing","Act in a play or short film","Take creative photos or videos","Design a poster, logo or web page","Decorate or style a room","Make crafts, pottery or jewellery","Dance or choreograph a routine","Visit art exhibitions or concerts","Come up with original ideas for a project"],
+    S:["Help a friend through a personal problem","Teach or tutor someone","Volunteer for a community or charity cause","Organise a gathering for family or friends","Mentor a younger person","Listen to people and give advice","Care for elderly people or children","Work with a team on a group project","Meet new people at events","Lead a support or interest group","Help a newcomer settle in"],
+    E:["Lead a team or committee","Sell a product or idea to someone","Start a small business or side hustle","Persuade others to see my point of view","Negotiate a deal or a price","Organise and promote an event","Speak in front of a group","Set targets and push to hit them","Network with business people","Run for a leadership position","Take charge when a group is stuck"],
+    C:["Keep my personal spending within a budget","Organise files, documents or records","Enter data accurately into a spreadsheet","Follow a clear procedure step by step","Plan a detailed schedule or itinerary","Check documents for errors","Keep track of stock or inventory","Fill in forms carefully and completely","Sort and label things so they are easy to find","Prepare a report using numbers","Work in a neat, orderly office"]
+  },
+  B:{
+    R:["Use hand tools such as a hammer, screwdriver or spanner","Read a technical drawing or diagram","Change a car tyre","Fix simple plumbing or electrical faults","Operate a drill or saw safely","Assemble equipment from instructions","Do physically demanding work for long hours","Maintain a vehicle or bicycle","Set up a computer or home network","Cook for a large group","Find my way using a map or compass"],
+    I:["Use a scientific calculator","Understand a research article or technical report","Explain how a scientific process works","Use statistics to analyse results","Write simple computer code or spreadsheet formulas","Identify the root cause of a problem","Interpret charts and graphs","Do mental arithmetic quickly","Design a simple experiment","Judge whether evidence supports a claim","Learn technical subjects quickly"],
+    A:["Draw people or objects realistically","Write creatively in my own voice","Play a musical instrument","Design things that look attractive","Perform in front of an audience","Use design or editing software such as Canva or Photoshop","Come up with unusual solutions","Express ideas through pictures or stories","Combine colours and layouts well","Sing or dance well","Make handmade crafts"],
+    S:["Explain things so others understand easily","Make people feel at ease","Listen without judging","Help settle a disagreement between people","Work well in a team","Teach a skill to others","Remember names and personal details","Sense how someone is feeling","Encourage and motivate others","Build rapport with strangers quickly","Keep in touch with a wide circle of people"],
+    E:["Persuade people to agree with me","Lead a group towards a goal","Win over someone who was unsure","Speak confidently in public","Make decisions under pressure","Handle rejection and keep going","Negotiate a good outcome","Start conversations with strangers","Get others to take action","Set goals and achieve them","Spot business opportunities"],
+    C:["Type quickly and accurately","Keep accurate records","Use spreadsheets such as Excel confidently","Manage a budget or petty cash","Follow detailed rules and regulations","Spot errors in numbers or documents","Organise a busy schedule","File and find documents efficiently","Complete paperwork on time","Use accounting or office software","Stay accurate during repetitive tasks"]
+  },
+  C:{
+    R:["Electrician","Aircraft maintenance engineer","Automotive mechanic","Carpenter","Chef","Plumber","Air-con technician","Construction site supervisor","Marine engineer","Agritech farmer","Machine operator","Lift technician","Park ranger","Land surveyor"],
+    I:["Doctor","Pharmacist","Research scientist","Data scientist","Software engineer","Actuary","Economist","Biomedical scientist","Laboratory technician","Veterinarian","Chemist","Cybersecurity analyst","Environmental scientist","Mathematician"],
+    A:["Graphic designer","Interior designer","Author","Photographer","Musician","Actor","Film director","Fashion designer","Architect","Animator","Copywriter","Content creator","Illustrator","Choreographer"],
+    S:["Teacher","Nurse","Social worker","Counsellor","Physiotherapist","Career coach","Youth worker","Preschool educator","Occupational therapist","Speech therapist","Training facilitator","Community development officer","Eldercare coordinator","Customer care specialist"],
+    E:["Sales manager","Entrepreneur","Real estate agent","Marketing manager","Lawyer","Business development manager","Restaurant owner","Event manager","Public relations manager","Stockbroker","Politician","Hotel manager","Recruitment consultant","Retail store manager"],
+    C:["Accountant","Bank operations officer","Administrative executive","Auditor","Payroll officer","Bookkeeper","Data entry specialist","Logistics coordinator","Tax officer","Medical records officer","Compliance officer","Office manager","Procurement officer","Legal secretary"]
+  }
+},
+zh:{
+  A:{
+    R:["修理漏水的水龙头或做简单的家居维修","按照说明组装家具","修理汽车或摩托车引擎","用电动工具做木工","种菜或照料花园","去远足、露营或户外探险","修理坏掉的电器","亲手制作模型或物品","操作机器或重型设备","安装并连接家用电子设备","修读木工、焊接或机械课程"],
+    I:["阅读新的科学发现","解谜题、猜谜或玩脑筋急转弯","做实验来验证一个想法","分析数据以找出规律","了解人体如何运作","研究电脑或软件如何运作","调查问题发生的原因","阅读天文或太空的资料","解答具挑战性的数学题","做决定前深入研究一个课题","观看科学或自然纪录片"],
+    A:["素描、绘画或上色","写故事、诗或博客","弹奏乐器或唱歌","参演话剧或短片","拍摄有创意的照片或视频","设计海报、标志或网页","布置或装饰房间","制作手工艺品、陶艺或首饰","跳舞或编排舞蹈","参观艺术展览或音乐会","为项目构思原创点子"],
+    S:["帮助朋友解决个人问题","教导或辅导他人","为社区或慈善活动当义工","为家人或朋友筹办聚会","指导年轻人","聆听他人并给予建议","照顾长者或小孩","与团队一起完成小组项目","在活动中认识新朋友","带领互助小组或兴趣小组","帮助新来的人适应环境"],
+    E:["领导团队或委员会","向别人推销产品或想法","开小生意或做副业","说服别人接受我的观点","谈判交易或价格","筹办并宣传活动","在一群人面前讲话","设定目标并努力达成","与商界人士建立人脉","竞选领导职位","在团队陷入僵局时主导局面"],
+    C:["把个人开支控制在预算内","整理文件、资料或记录","准确地把数据输入电子表格","按部就班地遵循清晰的程序","规划详细的时间表或行程","检查文件中的错误","记录库存或存货","仔细完整地填写表格","把物品分类并贴上标签，方便查找","用数字准备报告","在整洁有序的办公室工作"]
+  },
+  B:{
+    R:["使用锤子、螺丝刀或扳手等手工具","看懂技术图纸或图表","更换汽车轮胎","修理简单的水管或电路问题","安全地操作电钻或电锯","按照说明组装设备","长时间从事体力劳动","保养汽车或脚车","设置电脑或家庭网络","为一大群人煮食","用地图或指南针辨认方向"],
+    I:["使用科学计算器","看懂研究文章或技术报告","解释科学过程如何运作","用统计方法分析结果","编写简单的程序或电子表格公式","找出问题的根本原因","解读图表","快速心算","设计简单的实验","判断证据是否支持某个说法","快速掌握技术性科目"],
+    A:["逼真地画出人物或物件","用自己的风格进行创意写作","弹奏乐器","设计出好看的东西","在观众面前表演","使用Canva或Photoshop等设计或剪辑软件","想出与众不同的解决方法","通过图像或故事表达想法","善于搭配颜色和排版","唱歌或跳舞跳得好","制作手工艺品"],
+    S:["把事情解释得让人容易明白","让人感到自在","不带批判地聆听","帮忙化解他人之间的分歧","在团队中合作愉快","教导他人一项技能","记住别人的名字和个人细节","察觉别人的感受","鼓励和激励他人","很快与陌生人建立融洽关系","与广泛的人脉保持联系"],
+    E:["说服别人同意我的看法","带领团队达成目标","说服原本犹豫不决的人","自信地公开演讲","在压力下做决定","面对拒绝后继续努力","谈判出好的结果","主动与陌生人攀谈","推动他人采取行动","设定目标并实现","发掘商机"],
+    C:["打字又快又准确","保持准确的记录","熟练使用Excel等电子表格","管理预算或零用现金","遵守详细的规则和条例","发现数字或文件中的错误","安排繁忙的日程","有效率地存档和查找文件","准时完成文书工作","使用会计或办公软件","在重复性工作中保持准确"]
+  },
+  C:{
+    R:["电工","飞机维修工程师","汽车技工","木匠","厨师","水喉工","冷气技师","建筑工地主管","船舶工程师","农业科技农夫","机器操作员","电梯技师","公园管理员","土地测量师"],
+    I:["医生","药剂师","研究科学家","数据科学家","软件工程师","精算师","经济学家","生物医学科学家","实验室技术员","兽医","化学家","网络安全分析师","环境科学家","数学家"],
+    A:["平面设计师","室内设计师","作家","摄影师","音乐人","演员","电影导演","时装设计师","建筑师","动画师","文案撰稿人","内容创作者","插画师","编舞师"],
+    S:["教师","护士","社工","辅导员","物理治疗师","职业教练","青少年工作者","学前教育老师","职能治疗师","言语治疗师","培训导师","社区发展专员","乐龄护理协调员","客户关怀专员"],
+    E:["销售经理","企业家","房地产经纪","市场营销经理","律师","业务拓展经理","餐馆老板","活动经理","公关经理","股票经纪","政治人物","酒店经理","招聘顾问","零售店经理"],
+    C:["会计师","银行营运专员","行政专员","审计师","薪资专员","簿记员","数据输入专员","物流协调员","税务官员","医疗记录专员","合规专员","办公室经理","采购专员","法律秘书"]
+  }
+}};
+const RATINGS = {
+  en:{R:["Mechanical ability","Hands-on practical skills"],I:["Scientific ability","Problem-solving skills"],A:["Artistic ability","Creative expression"],S:["Teaching ability","People skills"],E:["Sales ability","Leadership skills"],C:["Clerical ability","Office and organising skills"]},
+  zh:{R:["机械能力","动手实践能力"],I:["科学能力","解决问题能力"],A:["艺术能力","创意表达能力"],S:["教导能力","人际能力"],E:["销售能力","领导能力"],C:["文书能力","办公及组织能力"]}
+};
+const RATE_ORDER = [["R",0],["S",0],["I",0],["E",0],["A",0],["C",0],["R",1],["S",1],["I",1],["E",1],["A",1],["C",1]];
+
+/* ===== Advisor notes text ===== */
+const ADV = {
+en:{
+  title:"Advisor notes", criteria:"Criteria check", why:"Why", watch:"Watch-outs", qs:"Suggested interview questions", hex:"Hexagon with 25-point line",
+  disclaimer:"This profile reflects interests, not ability or character. Use it as one input alongside the interview, references and licensing requirements, not as the sole basis for a hiring decision.",
+  met:"✓ Met", notMet:"✗ Not met", notEntered:"Not entered",
+  rowTotal:(t,m)=>`Total ${t} (min ${m})`, rowAbc:(x,m)=>`Parts A+B+C ${x} (min ${m})`,
+  strong:["Strong fit","Meets all three criteria: people orientation (S), drive to persuade (E) and organisation (C). This is the profile most likely to enjoy and sustain an advisory career."],
+  good:["Good fit, needs admin support","Meets the S and E criteria, which matter most for client-facing work. C is below 25, so paperwork and compliance habits will need structure."],
+  review:(p,m)=>["Borderline, interview to confirm",`Meets the ${p} criteria but not ${m}. Suitability depends on whether the gap can be coached; probe it in the interview.`],
+  low:["Not a typical fit","Neither S nor E meets the criteria. The candidate's interests point to other kinds of work, so they may find the advisory role draining. Consider only with strong evidence from the interview."],
+  ab:x=>` (Parts A to C: ${x})`,
+  abcNA:(n,t,m)=>`${n} total is ${t}, which meets the minimum, but the Part A to C breakdown was not entered so the ${m}-point check could not be applied.`,
+  sPass:(t,ab)=>`Social ${t}${ab}: genuine interest in people. Likely to build trust easily, enjoy fact-finding conversations and keep clients for the long term.`,
+  ePass:(t,ab)=>`Enterprising ${t}${ab}: comfortable persuading, setting targets and taking initiative. A good indicator for prospecting and closing.`,
+  abcLow:(n,t,x)=>`${n} total is ${t}, but Parts A to C add up to only ${x}. Much of the score comes from self-ratings, so the candidate may see themselves as stronger here than their actual interests and skills show.`,
+  watchS:"Self-image as a people person may be ahead of real experience. Look for concrete examples.",
+  watchE:"May overestimate sales ability. Real comfort with prospecting is unproven.",
+  sFail:t=>`Social is ${t}, below 25. May find relationship-building and service follow-ups draining; client care and referrals will need a system.`,
+  eFail:t=>`Enterprising is ${t}, below 25. Prospecting, asking for the sale and handling rejection are likely to be the biggest hurdles in the first year.`,
+  qE:["Tell me about a time you convinced someone to change their mind. What exactly did you say?","How do you feel about approaching people you don't know well? What would you do after three rejections in a row?"],
+  qS:["Describe a time you supported someone through a difficult situation. What did you do?","What do you enjoy most about meeting new people?"],
+  cPass:t=>`Conventional ${t}: comfortable with forms, procedures and compliance. Should handle submissions and documentation reliably.`,
+  cFail:t=>`Conventional is ${t}, below 25. Likely to find paperwork tedious. Pair with admin support or checklists to avoid submission errors.`,
+  qC:"How do you keep track of deadlines and paperwork today?",
+  noteI:"Investigative in the top three: analytical and keen to understand how things work. Suits needs analysis, complex products and high-net-worth or estate planning conversations, but may over-research and delay taking action.",
+  noteA:"Artistic in the top three: creative and independent. Can be an asset for personal branding and social media prospecting, but may resist scripts, routines and activity tracking.",
+  noteR:"Realistic in the top three: practical and hands-on. May prefer tangible tasks over long conversations, so check comfort with a role that is mostly talking to people.",
+  lead:n=>`Leads with ${n}, which is ideal for front-line advising.`,
+  consistent:(a,b)=>`Consistent profile: ${a} and ${b} sit next to each other on the hexagon, so the candidate's interests point in a clear direction.`,
+  opposite:(a,b)=>`${a} and ${b} sit opposite each other on the hexagon, so the candidate's interests pull in different directions.`,
+  qOpp:"Of all the jobs and activities you've done, which did you enjoy most and why?",
+  flat:x=>`Flat profile: highest and lowest scores are only ${x} points apart. Interests are not strongly defined yet, which is common in younger candidates. Treat the code as tentative.`,
+  defined:"Well-defined profile: interests are clear and strongly held.",
+  qFinal:"What attracts you to a commission-based career, and how would you manage your finances in the first six to twelve months?",
+  pattern:"Score pattern", and:" and ",
+  breadthAll:n=>`${n}: all three parts (A, B, C) are 5 or above, so the interest shows in what they like doing, what they can do and the jobs they would consider.`,
+  breadthSome:(n,c,a,b,cc)=>`${n}: ${c} of 3 parts are 5 or above (A ${a}, B ${b}, C ${cc}).`,
+  narrow:(n,a,b,cc)=>`${n} interest shows mainly in one part (A ${a}, B ${b}, C ${cc}). Check whether it is real interest, real skill or only an attraction to the job titles.`,
+  zero:(n,parts)=>`${n} has a 0 in Part ${parts}. The candidate ticked nothing at all there, which is a red flag for this role.`,
+  manyZeros:z=>`${z} of the 18 part scores (A to C across all six types) are 0. The candidate may have rushed or not engaged with the test. Treat the result with caution and consider a retake.`,
+  highAll:x=>`${x} of the 18 part scores are 5 or above. The candidate scored high almost everywhere, so the profile is not well differentiated. Check whether they answered selectively.`,
+  noParts:"Part A to C scores were not entered, so the score pattern checks were skipped."
+},
+zh:{
+  title:"顾问备注", criteria:"标准检查", why:"原因", watch:"注意事项", qs:"建议面试问题", hex:"六边形（虚线为25分）",
+  disclaimer:"此报告反映的是兴趣，而非能力或品格。请将其作为参考之一，结合面试、推荐人及执照要求一并考虑，不应作为聘用决定的唯一依据。",
+  met:"✓ 达标", notMet:"✗ 未达标", notEntered:"未输入",
+  rowTotal:(t,m)=>`总分 ${t}（最低 ${m}）`, rowAbc:(x,m)=>`A+B+C部分 ${x}（最低 ${m}）`,
+  strong:["非常合适","符合全部三项标准：以人为本（S）、说服动力（E）和组织能力（C）。这是最有可能喜欢并长期投入顾问职业的特质组合。"],
+  good:["合适，需要行政支援","符合S和E标准，这是面对客户工作最重要的两项。C低于25分，因此文书和合规习惯需要有系统的支援。"],
+  review:(p,m)=>["边缘，需面试确认",`符合${p}标准，但未符合${m}标准。是否合适取决于这方面的不足能否通过辅导改善，请在面试中深入了解。`],
+  low:["不太典型的人选","S和E均未达到标准。候选人的兴趣倾向于其他类型的工作，可能会觉得顾问工作很消耗精力。除非面试中有充分的证据，否则需慎重考虑。"],
+  ab:x=>`（A至C部分：${x}）`,
+  abcNA:(n,t,m)=>`${n}总分为${t}，达到最低要求，但未输入A至C部分的分数，因此无法进行${m}分的检查。`,
+  sPass:(t,ab)=>`社会型${t}分${ab}：真心对人感兴趣。很可能容易建立信任、喜欢了解客户需要的对话，并能长期维系客户。`,
+  ePass:(t,ab)=>`企业型${t}分${ab}：善于说服、设定目标并主动出击。这是开发客户和成交能力的良好指标。`,
+  abcLow:(n,t,x)=>`${n}总分为${t}，但A至C部分合计只有${x}。大部分分数来自自我评分，候选人对自己这方面的评价可能高于其实际兴趣和能力所显示的。`,
+  watchS:"自认为很会与人相处，但实际经验可能不足，请寻找具体例子。",
+  watchE:"可能高估了自己的销售能力，对开发客户的实际适应程度尚未得到证实。",
+  sFail:t=>`社会型为${t}分，低于25分。可能会觉得建立关系和售后跟进很消耗精力；客户服务和转介绍需要有系统的方法。`,
+  eFail:t=>`企业型为${t}分，低于25分。开发客户、开口成交和面对拒绝，很可能是第一年最大的挑战。`,
+  qE:["请分享一次你说服别人改变主意的经历。你具体说了什么？","你对接触不太熟悉的人有什么感觉？如果连续被拒绝三次，你会怎么做？"],
+  qS:["请分享一次你帮助别人度过困难的经历。你做了什么？","认识新朋友时，你最喜欢的是什么？"],
+  cPass:t=>`常规型${t}分：适应表格、程序和合规要求，应能可靠地处理投保申请和文件。`,
+  cFail:t=>`常规型为${t}分，低于25分。可能会觉得文书工作乏味。建议配合行政支援或检查清单，以避免提交错误。`,
+  qC:"你目前如何管理截止日期和文书工作？",
+  noteI:"研究型位列前三：善于分析，喜欢了解事物如何运作。适合需求分析、复杂产品以及高净值或遗产规划的对话，但可能会过度研究而迟迟不行动。",
+  noteA:"艺术型位列前三：有创意、独立。有助于建立个人品牌和通过社交媒体开发客户，但可能抗拒话术、例行工作和活动追踪。",
+  noteR:"实际型位列前三：务实、喜欢动手。可能偏好具体任务多于长时间交谈，请确认他是否适应以与人交谈为主的工作。",
+  lead:n=>`以${n}为首，非常适合前线顾问工作。`,
+  consistent:(a,b)=>`特质一致：${a}和${b}在六边形上相邻，候选人的兴趣方向明确。`,
+  opposite:(a,b)=>`${a}和${b}在六边形上处于相对位置，候选人的兴趣朝不同方向拉扯。`,
+  qOpp:"在你做过的所有工作和活动中，你最喜欢哪一项？为什么？",
+  flat:x=>`特质分布平坦：最高分与最低分只相差${x}分。兴趣尚未明确，这在较年轻的候选人中很常见，请把代码视为参考。`,
+  defined:"特质鲜明：兴趣清晰而强烈。",
+  qFinal:"佣金制的职业有什么吸引你？在最初的六至十二个月，你会如何安排自己的财务？",
+  pattern:"分数模式", and:"和",
+  breadthAll:n=>`${n}：A、B、C三个部分均达5分或以上，兴趣同时体现在喜欢的活动、具备的能力和会考虑的职业上。`,
+  breadthSome:(n,c,a,b,cc)=>`${n}：三个部分中有${c}个达5分或以上（A ${a}，B ${b}，C ${cc}）。`,
+  narrow:(n,a,b,cc)=>`${n}的兴趣主要集中在一个部分（A ${a}，B ${b}，C ${cc}）。请了解这是真正的兴趣、实际的能力，还是只是被职业名称吸引。`,
+  zero:(n,parts)=>`${n}在${parts}部分得0分。候选人在这里完全没有勾选，对这个职位来说是一个警号。`,
+  manyZeros:z=>`18个部分分数（六种类型的A至C部分）中有${z}个为0。候选人可能作答匆忙或不够投入。请谨慎看待结果，并考虑重新测试。`,
+  highAll:x=>`18个部分分数中有${x}个达5分或以上。候选人几乎在所有地方都给了高分，特质不够鲜明。请了解他是否有认真筛选作答。`,
+  noParts:"未输入A至C部分的分数，因此跳过分数模式检查。"
+}};
+const A_ = () => ADV[lang];
+
+/* ===== State ===== */
+let state, current="s-welcome";
+function freshState(){
+  const ans={}; ["A","B","C"].forEach(p=>{ ans[p]={}; TYPES.forEach(t=>ans[p][t]=new Set()); });
+  const rat={}; TYPES.forEach(t=>rat[t]=[null,null]);
+  return {candidate:{}, mode:null, part:0, answers:ans, ratings:rat, scores:null, unlocked:false};
+}
+state=freshState();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function show(id){
+  current=id;
+  document.querySelectorAll(".screen").forEach(el=>el.hidden = el.id!==id);
+  $("#stepinfo").textContent = id==="s-test" ? L().stepTest(state.part+1) : (L().step[id]||"");
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
+
+/* ===== Language ===== */
+function fillSelects(){
+  document.querySelectorAll("select[data-opts]").forEach(sel=>{
+    const keep=sel.value;
+    sel.innerHTML=`<option value="">${L().select}</option>`+L().opts[sel.dataset.opts].map((o,i)=>`<option value="${i}">${esc(o)}</option>`).join("");
+    sel.value=keep;
+  });
+}
+function applyStatic(){
+  document.documentElement.lang = lang==="zh" ? "zh-Hans" : "en";
+  document.title=L().docTitle;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent=L()[el.dataset.i18n]; });
+  $("#langBtn").textContent=L().langBtn;
+  $("#langBtn").setAttribute("aria-label", lang==="en" ? "切换到中文" : "Switch to English");
+  $("#pinInput").placeholder=L().pin; $("#pinInput").setAttribute("aria-label",L().pin);
+  $("#unlockBtn").textContent = state.unlocked ? L().advHide : L().advNotes;
+  $("#consentText").textContent=L().consent(CONFIG.agency[lang]);
+  $("#typestrip").innerHTML=TYPES.map(t=>`<div style="border-color:${COLOR(t)}"><b>${t}</b> ${I_(t).name}</div>`).join("");
+  fillSelects();
+  ["#d-err","#t-err","#m-err","#pinErr"].forEach(s=>$(s).textContent="");
+}
+function setLang(l){
+  lang=l; applyStatic();
+  if(current==="s-test") renderPart();
+  else if(current==="s-manual"){ const keep=stashManual(); buildManual(keep); show("s-manual"); }
+  else if(current==="s-results"){ renderResults(true); }
+  else show(current);
+}
+$("#langBtn").addEventListener("click",()=>setLang(lang==="en"?"zh":"en"));
+
+/* ===== Hexagon chart ===== */
+const ANG={R:-120,I:-60,A:0,S:60,E:120,C:180};
+function hexSVG(scores,opts={}){
+  const c=160,R=108,max=50;
+  const pt=(t,r)=>{const a=ANG[t]*Math.PI/180;return [c+r*Math.cos(a),c+r*Math.sin(a)];};
+  const poly=r=>TYPES.map(t=>pt(t,r).map(n=>n.toFixed(1)).join(",")).join(" ");
+  let g="";
+  [10,20,30,40,50].forEach(v=>{ g+=`<polygon points="${poly(R*v/max)}" fill="none" stroke="#D9E0E6" stroke-width="${v===50?1.5:1}"/>`; });
+  TYPES.forEach(t=>{ const [x,y]=pt(t,R); g+=`<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="#D9E0E6"/>`; });
+  if(opts.threshold) g+=`<polygon points="${poly(R*25/max)}" fill="none" stroke="#1C2B39" stroke-dasharray="4 4" stroke-width="1"/>`;
+  if(scores){
+    const v=t=>R*Math.min(Math.max(scores[t].total||0,0),max)/max;
+    g+=`<polygon points="${TYPES.map(t=>pt(t,v(t)).map(n=>n.toFixed(1)).join(",")).join(" ")}" fill="rgba(31,95,122,.18)" stroke="#1F5F7A" stroke-width="2.5" stroke-linejoin="round"/>`;
+    TYPES.forEach(t=>{ const [x,y]=pt(t,v(t)); g+=`<circle cx="${x}" cy="${y}" r="4" fill="${COLOR(t)}"/>`; });
+  }
+  TYPES.forEach(t=>{
+    const [x,y]=pt(t,R+30);
+    g+=`<circle cx="${x}" cy="${y}" r="17" fill="${COLOR(t)}"/><text x="${x}" y="${y+6}" text-anchor="middle" font-family="Lexend,sans-serif" font-weight="600" font-size="16" fill="#fff">${t}</text>`;
+    if(scores){ const dy=(t==="R"||t==="I")?-24:28; g+=`<text x="${x}" y="${y+dy}" text-anchor="middle" font-family="Lexend,sans-serif" font-size="12" fill="#5B6B7A">${scores[t].total}</text>`; }
+  });
+  return `<svg viewBox="-10 -10 340 340" role="img" aria-label="${L().hexLabel}">${g}</svg>`;
+}
+$("#heroHex").innerHTML=hexSVG(null);
+
+/* ===== Details ===== */
+$("#d-next").addEventListener("click",()=>{
+  const name=$("#d-name").value.trim(), mobile=$("#d-mobile").value.trim(), errs=[];
+  if(!name) errs.push(L().eName);
+  if(!/^[+\d][\d\s-]{6,}$/.test(mobile)) errs.push(L().eMobile);
+  if(!$("#d-consent").checked) errs.push(L().eConsent);
+  $("#d-err").textContent=errs.join(" ");
+  if(errs.length) return;
+  state.candidate={ name, mobile, email:$("#d-email").value.trim(), age:$("#d-age").value, edu:$("#d-edu").value,
+    status:$("#d-status").value, field:$("#d-field").value.trim(), advisor:$("#d-advisor").value.trim(), date:new Date() };
+  show("s-choose");
+});
+$("#c-test").addEventListener("click",()=>{ state.mode="test"; state.part=0; renderPart(); });
+$("#c-manual").addEventListener("click",()=>{ state.mode="manual"; buildManual(); show("s-manual"); });
+
+/* ===== Test ===== */
+function renderPart(){
+  const key=PART_KEYS[state.part], p=L().parts[state.part];
+  $("#t-title").textContent=p.title;
+  $("#t-intro").textContent=p.intro;
+  $("#t-prog").style.width=(state.part/4*100)+"%";
+  $("#t-err").textContent="";
+  $("#t-back").textContent = state.part===0 ? L().back : L().previous;
+  $("#t-next").textContent = state.part===3 ? L().seeMine : L().next;
+  let h="";
+  if(key!=="D"){
+    TYPES.forEach((t,gi)=>{
+      h+=`<div class="group"><h3>${L().set(gi+1)}</h3><div class="items">`;
+      ITEMS[lang][key][t].forEach((txt,i)=>{
+        h+=`<button type="button" class="item" data-t="${t}" data-i="${i}" aria-pressed="${state.answers[key][t].has(i)}">${esc(txt)}</button>`;
+      });
+      h+=`</div></div>`;
+    });
+  } else {
+    RATE_ORDER.forEach(([t,k],idx)=>{
+      if(idx===0||idx===6) h+=`<h3 class="rateset">${L().rateSets[k]}</h3>`;
+      const v=state.ratings[t][k], lbl=RATINGS[lang][t][k];
+      h+=`<div class="rateblock"><div style="font-weight:500">${lbl}</div><div class="rate" role="group" aria-label="${lbl}">`;
+      for(let n=1;n<=7;n++){ const used=usedBy(k,n,t); h+=`<button type="button" data-t="${t}" data-k="${k}" data-v="${n}" aria-pressed="${v===n}"${used?" disabled":""}>${n}</button>`; }
+      h+=`</div><div class="ratescale"><span>${L().low}</span><span>${L().avg}</span><span>${L().high}</span></div></div>`;
+    });
+  }
+  $("#t-body").innerHTML=h;
+  updateCount();
+  show("s-test");
+}
+function updateCount(){
+  const key=PART_KEYS[state.part];
+  if(key==="D") $("#t-count").textContent=L().rated(TYPES.reduce((n,t)=>n+state.ratings[t].filter(v=>v!==null).length,0));
+  else $("#t-count").textContent=L().selected(TYPES.reduce((s,t)=>s+state.answers[key][t].size,0));
+}
+$("#t-body").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const key=PART_KEYS[state.part];
+  if(key==="D"){
+    const t=b.dataset.t,k=+b.dataset.k,v=+b.dataset.v;
+    if(usedBy(k,v,t)){ $("#t-err").textContent=L().eDup; return; }
+    state.ratings[t][k]=v; $("#t-err").textContent="";
+    refreshRates();
+  } else {
+    const set=state.answers[key][b.dataset.t], i=+b.dataset.i;
+    set.has(i)?set.delete(i):set.add(i);
+    b.setAttribute("aria-pressed",set.has(i));
+  }
+  updateCount();
+});
+$("#t-back").addEventListener("click",()=>{ if(state.part===0){ show("s-choose"); return; } state.part--; renderPart(); });
+$("#t-next").addEventListener("click",()=>{
+  if(state.part===3){
+    if(TYPES.some(t=>state.ratings[t].includes(null))){ $("#t-err").textContent=L().eRate; return; }
+    if([0,1].some(k=>new Set(TYPES.map(t=>state.ratings[t][k])).size<6)){ $("#t-err").textContent=L().eDup; return; }
+    state.scores=scoresFromTest(); renderResults(); return;
+  }
+  state.part++; renderPart();
+});
+function usedBy(k,n,self){ return TYPES.some(t=>t!==self && state.ratings[t][k]===n); }
+function refreshRates(){
+  document.querySelectorAll("#t-body .rate button").forEach(x=>{
+    const t=x.dataset.t,k=+x.dataset.k,v=+x.dataset.v;
+    x.setAttribute("aria-pressed", state.ratings[t][k]===v);
+    x.disabled = usedBy(k,v,t);
+  });
+}
+function scoresFromTest(){
+  const s={};
+  TYPES.forEach(t=>{
+    const a=state.answers.A[t].size,b=state.answers.B[t].size,c=state.answers.C[t].size,d=state.ratings[t][0]+state.ratings[t][1];
+    s[t]={a,b,c,d,abc:a+b+c,total:a+b+c+d};
+  });
+  return s;
+}
+
+/* ===== Manual entry ===== */
+const MCOLS=[["a","A",11],["b","B",11],["c","C",14],["d","D",14],["total","",50]];
+function stashManual(){
+  const o={};
+  TYPES.forEach(t=>{ o[t]={}; MCOLS.forEach(([k])=>{ const el=$(`#m-${t}-${k}`); o[t][k]=el?el.value:""; }); o[t].touched=$(`#m-${t}-total`)?.dataset.touched||""; });
+  return o;
+}
+function buildManual(keep){
+  let h=`<thead><tr><th>${L().type}</th>${MCOLS.map(([k,P,mx])=>`<th>${k==="total"?L().total:L().part(P)}<br><span style="font-weight:300">${L().max(mx)}</span></th>`).join("")}</tr></thead><tbody>`;
+  TYPES.forEach(t=>{
+    const s=state.scores?state.scores[t]:null;
+    h+=`<tr><td><span class="tletter" style="background:${COLOR(t)}">${t}</span>${I_(t).name}</td>`;
+    MCOLS.forEach(([k,P,mx])=>{
+      let v = keep ? keep[t][k] : (s && s[k]!=null ? s[k] : "");
+      const touched = keep ? (k==="total"?keep[t].touched:"") : (k==="total" && s ? "1" : "");
+      h+=`<td class="${k==="total"?"tot":""}"><input type="number" inputmode="numeric" min="0" max="${mx}" id="m-${t}-${k}" data-t="${t}" data-k="${k}" data-touched="${touched}" value="${esc(v)}" aria-label="${I_(t).name} ${k==="total"?L().total:L().part(P)}"></td>`;
+    });
+    h+=`</tr><tr><td colspan="6" class="rowwarn" id="mw-${t}"></td></tr>`;
+  });
+  $("#m-table").innerHTML=h+"</tbody>";
+  $("#m-err").textContent="";
+  TYPES.forEach(checkRow);
+}
+const num=el=>el.value.trim()===""?null:Number(el.value);
+function checkRow(t){
+  const parts=["a","b","c","d"].map(k=>num($(`#m-${t}-${k}`))), tot=num($(`#m-${t}-total`));
+  $(`#mw-${t}`).textContent="";
+  if(parts.every(v=>v!==null)){
+    const sum=parts.reduce((x,y)=>x+y,0);
+    if(tot!==null && tot!==sum) $(`#mw-${t}`).textContent=L().mWarn(sum,tot);
+  }
+}
+$("#m-table").addEventListener("input",e=>{
+  const el=e.target; if(el.tagName!=="INPUT") return;
+  const t=el.dataset.t;
+  if(el.dataset.k==="total") el.dataset.touched = el.value.trim()!=="" ? "1" : "";
+  else {
+    const tot=$(`#m-${t}-total`), parts=["a","b","c","d"].map(k=>num($(`#m-${t}-${k}`)));
+    if(!tot.dataset.touched && parts.every(v=>v!==null)) tot.value=parts.reduce((x,y)=>x+y,0);
+  }
+  checkRow(t);
+});
+$("#m-back").addEventListener("click",()=>show(state.scores && state.mode==="test" ? "s-results" : "s-choose"));
+$("#m-next").addEventListener("click",()=>{
+  const s={}, errs=[];
+  TYPES.forEach(t=>{
+    const g=k=>num($(`#m-${t}-${k}`));
+    const a=g("a"),b=g("b"),c=g("c"),d=g("d"),total=g("total");
+    if(total===null || [a,b,c,d,total].some(v=>v!==null && (isNaN(v)||v<0||v>50))) errs.push(t);
+    s[t]={a,b,c,d,total,abc:(a!==null&&b!==null&&c!==null)?a+b+c:null};
+  });
+  if(errs.length){ $("#m-err").textContent=L().mErr(errs.join(", ")); return; }
+  state.scores=s; renderResults();
+});
+
+/* ===== Results ===== */
+function rank(s){ return TYPES.slice().sort((x,y)=>s[y].total-s[x].total || TYPES.indexOf(x)-TYPES.indexOf(y)); }
+function fmtDate(d){ return (d||new Date()).toLocaleDateString(L().dateLocale,{day:"numeric",month:"short",year:"numeric"}); }
+function renderResults(keepLock){
+  const s=state.scores, r=rank(s), code=r.slice(0,3), cd=state.candidate, Lx=L();
+  if(!keepLock){ state.unlocked=false; $("#pinRow").hidden=true; $("#pinInput").value=""; }
+  $("#pinErr").textContent="";
+  $("#advisorPanel").hidden=!state.unlocked; $("#printAdv").hidden=!state.unlocked;
+  $("#unlockBtn").textContent = state.unlocked ? Lx.advHide : Lx.advNotes;
+
+  const opt=(k,v)=> v==="" || v==null ? "" : Lx.opts[k][+v];
+  const sep = lang==="zh" ? "，" : ", ";
+  const info=[cd.mobile,cd.email,cd.age!==""&&cd.age!=null?Lx.phAge(opt("age",cd.age)):"",opt("edu",cd.edu),opt("status",cd.status),cd.field].filter(Boolean).map(esc).join(sep);
+  $("#printHead").innerHTML=`<h2>${esc(Lx.phTitle(cd.name))}</h2><div class="small">${info}</div><div class="small muted">${esc(fmtDate(cd.date))}${cd.advisor?esc(Lx.phAdvisor(cd.advisor)):""}${state.mode==="manual"?Lx.phKeyed:""}</div>`;
+  $("#r-for").textContent=`${cd.name}${sep}${fmtDate(cd.date)}`;
+  $("#r-code").innerHTML=code.map(t=>`<span style="background:${COLOR(t)}" title="${I_(t).name}">${t}</span>`).join("");
+  let sum=Lx.summary(I_(code[0]).name,I_(code[1]).name,I_(code[2]).name);
+  if(s[r[2]].total===s[r[3]].total) sum+=Lx.tie(r[2],r[3],code[0]+code[1]+r[3]);
+  $("#r-summary").innerHTML=sum;
+  $("#r-hex").innerHTML=hexSVG(s);
+  $("#r-types").innerHTML=code.map(t=>`<div class="typecard" style="border-color:${COLOR(t)}"><h3>${t}: ${I_(t).name} <span class="muted" style="font-weight:400">(${I_(t).tag})</span></h3><p>${I_(t).desc}</p></div>`).join("");
+
+  const T=x=>Math.max(s[x].total,0);
+  const people=2*T("S")+T("E")+T("A"), things=2*T("R")+T("I")+T("C"), data=T("E")+T("C"), ideas=T("I")+T("A");
+  const pp=people+things?people/(people+things):.5, dp=data+ideas?data/(data+ideas):.5;
+  const lean=(v,a,b)=> v>=.58?Lx.leanClear(a): v>=.52?Lx.leanSlight(a): v<=.42?Lx.leanClear(b): v<=.48?Lx.leanSlight(b): Lx.balanced;
+  $("#r-orient").innerHTML=`
+    <div class="orient"><div class="ends"><span>${Lx.people}</span><span>${Lx.task}</span></div><div class="bar"><i style="left:${((1-pp)*100).toFixed(0)}%"></i></div><div class="small muted">${lean(pp,Lx.pPeople,Lx.pTask)}</div></div>
+    <div class="orient"><div class="ends"><span>${Lx.data}</span><span>${Lx.ideas}</span></div><div class="bar"><i style="left:${((1-dp)*100).toFixed(0)}%"></i></div><div class="small muted">${lean(dp,Lx.pData,Lx.pIdeas)}</div></div>`;
+  $("#r-strengths").innerHTML=[...new Set(code.flatMap(t=>I_(t).strengths.slice(0,3)))].map(x=>`<span>${x}</span>`).join("");
+  $("#r-fields").innerHTML=[...new Set(code.slice(0,2).flatMap(t=>I_(t).fields))].map(x=>`<span>${x}</span>`).join("");
+  const f=v=>v==null?"–":v;
+  $("#r-scores").innerHTML=`<thead><tr><th>${Lx.type}</th><th>A</th><th>B</th><th>C</th><th>D</th><th>${Lx.total}</th></tr></thead><tbody>${r.map(t=>`<tr><td><span class="tletter" style="background:${COLOR(t)}">${t}</span>${I_(t).name}</td><td>${f(s[t].a)}</td><td>${f(s[t].b)}</td><td>${f(s[t].c)}</td><td>${f(s[t].d)}</td><td><b>${s[t].total}</b></td></tr>`).join("")}</tbody>`;
+  if(state.unlocked) renderAdvisor();
+  show("s-results");
+}
+
+/* ===== Advisor assessment ===== */
+function assess(s){
+  const A=A_(), r=rank(s), code=r.slice(0,3), rules=CONFIG.rules;
+  const chk=t=>{
+    const rule=rules[t], o={t,total:s[t].total,abc:s[t].abc};
+    o.totalOK=s[t].total>=rule.total;
+    o.abcOK = rule.abc==null ? true : (s[t].abc==null ? null : s[t].abc>=rule.abc);
+    o.pass=o.totalOK && o.abcOK!==false;
+    return o;
+  };
+  const S=chk("S"),E=chk("E"),C=chk("C");
+  let v;
+  if(S.pass&&E.pass&&C.pass) v=["v-strong",...A.strong];
+  else if(S.pass&&E.pass) v=["v-good",...A.good];
+  else if(S.pass||E.pass) v=["v-review",...A.review(S.pass?"S":"E",S.pass?"E":"S")];
+  else v=["v-low",...A.low];
+
+  const why=[], watch=[], qs=[];
+  [S,E].forEach(o=>{
+    const t=o.t, nm=I_(t).name, ab=o.abc==null?"":A.ab(o.abc);
+    if(o.pass && o.abcOK===null) why.push(A.abcNA(nm,o.total,rules[t].abc));
+    else if(o.pass) why.push(t==="S"?A.sPass(o.total,ab):A.ePass(o.total,ab));
+    else if(o.totalOK && o.abcOK===false){ why.push(A.abcLow(nm,o.total,o.abc)); watch.push(t==="S"?A.watchS:A.watchE); }
+    else why.push(t==="S"?A.sFail(o.total):A.eFail(o.total));
+    if(!o.pass || o.abcOK===false) qs.push(...(t==="E"?A.qE:A.qS));
+  });
+  if(C.pass) why.push(A.cPass(C.total)); else { why.push(A.cFail(C.total)); qs.push(A.qC); }
+
+  if(code.includes("I")) why.push(A.noteI);
+  if(code.includes("A")) why.push(A.noteA);
+  if(code.includes("R")) why.push(A.noteR);
+  if(code[0]==="S"||code[0]==="E") why.push(A.lead(I_(code[0]).name));
+  const i1=TYPES.indexOf(code[0]), i2=TYPES.indexOf(code[1]), dist=Math.min(Math.abs(i1-i2),6-Math.abs(i1-i2));
+  if(dist===1) why.push(A.consistent(code[0],code[1]));
+  if(dist===3){ why.push(A.opposite(code[0],code[1])); qs.push(A.qOpp); }
+  const spread=s[r[0]].total-s[r[5]].total;
+  if(spread<10) watch.push(A.flat(spread));
+  if(s[r[0]].total>=40 && spread>=25) why.push(A.defined);
+  qs.push(A.qFinal);
+
+  // Score pattern: 5+ per part, zeros, overall spread
+  const pattern=[], P=["a","b","c"], hasParts=t=>P.every(k=>s[t][k]!=null);
+  ["S","E","C"].forEach(t=>{
+    if(!hasParts(t)) return;
+    const nm=I_(t).name, v3=P.map(k=>s[t][k]), n5=v3.filter(x=>x>=5).length;
+    const zeros=P.filter(k=>s[t][k]===0).map(k=>k.toUpperCase());
+    if(zeros.length) pattern.push({warn:true, txt:A.zero(nm, zeros.join(A.and))});
+    else if(n5===3) pattern.push({warn:false, txt:A.breadthAll(nm)});
+    else if(n5<=1) pattern.push({warn:true, txt:A.narrow(nm,...v3)});
+    else pattern.push({warn:false, txt:A.breadthSome(nm,n5,...v3)});
+  });
+  if(TYPES.every(hasParts)){
+    const cells=TYPES.flatMap(t=>P.map(k=>s[t][k]));
+    const z=cells.filter(x=>x===0).length, hi=cells.filter(x=>x>=5).length;
+    if(z>=9) pattern.push({warn:true, txt:A.manyZeros(z)});
+    if(hi>=15) pattern.push({warn:true, txt:A.highAll(hi)});
+  }
+  if(!["S","E","C"].some(hasParts)) pattern.push({warn:false, txt:A.noParts});
+  return {v,checks:[S,E,C],why,watch,qs:[...new Set(qs)],pattern};
+}
+function renderAdvisor(){
+  const a=assess(state.scores), A=A_(), rules=CONFIG.rules;
+  const mark=ok=> ok===null?`<span class="na">${A.notEntered}</span>`: ok?`<span class="pass">${A.met}</span>`:`<span class="fail">${A.notMet}</span>`;
+  let rows="";
+  a.checks.forEach(o=>{
+    rows+=`<tr><td><span class="tletter" style="background:${COLOR(o.t)}">${o.t}</span>${A.rowTotal(o.total,rules[o.t].total)}</td><td>${mark(o.totalOK)}</td></tr>`;
+    if(rules[o.t].abc!=null) rows+=`<tr><td style="padding-left:42px">${A.rowAbc(o.abc==null?"–":o.abc,rules[o.t].abc)}</td><td>${mark(o.abcOK)}</td></tr>`;
+  });
+  $("#advisorPanel").innerHTML=`
+    <h2>${A.title}</h2>
+    <div class="verdict ${a.v[0]}"><h3>${a.v[1]}</h3><p>${a.v[2]}</p></div>
+    <h3>${A.criteria}</h3>
+    <table class="checks">${rows}</table>
+    <h3 style="margin-top:18px">${A.pattern}</h3>
+    <ul class="notes plist">${a.pattern.map(x=>`<li class="${x.warn?"pw":"pg"}">${x.txt}</li>`).join("")}</ul>
+    <h3 style="margin-top:18px">${A.why}</h3>
+    <ul class="notes">${a.why.map(x=>`<li>${x}</li>`).join("")}</ul>
+    ${a.watch.length?`<h3>${A.watch}</h3><ul class="notes">${a.watch.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}
+    <h3>${A.qs}</h3>
+    <ul class="notes">${a.qs.map(x=>`<li>${x}</li>`).join("")}</ul>
+    <h3>${A.hex}</h3>
+    <div style="max-width:300px">${hexSVG(state.scores,{threshold:true})}</div>
+    <p class="disclaimer">${A.disclaimer}</p>`;
+}
+
+/* ===== PIN, print, reset ===== */
+$("#unlockBtn").addEventListener("click",()=>{ if(state.unlocked){ lock(); return; } $("#pinRow").hidden=false; $("#pinInput").focus(); });
+function tryPin(){
+  if($("#pinInput").value===CONFIG.pin){
+    state.unlocked=true; renderAdvisor();
+    $("#advisorPanel").hidden=false; $("#printAdv").hidden=false; $("#pinRow").hidden=true; $("#pinErr").textContent="";
+    $("#unlockBtn").textContent=L().advHide;
+    $("#advisorPanel").scrollIntoView({behavior:"smooth",block:"start"});
+  } else $("#pinErr").textContent=L().ePin;
+  $("#pinInput").value="";
+}
+function lock(){
+  state.unlocked=false; $("#advisorPanel").hidden=true; $("#advisorPanel").innerHTML=""; $("#printAdv").hidden=true;
+  $("#unlockBtn").textContent=L().advNotes;
+}
+$("#pinGo").addEventListener("click",tryPin);
+$("#pinInput").addEventListener("keydown",e=>{ if(e.key==="Enter") tryPin(); });
+
+function doPrint(mode){
+  document.body.classList.remove("print-candidate","print-advisor");
+  document.body.classList.add(mode);
+  const old=document.title;
+  document.title=L().fileName(state.candidate.name||L().candidate, mode==="print-advisor");
+  window.print();
+  setTimeout(()=>{ document.title=old; },500);
+}
+$("#printCand").addEventListener("click",()=>doPrint("print-candidate"));
+$("#printAdv").addEventListener("click",()=>{ if(state.unlocked) doPrint("print-advisor"); });
+$("#editScores").addEventListener("click",()=>{ lock(); buildManual(); show("s-manual"); });
+$("#newCand").addEventListener("click",()=>{
+  if(!confirm(L().confirmNew)) return;
+  state=freshState(); lock();
+  document.querySelectorAll("#s-details input, #s-details select").forEach(el=>{ if(el.type==="checkbox") el.checked=false; else el.value=""; });
+  $("#d-err").textContent="";
+  show("s-welcome");
+});
+
+applyStatic();
+show("s-welcome");
+</script>
+</body>
+</html>

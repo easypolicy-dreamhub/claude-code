@@ -18,7 +18,7 @@ function boot_member_request(): array
         $cf = new CfAccess(
             $config['cf_access']['team_domain'],
             $config['cf_access']['aud'],
-            CfAccess::httpJwksProvider($config['cf_access']['team_domain'], $config['cf_access']['cache_dir'])
+            CfAccess::httpJwksProvider($config['cf_access']['team_domain'], $config['cf_access']['cache_dir'], $config['cf_access']['jwks_url'] ?? null)
         );
         $member = authenticate_member($pdo, $cf, $_SERVER['HTTP_CF_ACCESS_JWT_ASSERTION'] ?? null);
         return [$config, $pdo, $member];
