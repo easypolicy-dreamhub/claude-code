@@ -1,0 +1,5 @@
+# JSON API: never cache, no directory listing, PHP only.
+Options -Indexes
+<IfModule mod_headers.c>
+  Header always set Cache-Control "no-store"
+</IfModule>

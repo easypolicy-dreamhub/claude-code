@@ -1,0 +1,7 @@
+# Config, SQL and PHP libraries must never be served. (Best practice: put this whole
+# folder ABOVE public_html so the web server cannot reach it at all.)
+Require all denied
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
