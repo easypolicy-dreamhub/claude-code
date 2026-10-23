@@ -68,3 +68,17 @@ function would_create_cycle(array $map, int $memberId, ?int $newUplineId): bool
     }
     return $newUplineId === $memberId || in_array($newUplineId, downline_ids($map, $memberId), true);
 }
+
+/** The member and every upline above them, nearest first (stops on a loop). @return int[] */
+function upline_chain(array $map, int $id): array
+{
+    $out = [];
+    $seen = [];
+    $cur = $id;
+    while ($cur !== null && isset($map[$cur]) && !isset($seen[$cur])) {
+        $seen[$cur] = true;
+        $out[] = $cur;
+        $cur = $map[$cur]['upline_id'];
+    }
+    return $out;
+}

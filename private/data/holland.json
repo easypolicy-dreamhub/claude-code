@@ -1,0 +1,224 @@
+{
+ "info": {
+  "en": {
+   "R": {
+    "name": "Realistic",
+    "tag": "The Doer",
+    "desc": "Practical and hands-on. You like working with tools, machines, the outdoors or anything you can see and touch, and you prefer clear, tangible results.",
+    "strengths": [
+     "Practical problem-solving",
+     "Hands-on skills",
+     "Getting things done",
+     "Dependability"
+    ],
+    "fields": [
+     "Engineering",
+     "Technical trades",
+     "Logistics",
+     "Outdoor and physical work"
+    ]
+   },
+   "I": {
+    "name": "Investigative",
+    "tag": "The Thinker",
+    "desc": "Curious and analytical. You enjoy understanding how things work, solving complex problems and making decisions based on evidence.",
+    "strengths": [
+     "Analytical thinking",
+     "Research",
+     "Complex problem-solving",
+     "Fast learning"
+    ],
+    "fields": [
+     "Science and research",
+     "Data and technology",
+     "Healthcare",
+     "Finance and analysis"
+    ]
+   },
+   "A": {
+    "name": "Artistic",
+    "tag": "The Creator",
+    "desc": "Imaginative and expressive. You value originality and enjoy work where you can create, design or communicate ideas in your own way.",
+    "strengths": [
+     "Creativity",
+     "Original ideas",
+     "Visual and written expression",
+     "Adaptability"
+    ],
+    "fields": [
+     "Design",
+     "Media and content",
+     "Marketing and branding",
+     "The arts"
+    ]
+   },
+   "S": {
+    "name": "Social",
+    "tag": "The Helper",
+    "desc": "Warm and people-focused. You enjoy helping, teaching and supporting others, and you are good at building trust and understanding what people need.",
+    "strengths": [
+     "Building relationships",
+     "Listening",
+     "Empathy",
+     "Teamwork"
+    ],
+    "fields": [
+     "Education and training",
+     "Healthcare and wellness",
+     "Advisory and counselling",
+     "Community services"
+    ]
+   },
+   "E": {
+    "name": "Enterprising",
+    "tag": "The Persuader",
+    "desc": "Energetic and ambitious. You enjoy leading, influencing and persuading others, and you are motivated by goals, rewards and new opportunities.",
+    "strengths": [
+     "Persuasion",
+     "Leadership",
+     "Initiative",
+     "Resilience"
+    ],
+    "fields": [
+     "Sales and business development",
+     "Entrepreneurship",
+     "Management",
+     "Financial services"
+    ]
+   },
+   "C": {
+    "name": "Conventional",
+    "tag": "The Organiser",
+    "desc": "Organised and dependable. You like clear procedures, accuracy and order, and you take pride in doing things properly and on time.",
+    "strengths": [
+     "Organisation",
+     "Attention to detail",
+     "Reliability",
+     "Working with numbers and data"
+    ],
+    "fields": [
+     "Finance and accounting",
+     "Administration",
+     "Operations",
+     "Compliance and risk"
+    ]
+   }
+  },
+  "zh": {
+   "R": {
+    "name": "实际型",
+    "tag": "实干者",
+    "desc": "务实、喜欢动手。你喜欢使用工具、机器，或在户外工作，喜欢看得见、摸得着的事物，并偏好清晰具体的成果。",
+    "strengths": [
+     "实际解决问题",
+     "动手能力",
+     "执行力",
+     "可靠"
+    ],
+    "fields": [
+     "工程",
+     "技术行业",
+     "物流",
+     "户外及体力工作"
+    ]
+   },
+   "I": {
+    "name": "研究型",
+    "tag": "思考者",
+    "desc": "好奇、善于分析。你喜欢了解事物如何运作、解决复杂问题，并根据证据做决定。",
+    "strengths": [
+     "分析思维",
+     "研究能力",
+     "解决复杂问题",
+     "学习能力强"
+    ],
+    "fields": [
+     "科学与研究",
+     "数据与科技",
+     "医疗保健",
+     "金融与分析"
+    ]
+   },
+   "A": {
+    "name": "艺术型",
+    "tag": "创作者",
+    "desc": "富有想象力、善于表达。你重视原创性，喜欢能以自己的方式创作、设计或传达想法的工作。",
+    "strengths": [
+     "创造力",
+     "原创想法",
+     "视觉与文字表达",
+     "适应力"
+    ],
+    "fields": [
+     "设计",
+     "媒体与内容创作",
+     "市场营销与品牌",
+     "艺术"
+    ]
+   },
+   "S": {
+    "name": "社会型",
+    "tag": "助人者",
+    "desc": "热情、以人为本。你喜欢帮助、教导和支持他人，善于建立信任并了解别人的需要。",
+    "strengths": [
+     "建立关系",
+     "倾听",
+     "同理心",
+     "团队合作"
+    ],
+    "fields": [
+     "教育与培训",
+     "医疗与保健",
+     "咨询与辅导",
+     "社区服务"
+    ]
+   },
+   "E": {
+    "name": "企业型",
+    "tag": "说服者",
+    "desc": "精力充沛、有抱负。你喜欢领导、影响和说服他人，并以目标、回报和新机会为动力。",
+    "strengths": [
+     "说服力",
+     "领导力",
+     "主动性",
+     "抗压能力"
+    ],
+    "fields": [
+     "销售与业务拓展",
+     "创业",
+     "管理",
+     "金融服务"
+    ]
+   },
+   "C": {
+    "name": "常规型",
+    "tag": "组织者",
+    "desc": "有条理、可靠。你喜欢清晰的程序、准确和秩序，并以把事情做好、准时完成为荣。",
+    "strengths": [
+     "组织能力",
+     "注重细节",
+     "可靠",
+     "处理数字与数据"
+    ],
+    "fields": [
+     "金融与会计",
+     "行政",
+     "营运",
+     "合规与风险管理"
+    ]
+   }
+  }
+ },
+ "ui": {
+  "en": {
+   "docTitle": "Your career code",
+   "strengths": "Your career strengths",
+   "fields": "Fields that often suit your code"
+  },
+  "zh": {
+   "docTitle": "你的职业代码",
+   "strengths": "你的职业优势",
+   "fields": "适合你代码的领域"
+  }
+ }
+}

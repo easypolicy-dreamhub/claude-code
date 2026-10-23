@@ -22,7 +22,7 @@ function json_response(int $status, array $body): never
 /** Parsed JSON body of a state-changing request. */
 function json_body(): array
 {
-    $raw = file_get_contents('php://input');
+    $raw = file_get_contents('php://input', false, null, 0, 262144); // 256 KB cap
     if ($raw === false || $raw === '') {
         return [];
     }
