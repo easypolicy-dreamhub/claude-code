@@ -182,3 +182,33 @@ function make_mailer(array $config): Mailer
     }
     return new PhpMailMailer($from, $name);
 }
+
+/**
+ * Sends one test message and reports what happened, in plain words. Used by /members/api/mail_test.php
+ * (super admin only) so a mail problem can be diagnosed in seconds instead of by taking a whole test.
+ * @return array{ok:bool, transport:string, from:string, to:string, error:?string, advice:string}
+ */
+function run_mail_test(array $config, Mailer $mailer, string $to): array
+{
+    $m = $config['mail'] ?? [];
+    $transport = ($m['transport'] ?? 'mail') === 'smtp' ? 'smtp' : 'mail';
+    $out = ['ok' => false, 'transport' => $transport, 'from' => (string)($m['from'] ?? 'hello@dreamhub-e3.com'), 'to' => $to, 'error' => null, 'advice' => ''];
+    try {
+        $mailer->send($to, 'DreamHub E3 mail test ' . gmdate('H:i:s'), '<p>This is a test from your DreamHub E3 website. If you can read this, sending works.</p>', "This is a test from your DreamHub E3 website. If you can read this, sending works.\n");
+        $out['ok'] = true;
+        $out['advice'] = $transport === 'mail'
+            ? 'The server accepted the message. Check the inbox AND the spam folder of ' . $to . ' for "DreamHub E3 mail test". If it never shows up, the server is not delivering it: switch to SMTP (login with the mailbox).'
+            : 'The mail server accepted the message after logging in. Check the inbox AND the spam folder of ' . $to . ' for "DreamHub E3 mail test".';
+    } catch (Throwable $e) {
+        $out['error'] = $e->getMessage();
+        $msg = strtolower($e->getMessage());
+        $out['advice'] = match (true) {
+            str_contains($msg, '535') || str_contains($msg, 'auth') => 'The mailbox login was refused. Check the mailbox address and password in config.php (mail > user, pass).',
+            str_contains($msg, 'connect') => 'Could not reach the mail server. Check host and port in config.php (mail > host, port), and that secure matches the port (465 = ssl, 587 = tls).',
+            str_contains($msg, 'starttls') || str_contains($msg, 'ssl') || str_contains($msg, 'certificate') => 'The secure connection failed. Try "verify_tls" => false in the mail settings (only for this server), or use the other port.',
+            str_contains($msg, 'mail() refused') => 'Your host does not allow websites to send mail this way. Switch to SMTP (login with the mailbox).',
+            default => 'The mail server refused the message. The error above says why.',
+        };
+    }
+    return $out;
+}
