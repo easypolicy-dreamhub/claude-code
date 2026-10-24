@@ -61,7 +61,10 @@ final class PhpMailMailer implements Mailer
     public function send(string $to, string $subject, string $html, string $text): void
     {
         [$headers, $body] = mail_build($this->from, $this->fromName, $html, $text, substr(strrchr($this->from, '@'), 1));
-        $ok = mail(mail_address($to), mail_encode_header($subject), str_replace("\r\n", "\n", $body), implode("\n", $headers), '-f' . mail_clean($this->from));
+        // CRLF on EVERY line. PHP itself writes the To/Subject lines with CRLF, so using bare LF for the rest made a
+        // mixed message that mail filters glue together (From, Date, Message-ID ... became one From line and
+        // Gmail refused it: "multiple addresses in From").
+        $ok = mail(mail_address($to), mail_encode_header($subject), $body, implode("\r\n", $headers), '-f' . mail_clean($this->from));
         if (!$ok) {
             throw new RuntimeException('mail() refused the message.');
         }
