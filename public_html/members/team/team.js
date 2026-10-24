@@ -139,8 +139,8 @@ function previewRank(id) {
       }).join('');
     } else { h += '<p class="note">Nobody moves.</p>'; }
     if (p.team_admin_off) h += '<p class="note">They will no longer be a team admin.</p>';
-    if (p.gm_choice) h += '<p class="note"><b>Group Manager under a Group Manager.</b> Under GE rules they break away. ' + (V().super_admin ?
-      'Ask them: stay in the system (confirm below and nothing else changes) or opt out (use \u201cRemove whole group\u201d instead).' :
+    if (p.gm_choice) h += '<p class="note"><b>New Group Manager.</b> Under GE rules they break away from the Group Manager who built them and sit directly under the super admin. ' + (V().super_admin ?
+      'Ask them: stay in the system (confirm below) or opt out (use \u201cRemove whole group\u201d instead).' :
       'Confirm below to keep them in the system. If they want to leave the system completely, ask the super admin.') + '</p>';
     h += '<div class="row"><button class="btn" id="mApply">Confirm change</button></div></div>';
     $('#mPlan').innerHTML = h;

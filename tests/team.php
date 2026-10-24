@@ -185,4 +185,31 @@ remove_member($pdo, who('You'), $ids['G'], $ids['P']);
 $pdo->exec("UPDATE members SET rank_label = 'group_manager' WHERE id = {$ids['G']}");   // G was promoted elsewhere while removed
 check('reactivate default skips an old upline who is junior to them (goes to You, not P)', plan_reactivate(m(), who('You'), $ids['G'])['default_to']['name'] === 'You');
 
+echo "\nNew Group Manager breaks away from the GM who built them (your decision: option 2)\n";
+setup(['A' => ['group_manager', null], 'AB' => ['unit_manager', 'A'], 'ABA' => ['agent', 'AB']]);
+$p = plan('AB', 'group_manager');
+check('Unit Manager AB under Group Manager A, promoted to GM: preview moves AB to You and asks stay/opt-out', moved($p) === ['AB->You'] && $p['gm_choice'] && $p['moves'][0]['team_size'] === 1);
+rank('AB', 'group_manager');
+check('applied: AB (with ABA) is under You; A no longer sees them; You still do', upline('AB') === 'You' && upline('ABA') === 'AB' && !sees('A', 'AB') && !sees('A', 'ABA') && sees('You', 'ABA'));
+check('...and AB cannot see You', !sees('AB', 'You'));
+setup(['G1' => ['group_manager', null], 'A' => ['unit_manager', 'G1'], 'AB' => ['unit_manager', 'A']]);
+check('nested: AB under UM A under GM G1: breaks away past G1 all the way to You', moved(plan('AB', 'group_manager')) === ['AB->You']);
+setup(['A' => ['group_manager', null], 'AA' => ['agent', 'A']]);
+check('an Agent promoted straight to Group Manager under GM A also goes to You', moved(plan('AA', 'group_manager')) === ['AA->You']);
+setup(['T' => ['group_manager', null], 'U' => ['unit_manager', 'T'], 'UA' => ['agent', 'U']]);
+move_member($pdo, who('You'), $ids['T'], null);   // T is an independent top-level Group Manager, not in your tree
+$p = plan('U', 'group_manager');
+check('independent GM T (not under You): U breaks away to top level, no stay/opt-out question', moved($p) === ['U->top'] && !$p['gm_choice']);
+setup(['A' => ['unit_manager', null]]);
+$pdo->exec("UPDATE members SET rank_label = 'unit_manager' WHERE id = {$ids['You']}");   // you demoted yourself: not senior enough to sit over a GM
+check('if the super admin is not senior enough to sit over a Group Manager, the new GM goes to top level', moved(plan('A', 'group_manager')) === ['A->top']);
+setup(['A' => ['unit_manager', null]]);
+$p = plan('A', 'group_manager');
+check('UM directly under the super admin promoted to GM: stays (you said "just leave it"), question asked', moved($p) === [] && $p['gm_choice']);
+setup(['Amy' => ['group_manager', null], 'Ben' => ['unit_manager', 'Amy'], 'Bea' => ['agent', 'Ben']]);
+set_team_admin($pdo, who('You'), $ids['Amy'], true);
+apply_rank_change($pdo, who('Amy'), $ids['Ben'], 'group_manager');
+check('team admin Amy promotes her Unit Manager Ben to GM: Ben (with Bea) leaves Amy\'s group for You', upline('Ben') === 'You' && upline('Bea') === 'Ben' && !sees('Amy', 'Ben') && sees('You', 'Bea'));
+check('...Amy\'s Team page no longer lists them', array_column(team_tree($pdo, m(), who('Amy'), false)['members'], 'name') === ['Amy']);
+
 finish();

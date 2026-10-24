@@ -12,7 +12,7 @@ The tree here decides who sees whose candidates in every tool (Career Code now, 
 ## Rank rules (always previewed; untick any suggested move)
 - **Promotion above the upline's rank:** breaks away with their whole team to the nearest leader above with a high enough rank (usually you).
 - **Unit Manager equal to a Unit Manager upline:** stays (parallel).
-- **Group Manager directly under a Group Manager:** you choose: stay in the system (confirm) or opt out (Remove whole group).
+- **A new Group Manager** (promoted from any rank) always breaks away from the Group Manager who built them, with their whole team, and sits directly **under the super admin**. You then choose: stay in the system (confirm) or opt out (Remove whole group). If the super admin is not above them, they go to top level. (Decision: a Unit Manager under Group Manager A who becomes a Group Manager leaves A and goes under you; A stops seeing them.)
 - **Group Manager relegated to Unit Manager:** stays under their mother GM; their Unit Managers stay under them as parallels (GE circular CAD/1602/DEC2013/DT/SM, as given 29 Apr 2026); team admin is removed.
 - **Unit Manager demoted to Agent:** their agents, and any Unit Manager under them, move up to their upline.
 - **Nobody returns automatically** to a former upline after a demotion.
@@ -31,14 +31,11 @@ The tree here decides who sees whose candidates in every tool (Career Code now, 
 - Default destinations are **rank-aware**: removing someone proposes the nearest leader at least as senior as their team; reactivating proposes the nearest leader at least as senior as the person, else top level.
 - Choosing the rank someone already has is refused.
 
-## Open decision (not changed)
-When a **Unit Manager under a Group Manager who is not the super admin** is promoted to Group Manager (Ben under Amy under You), the page keeps Ben under Amy and asks the stay/opt-out question. GE says a new GM breaks away from the GM who built them. If you want Ben to move under **You** by default (Amy would stop seeing him), say so; it is a one-line change to the preview and stays untickable.
-
 ## Deploy
 1. phpMyAdmin > `dreamhub_members` > SQL: run `private/schema_phase3b.sql` (adds `is_team_admin` and `removal_batch`).
 2. Upload and extract the zip in your cPanel home folder.
 3. Replace `public_html/members/apps.js` (adds the "Team" card under Leader Tools).
 
 ## Tests
-`php tests/team.php` (69 scenario checks), `php tests/team_property.php 1500` (random teams and operations, rules checked after every step),
+`php tests/team.php` (79 scenario checks), `php tests/team_property.php 1500` (random teams and operations, rules checked after every step),
 and `node tests/e2e_team.js` (43 browser checks incl. hostile API requests, with real signed login tokens).

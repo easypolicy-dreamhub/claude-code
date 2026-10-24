@@ -73,7 +73,7 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1' }), p = b64({ 
   check('choosing the current rank: told it is already their rank, nothing to confirm', !(await you.$('#mApply')));
   await you.click('[data-close]');
   t = await changeRank(you, 'Amy', 'group_manager');
-  check('Amy -> Group Manager under Group Manager You: preview explains the GE stay/opt-out choice', /Group Manager under a Group Manager/.test(t));
+  check('Amy -> Group Manager directly under You: no move, and the preview explains the GE stay/opt-out choice', /New Group Manager/.test(t) && /break away/.test(t) && /stay in the system/.test(t) && /Nobody moves/.test(t));
   await manage(you, 'Alice'); await you.selectOption('#mRank', 'group_manager'); await you.click('#mRankGo'); await you.waitForSelector('#mPlan .plan');
   check('preview never changes anything by itself', (await you.evaluate(async (u) => (await (await fetch(u)).json()).members.find((m) => m.name === 'Alice').rank, `${BASE}/members/api/team.php`)) === 'unit_manager');
   await you.click('[data-close]');

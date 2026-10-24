@@ -6,8 +6,9 @@ declare(strict_types=1);
  * so changing the tree here is what changes who sees whose candidates.
  *
  *  - Promotion: rank now HIGHER than the upline's -> breaks away with their whole team to the nearest
- *    leader above with a high enough rank. Group Manager equal to a Group Manager upline -> your choice
- *    (stay, or remove the whole group). Unit Manager equal to a Unit Manager upline -> stays (parallel).
+ *    leader above with a high enough rank. Unit Manager equal to a Unit Manager upline -> stays (parallel).
+ *    A new Group Manager always breaks away from the Group Manager who built them: they stay in the system
+ *    only under the super admin (your choice: stay, or remove the whole group), else top level.
  *  - Demotion: the person stays where they are. Anyone directly under them who now OUTRANKS them moves up;
  *    on dropping to Agent their agents move up too. Below Group Manager -> no longer team admin.
  *  - Nobody returns automatically to a former upline.
@@ -66,6 +67,17 @@ function nearest_leader(array $map, ?int $fromId, int $level): ?int
 }
 
 /** Direct reports. Removed people are left out unless asked for: they are history, not part of anyone's live team. */
+/** The super admin, if they are somewhere above (starting at $fromId) and senior enough to sit over a $level; else null. */
+function super_admin_above(array $map, ?int $fromId, int $level): ?int
+{
+    foreach ($fromId === null ? [] : upline_chain($map, $fromId) as $id) {
+        if ($map[$id]['is_admin'] && $map[$id]['is_active']) {
+            return rank_level($map[$id]['rank_label']) >= $level ? $id : null;
+        }
+    }
+    return null;
+}
+
 function children_of(array $map, int $id, bool $includeRemoved = false): array
 {
     return array_values(array_map(static fn (array $m): int => $m['id'], array_filter($map, static fn (array $m): bool => $m['upline_id'] === $id && ($includeRemoved || $m['is_active']))));
@@ -96,13 +108,16 @@ function plan_rank_change(array $map, int $id, string $newRank): array
 
     if ($new > $old && $up !== null) {
         $upLevel = rank_level($map[$up]['rank_label']);
-        if ($new > $upLevel) {
-            $dest = nearest_leader($map, $map[$up]['upline_id'], $new);
-            $moves[] = ['member' => $id, 'from' => $up, 'to' => $dest, 'reason' => 'now outranks their upline'];
-            // Lands as a Group Manager directly under a Group Manager: the same "stay or opt out" choice applies.
-            $gmChoice = $newRank === 'group_manager' && $dest !== null && $map[$dest]['rank_label'] === 'group_manager';
-        } elseif ($new === $upLevel && $newRank === 'group_manager') {
-            $gmChoice = true;   // GE: a GM built by a GM breaks away; you decide whether they stay in the system
+        if ($newRank === 'group_manager') {
+            // GE: a new Group Manager breaks away from the Group Manager who built them. The only place they can
+            // stay in the system is under the super admin (CFG); with no super admin above them, top level.
+            $dest = super_admin_above($map, $up, $new);
+            if ($dest !== $up) {
+                $moves[] = ['member' => $id, 'from' => $up, 'to' => $dest, 'reason' => 'a new Group Manager breaks away from the Group Manager who built them'];
+            }
+            $gmChoice = $dest !== null;   // stay in the system (confirm) or opt out (remove the whole group)
+        } elseif ($new > $upLevel) {
+            $moves[] = ['member' => $id, 'from' => $up, 'to' => nearest_leader($map, $map[$up]['upline_id'], $new), 'reason' => 'now outranks their upline'];
         }
     } elseif ($new < $old) {
         foreach (children_of($map, $id) as $kid) {
