@@ -86,6 +86,7 @@ function renderList() {
     pills += '<span class="pill' + (c.purpose === 'internship' ? ' intern' : '') + '">' + (c.purpose === 'internship' ? 'Internship' : 'Career') + '</span>';
     if (!c.completed) pills += '<span class="pill grey">Unfinished</span>';
     if (c.duplicate_of) pills += '<span class="pill warn">Repeat applicant</span>';
+    if (c.via_link) pills += '<span class="pill warn">Via ' + esc(c.via_link.name) + '\u2019s link</span>';
     if (c.completed && !c.result_emailed) pills += '<span class="pill warn">Result email not sent</span>';
     var advisor = c.owner && (!v || c.owner.id !== v.id) ? ' · Advisor: ' + esc(c.owner.name) : '';
     return '<li><button class="item" data-id="' + c.id + '">' + codeHtml(c.code) + '<span><span class="name">' + esc(c.name) + '</span><br><span class="sub">' + esc(c.mobile) + advisor + '</span><span class="pills">' + pills + '</span></span><span class="when">' + esc(ago(c.completed_at || c.started_at)) + '</span></button></li>';
@@ -153,6 +154,7 @@ function renderDetail(c) {
       '<div class="contact no-print"><a class="chip" href="tel:' + esc(c.mobile) + '">📞 ' + esc(c.mobile) + '</a><a class="chip" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' + (c.email ? '<a class="chip" href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '') + '</div></div>' +
       codeHtml(c.code, true) + '</div>' + dup +
     '<div class="grid2"><dl class="kv"><dt>Advisor</dt><dd>' + chain + '</dd><dt>Source</dt><dd>' + esc({ landing: 'Website', referral: 'Advisor’s link', live: 'Live session' }[c.source] || c.source) + '</dd>' +
+      (c.via_link ? '<dt>Link used</dt><dd>' + esc(c.via_link.name) + '\u2019s link <span class="sub">(already registered, so stays with the first advisor; reassign below if needed)</span></dd>' : '') +
       '<dt>Started</dt><dd>' + esc(fmt(c.started_at)) + '</dd><dt>Finished</dt><dd>' + esc(fmt(c.completed_at)) + '</dd><dt class="print-only">Mobile</dt><dd class="print-only">' + esc(c.mobile) + '</dd><dt class="print-only">Email</dt><dd class="print-only">' + esc(c.email || '-') + '</dd>' +
       '<dt>Age group</dt><dd>' + opt(STR.en.opts.age, d.age) + '</dd><dt>Qualification</dt><dd>' + opt(STR.en.opts.edu, d.edu) + '</dd><dt>Status</dt><dd>' + opt(STR.en.opts.status, d.status) + '</dd><dt>Job / studies</dt><dd>' + esc(d.field || '-') + '</dd>' +
       '<dt>Consent</dt><dd>' + esc(fmt(c.consent.at)) + '</dd></dl>' +

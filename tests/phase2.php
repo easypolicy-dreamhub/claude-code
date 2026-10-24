@@ -88,7 +88,10 @@ $d = start_candidate($pdo, $cfg, valid_start(['ref' => 'aa']), null);   // same 
 $drow = $pdo->query('SELECT * FROM candidates WHERE id = ' . $d['candidate_id'])->fetch();
 check('stays with the first advisor (Amy), not AA', (int)$drow['owner_member_id'] === $A['id'] && $d['advisor_name'] === 'Amy A');
 check('flagged as duplicate of the first record', (int)$drow['duplicate_of'] === $r['candidate_id']);
+check('Option 2: the link that was used (AA) is remembered even though Amy keeps the candidate', (int)$drow['referred_by_member_id'] === $AA['id'] && (int)$drow['owner_member_id'] === $A['id']);
+check('a first-time candidate through Amy\'s link: link owner and owner are the same person', (int)$pdo->query('SELECT referred_by_member_id FROM candidates WHERE id = ' . $r['candidate_id'])->fetchColumn() === $A['id']);
 $d2 = start_candidate($pdo, $cfg, valid_start(['mobile' => '+60 12 345 6789', 'email' => 'other@example.com']), null);
+check('a repeat with no link: nobody is recorded as the referrer', $pdo->query('SELECT referred_by_member_id FROM candidates WHERE id = ' . $d2['candidate_id'])->fetchColumn() === null);
 check('match on mobile alone, and chains back to the ROOT record', (int)$pdo->query('SELECT duplicate_of FROM candidates WHERE id = ' . $d2['candidate_id'])->fetchColumn() === $r['candidate_id']);
 
 echo "\nRate limit\n";
@@ -144,6 +147,34 @@ check('inactive advisor is skipped, upline still told', !in_array('a@x.com', arr
 check('mail_encode_header handles Chinese and strips newlines', str_starts_with(mail_encode_header("你好\r\nBcc: x"), '=?UTF-8?B?') && !preg_match('/[\r\n]/', mail_encode_header("a\r\nb")));
 
 try { mail_address("a@b.com\r\nBcc: x@y.com"); check('rejects header injection in an address', false); } catch (RuntimeException $e) { check('rejects header injection in an address', true); }
+
+echo "\nTelling the agent whose link was used (repeat applicant stays with Amy)\n";
+submit_assessment($pdo, $d['submit_token'], sample_answers());
+$dc = $pdo->query('SELECT * FROM candidates WHERE id = ' . $d['candidate_id'])->fetch();
+update_member($pdo, $me['id'], $A['id'], ['is_active' => true]);
+$mr = new MemoryMailer();
+$res = notify_completion($pdo, $cfg, $mr, $dc, $sub['scores'], $sub['code']);
+$rto = array_column($mr->sent, 'to');
+check('candidate, Amy (owner), You (upline) AND AA (whose link was used) were emailed', count($rto) === 4 && in_array('aa@x.com', $rto, true) && in_array('a@x.com', $rto, true) && in_array('you@x.com', $rto, true) && $res['notified'] === 3);
+$byTo = array_column($mr->sent, null, 'to');
+check('Amy\'s notice says whose link was used', str_contains($byTo['a@x.com']['text'], "Link used: Ah Ah's personal link"));
+$rn = $byTo['aa@x.com'];
+check('AA\'s notice names the person and says another advisor will follow up', str_contains($rn['text'], 'used your Career Code link') && str_contains($rn['text'], 'another advisor') && str_contains($rn['subject'], 'Someone you referred'));
+check('AA\'s notice reveals nothing else: no code, no phone, no email, no dashboard link, not who has them', !preg_match('/ESC|SAE|\+60|@example\.com|dashboard|candidate=|Amy A|Good fit|advisor notes/i', $rn['text'] . $rn['html'] . $rn['subject']));
+$evilc = $dc; $evilc['name'] = "<img src=x onerror=1> Eve\r\nBcc: x@evil.com";
+$en = build_referrer_notice($evilc, $AA);
+check('referrer notice: hostile name is escaped and cannot add headers', !str_contains($en['html'], '<img') && !preg_match('/[\r\n]/', $en['subject']));
+update_member($pdo, $me['id'], $AA['id'], ['is_active' => false]);
+$mr2 = new MemoryMailer(); notify_completion($pdo, $cfg, $mr2, $dc, $sub['scores'], $sub['code']);
+check('a deactivated referrer is not emailed', !in_array('aa@x.com', array_column($mr2->sent, 'to'), true));
+update_member($pdo, $me['id'], $AA['id'], ['is_active' => true]);
+$yc2 = start_candidate($pdo, $cfg, valid_start(['mobile' => '0125550001', 'email' => 'y1@example.com', 'ref' => 'cf']), null);   // You's own link
+submit_assessment($pdo, $yc2['submit_token'], sample_answers());
+$ycrow = $pdo->query('SELECT * FROM candidates WHERE id = ' . $yc2['candidate_id'])->fetch();
+$pdo->exec("UPDATE candidates SET owner_member_id = {$A['id']} WHERE id = {$yc2['candidate_id']}");   // Amy owns it, but You's link was used
+$ycrow['owner_member_id'] = $A['id'];
+$mr3 = new MemoryMailer(); notify_completion($pdo, $cfg, $mr3, $ycrow, $sub['scores'], $sub['code']);
+check('a referrer who is already in the owner\'s chain gets ONE email (the normal notice), not two', count(array_keys(array_column($mr3->sent, 'to'), 'you@x.com')) === 1);
 
 echo "\nTurnstile\n";
 $tcfg = ['turnstile' => ['secret' => 's3']];

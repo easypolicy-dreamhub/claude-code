@@ -105,6 +105,7 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
     }
 
     [$owner, $source] = resolve_owner($pdo, $config, $ref);
+    $referrerId = $source === 'referral' ? (int)$owner['id'] : null;   // whose link was used, even if a repeat applicant stays elsewhere
     $dupOf = null;
     $stmt = $pdo->prepare('SELECT id, owner_member_id, duplicate_of FROM candidates WHERE mobile = ? OR email = ? ORDER BY id LIMIT 1');
     $stmt->execute([$mobile, $email]);
@@ -117,9 +118,9 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
 
     $token = bin2hex(random_bytes(32));
     $now = gmdate('Y-m-d H:i:s');
-    $pdo->prepare('INSERT INTO candidates (owner_member_id, purpose, source, name, mobile, email, age_group, education, work_status, field, lang,
-            consent_at, consent_version, duplicate_of, submit_token_hash, ip_hash, started_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-        ->execute([(int)$owner['id'], $purpose, $source, $name, $mobile, $email, $age, $edu, $status, $field === '' ? null : $field, $lang,
+    $pdo->prepare('INSERT INTO candidates (owner_member_id, referred_by_member_id, purpose, source, name, mobile, email, age_group, education, work_status, field, lang,
+            consent_at, consent_version, duplicate_of, submit_token_hash, ip_hash, started_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        ->execute([(int)$owner['id'], $referrerId, $purpose, $source, $name, $mobile, $email, $age, $edu, $status, $field === '' ? null : $field, $lang,
             $now, CONSENT_VERSION, $dupOf, hash('sha256', $token), $ipH, $now]);
     return ['submit_token' => $token, 'advisor_name' => $owner['name'], 'candidate_id' => (int)$pdo->lastInsertId()];
 }
@@ -194,6 +195,8 @@ function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand,
     }
 
     $duplicate = !empty($cand['duplicate_of']);
+    $refId = isset($cand['referred_by_member_id']) ? (int)$cand['referred_by_member_id'] : 0;
+    $referrer = $refId > 0 && $refId !== (int)$owner['id'] ? ($map[$refId] ?? null) : null;   // link used by someone other than the owner
     $sentTo = [];
     foreach (upline_chain($map, (int)$owner['id']) as $mid) {
         $r = $map[$mid];
@@ -201,12 +204,23 @@ function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand,
             continue;
         }
         try {
-            $m = build_advisor_notice($cand, $code, $owner, $r, $config, $duplicate);
+            $m = build_advisor_notice($cand, $code, $owner, $r, $config, $duplicate, $referrer);
             $mailer->send($r['email'], $m['subject'], $m['html'], $m['text']);
             $sentTo[$r['email']] = true;
             $result['notified']++;
         } catch (Throwable $e) {
             error_log('career-code: advisor notice failed: ' . $e->getMessage());
+        }
+    }
+    // The agent whose link was used, when the person stays with someone else: tell them, minimally, so nothing is silent.
+    if ($referrer !== null && $referrer['is_active'] && !isset($sentTo[$referrer['email']])) {
+        try {
+            $m = build_referrer_notice($cand, $referrer);
+            $mailer->send($referrer['email'], $m['subject'], $m['html'], $m['text']);
+            $sentTo[$referrer['email']] = true;
+            $result['notified']++;
+        } catch (Throwable $e) {
+            error_log('career-code: referrer notice failed: ' . $e->getMessage());
         }
     }
     if ($result['notified'] > 0) {

@@ -73,6 +73,20 @@ check('Chinese advisor notes on request', get_candidate($pdo, $map(), $viewer('A
 check('detail never exposes token hash or ip hash', !str_contains(json_encode($d), 'hash'));
 check('AA gets reassign options = only AA; admin gets every active member', array_column($d['reassign_options'], 'name') === ['A', 'AA'] && count(get_candidate($pdo, $map(), $viewer('you'), $c['AA'])['reassign_options']) === 7);
 
+echo "\nRepeat applicant: the link that was used is visible\n";
+$firstA = $pdo->query('SELECT mobile FROM candidates WHERE id = ' . $c['A'])->fetchColumn();
+$rep = start_candidate($pdo, $cfg, valid_start(['ref' => 'ref-b', 'mobile' => $firstA, 'email' => 'viaB2@x.com', 'name' => 'Repeat Rita']), null);
+submit_assessment($pdo, $rep['submit_token'], sample_answers());
+$rd = get_candidate($pdo, $map(), $viewer('A'), $rep['candidate_id']);
+check('Rita used B\'s link but was already A\'s: A (owner) sees "link used: B"', $rd['owner']['name'] === 'A' && $rd['via_link']['name'] === 'B' && $rd['duplicate_of'] !== null);
+$rl = array_values(array_filter(list_candidates($pdo, $map(), $viewer('A'), [])['candidates'], fn ($x) => $x['name'] === 'Repeat Rita'))[0];
+check('the list row carries it too', ($rl['via_link']['name'] ?? '') === 'B');
+throws('B cannot open Rita (she stays with A; B only gets a notice)', 404, fn () => get_candidate($pdo, $map(), $viewer('B'), $rep['candidate_id']));
+check('an ordinary candidate has no "link used" line', get_candidate($pdo, $map(), $viewer('A'), $c['A'])['via_link'] === null);
+$csvx = export_candidates_csv($pdo, $map(), $viewer('you'));
+check('CSV (admin) has a "link used" column, B for Rita', str_contains($csvx, '"link used"') && preg_match('/"Repeat Rita".*?"A","B"/', $csvx) === 1);
+$pdo->exec("DELETE FROM assessments WHERE candidate_id = {$rep['candidate_id']}"); $pdo->exec("DELETE FROM candidates WHERE id = {$rep['candidate_id']}");
+
 echo "\nStatus changes\n";
 update_candidate($pdo, $map(), $viewer('A'), $c['AA'], ['pipeline_status' => 'contacted']);
 check('upline A moves AA\'s candidate to contacted', get_candidate($pdo, $map(), $viewer('AA'), $c['AA'])['status'] === 'contacted');

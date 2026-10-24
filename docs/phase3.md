@@ -50,3 +50,10 @@ only ever sent to a member who may see that candidate. There is no PIN.
 ## Not yet
 Live/manual entry for advisors replaces the old app in phase 4 (the PIN note on the old card goes then).
 Activity page: phase 5. Hiding the "Leader Tools" cards from non-leaders needs a server check (the toolkit is a static page).
+
+## Repeat applicants and the link they used
+A person is flagged **Repeat applicant** when their normalised mobile number or lower-cased email matches any earlier
+candidate record (finished or not). The first advisor keeps them. The record also stores **whose personal link was used**
+(`referred_by_member_id`), shown as a "Via <name>'s link" tag and a "Link used" row. The advisor who keeps the candidate sees
+it in their notice, and the agent whose link was used gets a minimal email (name only: no result, no contact details, no
+dashboard link). Needs `private/schema_phase3c.sql` run in phpMyAdmin before the matching files are uploaded.

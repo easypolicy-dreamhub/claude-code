@@ -27,6 +27,12 @@ if ($mode === 'seed') {
     }
     start_candidate($pdo, $cfg, valid_start(['ref' => 'amy', 'name' => 'Unfinished Una', 'mobile' => '0199990001', 'email' => 'una@x.com']), null);
     echo "seeded team\n";
+} elseif ($mode === 'add-dup') {
+    // A repeat applicant (same mobile as the first seeded candidate, owned by You) arrives through Amy's personal link.
+    $cfg = ['default_owner_email' => 'you@x.com', 'ip_salt' => 'e2e', 'rate_limit_per_hour' => 1000];
+    $r = start_candidate($pdo, $cfg, valid_start(['ref' => 'amy', 'name' => 'Repeat Rita', 'mobile' => '0120000001', 'email' => 'rita@x.com']), null);
+    submit_assessment($pdo, $r['submit_token'], sample_answers());
+    echo "added dup\n";
 } else {
     echo json_encode(['candidates' => $pdo->query('SELECT * FROM candidates ORDER BY id')->fetchAll(), 'assessments' => $pdo->query('SELECT * FROM assessments ORDER BY id')->fetchAll()]);
 }

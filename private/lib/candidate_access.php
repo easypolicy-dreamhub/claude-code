@@ -33,10 +33,13 @@ function candidate_summary(array $c, array $map): array
     $scores = isset($c['a_scores']) ? json_decode((string)$c['a_scores'], true) : null;
     $verdict = $scores ? assess_candidate($scores, 'en')['verdict'] : null;
     $owner = $map[(int)$c['owner_member_id']] ?? null;
+    $rb = isset($c['referred_by_member_id']) && $c['referred_by_member_id'] !== null ? (int)$c['referred_by_member_id'] : null;
+    $via = $rb !== null && $owner && $rb !== (int)$owner['id'] && isset($map[$rb]) ? ['id' => $rb, 'name' => $map[$rb]['name']] : null;   // link used by someone else
     return [
         'id' => (int)$c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email'],
         'purpose' => $c['purpose'], 'source' => $c['source'], 'lang' => $c['lang'],
         'owner' => $owner ? ['id' => (int)$owner['id'], 'name' => $owner['name'], 'active' => (bool)$owner['is_active']] : null,
+        'via_link' => $via,
         'status' => $c['pipeline_status'], 'duplicate_of' => $c['duplicate_of'] === null ? null : (int)$c['duplicate_of'],
         'completed' => $c['completed_at'] !== null, 'code' => $c['a_code'] ?? null,
         'verdict' => $verdict ? ['key' => $verdict['key'], 'title' => $verdict['title']] : null,
@@ -243,7 +246,7 @@ function export_candidates_csv(PDO $pdo, array $map, array $viewer, ?array $owne
     if (!$viewer['is_admin']) {
         throw new HttpError(403, 'Admins only.');
     }
-    $hdr = ['id', 'started (UTC)', 'completed (UTC)', 'name', 'mobile', 'email', 'purpose', 'source', 'advisor', 'code', 'verdict', 'status', 'duplicate of'];
+    $hdr = ['id', 'started (UTC)', 'completed (UTC)', 'name', 'mobile', 'email', 'purpose', 'source', 'advisor', 'link used', 'code', 'verdict', 'status', 'duplicate of'];
     $lines = [implode(',', array_map('csv_cell', $hdr))];
     $where = $ownerIds === null ? '' : ($ownerIds ? 'WHERE c.owner_member_id IN (' . implode(',', array_map('intval', $ownerIds)) . ')' : 'WHERE 1 = 0');
     $stmt = $pdo->query("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
@@ -251,7 +254,7 @@ function export_candidates_csv(PDO $pdo, array $map, array $viewer, ?array $owne
     foreach ($stmt as $c) {
         $s = candidate_summary($c, $map);
         $lines[] = implode(',', array_map('csv_cell', [$s['id'], $c['started_at'], $c['completed_at'], $s['name'], $s['mobile'], $s['email'], $s['purpose'],
-            $s['source'], $s['owner']['name'] ?? '', $s['code'], $s['verdict']['title'] ?? '', $s['status'], $s['duplicate_of']]));
+            $s['source'], $s['owner']['name'] ?? '', $s['via_link']['name'] ?? '', $s['code'], $s['verdict']['title'] ?? '', $s['status'], $s['duplicate_of']]));
     }
     return "\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n";   // BOM so Excel shows Chinese names correctly
 }

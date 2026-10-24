@@ -126,7 +126,7 @@ function build_candidate_email(array $cand, array $scores, array $owner, array $
  * so a forwarded or leaked email reveals nothing sensitive.
  * @return array{subject:string, html:string, text:string}
  */
-function build_advisor_notice(array $cand, string $code, array $owner, array $recipient, array $config, bool $duplicate): array
+function build_advisor_notice(array $cand, string $code, array $owner, array $recipient, array $config, bool $duplicate, ?array $referrer = null): array
 {
     $base = rtrim((string)($config['base_url'] ?? 'https://dreamhub-e3.com'), '/');
     $link = $base . DASHBOARD_PATH . '?candidate=' . (int)$cand['id'];
@@ -137,13 +137,15 @@ function build_advisor_notice(array $cand, string $code, array $owner, array $re
         '',
         "$name completed the Career Code ($purpose). Code: $code.",
         'Assigned to: ' . $owner['name'] . ($duplicate ? ' (this person has taken the test before; check the earlier record)' : ''),
+        ...($referrer ? ['Link used: ' . $referrer['name'] . '\'s personal link'] : []),
         '',
         "Open the full result and advisor notes (login required): $link",
     ];
     $html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#24333A;line-height:1.55;max-width:520px">'
         . '<p>' . h("Hi {$recipient['name']},") . '</p>'
         . '<p><b>' . h($name) . '</b> completed the Career Code (' . h($purpose) . '). Code: <b>' . h($code) . '</b>.<br>Assigned to: '
-        . h($owner['name']) . ($duplicate ? ' <i>(this person has taken the test before; check the earlier record)</i>' : '') . '</p>'
+        . h($owner['name']) . ($duplicate ? ' <i>(this person has taken the test before; check the earlier record)</i>' : '')
+        . ($referrer ? '<br>Link used: ' . h($referrer['name']) . '\'s personal link' : '') . '</p>'
         . '<p><a href="' . h($link) . '" style="display:inline-block;background:#24333A;color:#FFFFFF;text-decoration:none;padding:10px 18px;border-radius:999px">Open result and advisor notes</a></p>'
         . '<p style="font-size:12px;color:#5C6870">Login required. Please do not forward this email.</p></div>';
     return ['subject' => "New Career Code result: $name ($code)", 'html' => $html, 'text' => implode("\n", $lines)];
@@ -152,4 +154,19 @@ function build_advisor_notice(array $cand, string $code, array $owner, array $re
 function mail_clean_name(string $s): string
 {
     return trim(preg_replace('/[\x00-\x1F\x7F]+/', ' ', $s) ?? '');
+}
+
+/**
+ * For the agent whose personal link a repeat applicant used. Deliberately minimal: the person's name only, no
+ * result, no contact details, no dashboard link, and not even who the candidate stays with.
+ * @return array{subject:string, html:string, text:string}
+ */
+function build_referrer_notice(array $cand, array $referrer): array
+{
+    $name = mail_clean_name($cand['name']);
+    $line = "$name used your Career Code link and finished the assessment. They had already registered with another advisor in the team, so that advisor will follow up with them. You will not see their result, but your link is recorded as the one they used. Thank you for referring them.";
+    $html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#24333A;line-height:1.55;max-width:520px"><p>' . h("Hi {$referrer['name']},") . '</p><p>'
+        . '<b>' . h($name) . '</b> used your Career Code link and finished the assessment. They had already registered with another advisor in the team, so that advisor will follow up with them. '
+        . 'You will not see their result, but your link is recorded as the one they used. Thank you for referring them.</p></div>';
+    return ['subject' => "Someone you referred finished the Career Code: $name", 'html' => $html, 'text' => "Hi {$referrer['name']},\n\n$line\n"];
 }

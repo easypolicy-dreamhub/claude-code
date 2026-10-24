@@ -18,7 +18,7 @@ function init_db(PDO $pdo): PDO {
         upline_id INTEGER NULL, is_admin INTEGER NOT NULL DEFAULT 0, is_team_admin INTEGER NOT NULL DEFAULT 0, referral_code TEXT UNIQUE NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, deactivated_at TEXT NULL, removal_batch TEXT NULL)');
     $pdo->exec('CREATE TABLE audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id INTEGER, action TEXT, subject_id INTEGER, detail TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
-    $pdo->exec('CREATE TABLE candidates (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_member_id INTEGER NOT NULL, purpose TEXT NOT NULL DEFAULT "career", source TEXT NOT NULL,
+    $pdo->exec('CREATE TABLE candidates (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_member_id INTEGER NOT NULL, referred_by_member_id INTEGER NULL, purpose TEXT NOT NULL DEFAULT "career", source TEXT NOT NULL,
         name TEXT NOT NULL, mobile TEXT NOT NULL, email TEXT NULL, age_group INTEGER NULL, education INTEGER NULL, work_status INTEGER NULL, field TEXT NULL, lang TEXT NOT NULL DEFAULT "en",
         consent_at TEXT DEFAULT CURRENT_TIMESTAMP, consent_version TEXT NOT NULL, pipeline_status TEXT NOT NULL DEFAULT "new", duplicate_of INTEGER NULL, submit_token_hash TEXT NULL,
         ip_hash TEXT NULL, started_at TEXT DEFAULT CURRENT_TIMESTAMP, completed_at TEXT NULL, result_emailed_at TEXT NULL, notified_at TEXT NULL)');

@@ -133,6 +133,18 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1', typ: 'JWT' })
   await adm.waitForFunction(() => document.querySelectorAll('#list .item').length === 4);
   check('admin deletes Eddy; list shrinks to 4', !(await names(adm)).includes('Eddy Ee'));
 
+  console.log('\nRepeat applicant through someone else\'s link');
+  execFileSync('php', [path.join(ROOT, 'tests/e2e_db.php'), 'add-dup', DB]);
+  await adm.reload(); await adm.waitForSelector('#list .item');
+  const rita = adm.locator('.item', { hasText: 'Repeat Rita' });
+  check('list row shows the Repeat applicant tag and "Via Amy\'s link"', /Repeat applicant/.test(await rita.textContent()) && /Via Amy\u2019s link/.test(await rita.textContent()), await rita.textContent());
+  check('it stays with the first advisor (You), not Amy', /Advisor: You/.test(await rita.textContent()) || !/Advisor: Amy/.test(await rita.textContent()));
+  await rita.click(); await adm.waitForSelector('#dStatus');
+  const rtext = await adm.textContent('#detail');
+  check('detail says "Link used: Amy\u2019s link (already registered ...)" and shows the earlier-record warning', /Link used/.test(rtext) && /Amy\u2019s link/.test(rtext) && /already registered/.test(rtext) && /took the test before/.test(rtext));
+  check('Amy cannot open Rita (she only gets a short email)', (await api(amy, '?id=7'))[0] === 404 && !(await names(amy)).includes('Repeat Rita'));
+  await adm.screenshot({ path: path.join(SHOTS, 'd6-repeat-link.png') });
+
   console.log('\nPhone layout');
   const phone = await dash('you@x.com', '', { width: 390, height: 844 });
   await phone.screenshot({ path: path.join(SHOTS, 'd4-phone-list.png'), fullPage: true });
