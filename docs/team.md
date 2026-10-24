@@ -24,11 +24,21 @@ The tree here decides who sees whose candidates in every tool (Career Code now, 
 - **Reactivate:** brings someone back under who you choose, optionally with the people removed in the same action.
 - Every change is recorded in `audit_log` with who did it.
 
+## Safeguards added in review
+- The **super admin can never be placed under anyone** (otherwise that person could read your candidates). The Team page hides Move for you, and the server refuses it.
+- A **removed member can only be reactivated**: no rank change, move or second removal (a second removal used to overwrite the removal batch and break "reactivate with team").
+- Previews and removals deal with **live people only**; removed people stay as history under whoever they were under.
+- Default destinations are **rank-aware**: removing someone proposes the nearest leader at least as senior as their team; reactivating proposes the nearest leader at least as senior as the person, else top level.
+- Choosing the rank someone already has is refused.
+
+## Open decision (not changed)
+When a **Unit Manager under a Group Manager who is not the super admin** is promoted to Group Manager (Ben under Amy under You), the page keeps Ben under Amy and asks the stay/opt-out question. GE says a new GM breaks away from the GM who built them. If you want Ben to move under **You** by default (Amy would stop seeing him), say so; it is a one-line change to the preview and stays untickable.
+
 ## Deploy
 1. phpMyAdmin > `dreamhub_members` > SQL: run `private/schema_phase3b.sql` (adds `is_team_admin` and `removal_batch`).
 2. Upload and extract the zip in your cPanel home folder.
 3. Replace `public_html/members/apps.js` (adds the "Team" card under Leader Tools).
 
 ## Tests
-`php tests/team.php` (56 scenario checks: your promotion/demotion cases, overrides, removals, team admin limits)
-and `node tests/e2e_team.js` (29 browser checks with real signed login tokens).
+`php tests/team.php` (69 scenario checks), `php tests/team_property.php 1500` (random teams and operations, rules checked after every step),
+and `node tests/e2e_team.js` (43 browser checks incl. hostile API requests, with real signed login tokens).

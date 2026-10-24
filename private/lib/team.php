@@ -38,8 +38,8 @@ function is_team_admin(array $m): bool
 /** Super admin: anyone. Team admin: only people strictly below them. Everyone else: nobody. */
 function can_manage(array $map, array $actor, int $targetId): bool
 {
-    if (!isset($map[$targetId])) {
-        return false;
+    if (!isset($map[$targetId]) || !$map[$targetId]['is_active']) {
+        return false;      // a removed member can only be reactivated, never ranked, moved or removed again
     }
     if (is_super_admin($actor)) {
         return true;
@@ -65,9 +65,15 @@ function nearest_leader(array $map, ?int $fromId, int $level): ?int
     return null;
 }
 
-function children_of(array $map, int $id): array
+/** Direct reports. Removed people are left out unless asked for: they are history, not part of anyone's live team. */
+function children_of(array $map, int $id, bool $includeRemoved = false): array
 {
-    return array_values(array_map(static fn (array $m): int => $m['id'], array_filter($map, static fn (array $m): bool => $m['upline_id'] === $id)));
+    return array_values(array_map(static fn (array $m): int => $m['id'], array_filter($map, static fn (array $m): bool => $m['upline_id'] === $id && ($includeRemoved || $m['is_active']))));
+}
+
+function active_team_size(array $map, int $id): int
+{
+    return count(array_filter(downline_ids($map, $id), static fn (int $k): bool => (bool)$map[$k]['is_active']));
 }
 
 function person(array $map, ?int $id): ?array
@@ -110,7 +116,7 @@ function plan_rank_change(array $map, int $id, string $newRank): array
     }
     return [
         'member' => person($map, $id), 'from_rank' => $m['rank_label'], 'to_rank' => $newRank,
-        'moves' => array_map(static fn (array $mv) => $mv + ['team_size' => count(downline_ids($map, $mv['member']))], $moves),
+        'moves' => array_map(static fn (array $mv) => $mv + ['team_size' => active_team_size($map, $mv['member'])], $moves),
         'team_admin_off' => !empty($m['is_team_admin']) && $newRank !== 'group_manager',
         'gm_choice' => $gmChoice,
     ];
@@ -128,6 +134,9 @@ function apply_rank_change(PDO $pdo, array $actor, int $id, string $newRank, ?ar
     $map = load_member_map($pdo);
     if (!can_manage($map, $actor, $id)) {
         throw new HttpError(403, 'You cannot change this member\'s rank.');
+    }
+    if ($map[$id]['rank_label'] === $newRank) {
+        throw new HttpError(422, 'That is already their rank.');
     }
     $plan = plan_rank_change($map, $id, $newRank);
     $moves = array_values(array_filter($plan['moves'], static fn (array $mv) => $accept === null || in_array($mv['member'], $accept, true)));
@@ -156,6 +165,9 @@ function move_member(PDO $pdo, array $actor, int $id, ?int $to, bool $withTeam =
     }
     if ($to === null ? !is_super_admin($actor) : !in_array($to, allowed_destinations($map, $actor), true)) {
         throw new HttpError(403, 'You cannot place someone there.');
+    }
+    if ($to !== null && $map[$id]['is_admin']) {
+        throw new HttpError(422, 'The super admin always stays at the top: anyone above you could see your candidates.');
     }
     if ($to !== null && ($to === $id || in_array($to, downline_ids($map, $id), true))) {
         throw new HttpError(422, 'Someone cannot be placed under their own team.');
@@ -186,13 +198,20 @@ function count_candidates(PDO $pdo, array $ownerIds): int
 /** Someone who left: their agents (and by default their candidates) go to their upline. */
 function plan_remove_member(PDO $pdo, array $map, array $actor, int $id): array
 {
+    if (isset($map[$id]) && !$map[$id]['is_active']) {
+        throw new HttpError(422, 'This member is already removed.');
+    }
     if (!can_manage($map, $actor, $id) || $id === (int)$actor['id']) {
         throw new HttpError(403, 'You cannot remove this member.');
     }
     if ($map[$id]['is_admin']) {
         throw new HttpError(422, 'The super admin cannot be removed here.');
     }
-    $default = nearest_leader($map, $map[$id]['upline_id'], 0);
+    // Default: the nearest leader above who is at least as senior as the most senior person in their team,
+    // so a demoted upline never ends up proposed as the new upline of someone who outranks them.
+    $kids = children_of($map, $id);
+    $need = $kids ? max(array_map(static fn (int $k): int => rank_level($map[$k]['rank_label']), $kids)) : 0;
+    $default = nearest_leader($map, $map[$id]['upline_id'], $need);
     return [
         'member' => person($map, $id), 'agents' => array_map(static fn ($k) => person($map, $k), children_of($map, $id)),
         'candidates' => count_candidates($pdo, [$id]), 'default_to' => person($map, $default),
@@ -210,7 +229,8 @@ function remove_member(PDO $pdo, array $actor, int $id, ?int $teamTo, bool $move
     }
     $pdo->beginTransaction();
     try {
-        $pdo->prepare('UPDATE members SET upline_id = ? WHERE upline_id = ?')->execute([$teamTo, $id]);
+        // Only the live team moves; people who were removed earlier stay under them as history.
+        $pdo->prepare('UPDATE members SET upline_id = ? WHERE upline_id = ? AND is_active = 1')->execute([$teamTo, $id]);
         if ($moveCandidates && $teamTo !== null) {
             $pdo->prepare('UPDATE candidates SET owner_member_id = ? WHERE owner_member_id = ?')->execute([$teamTo, $id]);
         }
@@ -277,10 +297,16 @@ function plan_reactivate(array $map, array $actor, int $id): array
     }
     $batch = $map[$id]['removal_batch'] ?? null;
     $together = $batch === null ? [] : array_values(array_filter(downline_ids($map, $id), static fn ($k) => !$map[$k]['is_active'] && ($map[$k]['removal_batch'] ?? null) === $batch));
-    $prev = $map[$id]['upline_id'];
+    // Default: the nearest active leader from their old upline upwards who is at least as senior as they are;
+    // if nobody qualifies, top level (never a placement under someone they outrank).
+    $need = rank_level($map[$id]['rank_label']);
+    $dest = nearest_leader($map, $map[$id]['upline_id'], $need);
+    if ($dest === null && rank_level($actor['rank_label']) >= $need) {
+        $dest = (int)$actor['id'];
+    }
     return [
         'member' => person($map, $id), 'team' => array_map(static fn ($k) => person($map, $k), $together),
-        'default_to' => person($map, $prev !== null && $map[$prev]['is_active'] ? $prev : (int)$actor['id']),
+        'default_to' => person($map, $dest),
     ];
 }
 

@@ -94,6 +94,28 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1' }), p = b64({ 
   check('Amy\'s move list only offers her own group, and no top level', JSON.stringify((await amyT.$$eval('#mTo option', (o) => o.map((x) => x.textContent.split(' (')[0]))).sort()) === JSON.stringify(['Amy', 'Ben']) && !(await amyT.isVisible('#mGroup')));
   await amyT.click('[data-close]');
   check('Amy cannot use the admin-only actions through the API', (await amyT.evaluate(async (u) => (await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' }, body: JSON.stringify({ action: 'add', name: 'X', email: 'x9@x.com' }) })).status, `${BASE}/members/api/team.php`)) === 403);
+  const post = (pg, body) => pg.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' }, body: JSON.stringify(b) })).status, [`${BASE}/members/api/team.php`, body]);
+  const idOf = (pg, name) => pg.evaluate(async ([u, n]) => (await (await fetch(u + '?inactive=1')).json()).members.find((m) => m.name === n).id, [`${BASE}/members/api/team.php`, name]);
+  const [idYou, idAmy, idAlice] = [await idOf(you, 'You'), await idOf(you, 'Amy'), await idOf(you, 'Alice')];
+  const agent = await open('dormant@x.com'); await agent.goto(`${BASE}/members/team/`);
+  const hostile = [
+    ['team admin cannot edit anyone\'s details', amyT, { action: 'edit', id: idAlice, name: 'Hacked' }, 403],
+    ['team admin cannot grant team admin', amyT, { action: 'team_admin', id: idAlice, on: true }, 403],
+    ['team admin cannot remove a whole group', amyT, { action: 'preview_remove_group', id: idAlice }, 403],
+    ['team admin cannot touch the super admin (rank)', amyT, { action: 'apply_rank', id: idYou, rank: 'agent' }, 403],
+    ['team admin cannot touch the super admin (move)', amyT, { action: 'move', id: idYou, to: idAmy }, 403],
+    ['team admin cannot move someone to top level', amyT, { action: 'move', id: idAlice, to: null }, 403],
+    ['a plain agent cannot change ranks', agent, { action: 'apply_rank', id: idAlice, rank: 'group_manager' }, 403],
+    ['a plain agent cannot add members', agent, { action: 'add', name: 'X', email: 'x8@x.com' }, 403],
+    ['a plain agent cannot remove anyone', agent, { action: 'remove', id: idAlice, team_to: idAmy }, 403],
+    ['super admin cannot be moved under a member', you, { action: 'move', id: idYou, to: idAmy }, 422],
+    ['unknown action', you, { action: 'launch_missiles' }, 400],
+    ['unknown rank', you, { action: 'preview_rank', id: idAlice, rank: 'ceo' }, 422],
+  ];
+  for (const [name, pg, body, want] of hostile) { const got = await post(pg, body); check(`API: ${name} -> ${want}`, got === want, `got ${got}`); }
+  check('API: a plain agent sees only themselves in the tree', (await agent.evaluate(async (u) => (await (await fetch(u)).json()).members.length, `${BASE}/members/api/team.php`)) === 1);
+  check('API: the old member endpoint no longer accepts rank/upline changes', await you.evaluate(async ([u]) => { const r = await fetch(u, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' }, body: JSON.stringify({ rank: 'agent', upline_id: null, is_admin: false }) }); return r.status; }, [`${BASE}/members/api/members.php?id=${idAlice}`]) === 200 && (await idOf(you, 'Alice')) === idAlice
+    && (await you.evaluate(async (u) => (await (await fetch(u)).json()).members.find((m) => m.name === 'Alice').rank, `${BASE}/members/api/team.php`)) === 'unit_manager');
   await amyT.screenshot({ path: path.join(SHOTS, 't2-team-admin.png'), fullPage: true });
 
   console.log('\nSomeone leaves; a group opts out; comes back');

@@ -136,6 +136,9 @@ function update_member(PDO $pdo, int $actorId, int $id, array $in): array
         if ($up !== null && !isset($map[$up])) {
             throw new HttpError(422, 'Upline member not found.');
         }
+        if ($up !== null && $cur['is_admin']) {
+            throw new HttpError(422, 'The super admin cannot have an upline.');
+        }
         if (would_create_cycle($map, $id, $up)) {
             throw new HttpError(422, 'That would put the member under their own downline.');
         }

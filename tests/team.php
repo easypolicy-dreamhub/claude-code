@@ -150,4 +150,39 @@ check('C sees only C and CA, and may manage nobody', array_column(team_tree($pdo
 check('super admin sees everyone', count(team_tree($pdo, m(), who('You'), true)['members']) === 6);
 check('inactive members hidden unless asked', !in_array('BA', array_column(team_tree($pdo, m(), who('You'), false)['members'], 'name'), true));
 
+echo "\nReview fixes (found by the stress test and adversarial probes)\n";
+setup(['Amy' => ['group_manager', null], 'Bob' => ['agent', 'Amy']]);
+move_member($pdo, who('You'), $ids['Amy'], null);   // Amy becomes top-level, NOT under You
+$cfg2 = ['default_owner_email' => 'you@x.com', 'ip_salt' => 's', 'rate_limit_per_hour' => 99];
+$yc = start_candidate($pdo, $cfg2, valid_start(['mobile' => '0123000001', 'email' => 'p1@x.com']), null)['candidate_id'];
+throws('the super admin can never be placed under another member', 422, fn () => move_member($pdo, who('You'), $ids['You'], $ids['Amy']));
+check('...so a top-level Group Manager still cannot read the super admin\'s candidates', !can_see_candidate(m(), who('Amy'), (int)$pdo->query("SELECT owner_member_id FROM candidates WHERE id = $yc")->fetchColumn()));
+throws('the member editor refuses to give the super admin an upline too', 422, fn () => update_member($pdo, $me['id'], $ids['You'], ['upline_id' => $ids['Amy']]));
+setup(['A' => ['unit_manager', null], 'AA' => ['agent', 'A'], 'AB' => ['agent', 'A']]);
+remove_member($pdo, who('You'), $ids['AB'], $ids['A']);
+$batch = who('AB')['removal_batch'];
+throws('a removed member cannot be removed again', 422, fn () => remove_member($pdo, who('You'), $ids['AB'], $ids['A']));
+check('...and the removal batch id is untouched', who('AB')['removal_batch'] === $batch && $batch !== null);
+throws('a removed member cannot be given a new rank', 403, fn () => apply_rank_change($pdo, who('You'), $ids['AB'], 'group_manager'));
+throws('a removed member cannot be moved', 403, fn () => move_member($pdo, who('You'), $ids['AB'], $ids['AA']));
+check('a removed member shows no Manage rights in the tree', !array_values(array_filter(team_tree($pdo, m(), who('You'), true)['members'], fn ($n) => $n['name'] === 'AB'))[0]['can_manage']);
+$pdo->exec("UPDATE members SET upline_id = {$ids['A']} WHERE id = {$ids['AB']}");
+$p = plan_rank_change(m(), $ids['A'], 'agent');
+check('demotion preview leaves removed people out (only AA moves)', moved($p) === ['AA->You']);
+throws('choosing the rank someone already has is refused', 422, fn () => apply_rank_change($pdo, who('You'), $ids['A'], 'unit_manager'));
+setup(['A' => ['agent', null], 'AA' => ['agent', 'A'], 'AAx' => ['agent', 'AA'], 'AAy' => ['agent', 'AA']]);
+remove_member($pdo, who('You'), $ids['AAx'], $ids['AA']);
+$pdo->exec("UPDATE members SET upline_id = {$ids['AA']} WHERE id = {$ids['AAx']}");   // AAx left earlier but still hangs under AA as history
+$bp = plan_rank_change(m(), $ids['AA'], 'unit_manager');
+check('breakaway preview counts only live people under them (1 of 2)', moved($bp) === ['AA->You'] && $bp['moves'][0]['team_size'] === 1, json_encode($bp['moves']));
+setup(['P' => ['agent', null], 'X' => ['agent', 'P'], 'Y' => ['agent', 'X']]);
+$pdo->exec("UPDATE members SET rank_label = 'unit_manager' WHERE id = {$ids['Y']}");   // Y outranks X and P (placed by hand)
+check('remove-someone default skips an upline who is too junior for the team (goes to You, not P)', plan_remove_member($pdo, m(), who('You'), $ids['X'])['default_to']['name'] === 'You');
+setup(['P' => ['unit_manager', null], 'G' => ['group_manager', 'P']]);
+$pdo->exec("UPDATE members SET rank_label = 'group_manager' WHERE id = {$ids['P']}");
+setup(['P' => ['unit_manager', null], 'G' => ['unit_manager', 'P']]);
+remove_member($pdo, who('You'), $ids['G'], $ids['P']);
+$pdo->exec("UPDATE members SET rank_label = 'group_manager' WHERE id = {$ids['G']}");   // G was promoted elsewhere while removed
+check('reactivate default skips an old upline who is junior to them (goes to You, not P)', plan_reactivate(m(), who('You'), $ids['G'])['default_to']['name'] === 'You');
+
 finish();

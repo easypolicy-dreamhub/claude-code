@@ -102,8 +102,9 @@ function manage(id) {
   var ranks = Object.keys(st.data.ranks).map(function (r) { return '<option value="' + r + '"' + (r === m.rank ? ' selected' : '') + '>' + esc(rankName(r)) + '</option>'; }).join('');
   var html = '<h2>' + esc(m.name) + '</h2><p class="note">' + esc(rankName(m.rank)) + (parent ? ' · under ' + esc(parent.name) : ' · top level') + ' · ' + descendants(id).length + ' people below</p>' +
     '<div class="sec"><h3>Rank</h3><select id="mRank">' + ranks + '</select><div class="row"><button class="btn" id="mRankGo">Preview change</button></div><div id="mPlan"></div></div>' +
+    (m.is_admin ? '<div class="sec"><h3>Position</h3><p class="note">The super admin always stays at the top: anyone above you could see your candidates.</p></div>' :
     '<div class="sec"><h3>Move (manual placement)</h3><label class="f" for="mTo">Put ' + esc(m.name) + ' under</label><select id="mTo">' + destOptions(id, m.parent, true) + '</select>' +
-      '<label class="check"><input type="checkbox" id="mWith" checked> Move their team with them</label><div class="row"><button class="btn plain" id="mMove">Move</button></div></div>';
+      '<label class="check"><input type="checkbox" id="mWith" checked> Move their team with them</label><div class="row"><button class="btn plain" id="mMove">Move</button></div></div>');
   if (v.super_admin && m.rank === 'group_manager' && !m.is_admin) {
     html += '<div class="sec"><h3>Team admin</h3><p class="note">' + (m.is_team_admin ? esc(m.name) + ' can change ranks, move and remove people in their own group.' : 'Let ' + esc(m.name) + ' change ranks, move and remove people in their own group (never anyone else).') + '</p><div class="row"><button class="btn plain" id="mTA" data-on="' + (m.is_team_admin ? '0' : '1') + '">' + (m.is_team_admin ? 'Remove team admin' : 'Make team admin') + '</button></div></div>';
   }
@@ -116,7 +117,7 @@ function manage(id) {
   }
   openDlg(html);
   $('#mRankGo').onclick = function () { previewRank(id); };
-  $('#mMove').onclick = function () {
+  if ($('#mMove')) $('#mMove').onclick = function () {
     var to = $('#mTo').value === '' ? null : +$('#mTo').value, withTeam = $('#mWith').checked, name = to === null ? 'top level' : st.byId[to].name;
     if (!confirm('Put ' + m.name + ' under ' + name + (withTeam ? ' with their team' : ' (their team stays where it is)') + '? Who can see whose candidates changes straight away.')) return;
     act({ action: 'move', id: id, to: to, with_team: withTeam }).then(function () { dlg.close(); toast(m.name + ' moved under ' + name + '.'); }).catch(fail);
@@ -138,7 +139,9 @@ function previewRank(id) {
       }).join('');
     } else { h += '<p class="note">Nobody moves.</p>'; }
     if (p.team_admin_off) h += '<p class="note">They will no longer be a team admin.</p>';
-    if (p.gm_choice) h += '<p class="note"><b>Group Manager under a Group Manager.</b> Under GE rules they break away. Ask them: stay in the system (confirm below and nothing else changes) or opt out (use “Remove whole group” instead).</p>';
+    if (p.gm_choice) h += '<p class="note"><b>Group Manager under a Group Manager.</b> Under GE rules they break away. ' + (V().super_admin ?
+      'Ask them: stay in the system (confirm below and nothing else changes) or opt out (use \u201cRemove whole group\u201d instead).' :
+      'Confirm below to keep them in the system. If they want to leave the system completely, ask the super admin.') + '</p>';
     h += '<div class="row"><button class="btn" id="mApply">Confirm change</button></div></div>';
     $('#mPlan').innerHTML = h;
     $('#mApply').onclick = function () {
