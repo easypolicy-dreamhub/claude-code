@@ -97,6 +97,14 @@ const APPS = [
     note:  "Opens in Gemini. Sign in with a Google account the Gem is shared with."
   },
   {
+    name:  "Team",
+    url:   "/members/team/",
+    icon:  "👥",
+    about: "Your team tree and personal Career Code links; admins change ranks, move and remove members",
+    group: "Leader Tools",
+    note:  "Everyone sees their own team. Changes: super admin and team admins only."
+  },
+  {
     name:  "Agency Report Generator",
     url:   "/members/agency-report/",
     icon:  "📊",

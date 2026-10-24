@@ -237,15 +237,17 @@ function csv_cell(mixed $v): string
     return '"' . str_replace('"', '""', $s) . '"';
 }
 
-function export_candidates_csv(PDO $pdo, array $map, array $viewer): string
+/** @param ?int[] $ownerIds limit to these owners (used for "download a copy" before removing a group) */
+function export_candidates_csv(PDO $pdo, array $map, array $viewer, ?array $ownerIds = null): string
 {
     if (!$viewer['is_admin']) {
         throw new HttpError(403, 'Admins only.');
     }
     $hdr = ['id', 'started (UTC)', 'completed (UTC)', 'name', 'mobile', 'email', 'purpose', 'source', 'advisor', 'code', 'verdict', 'status', 'duplicate of'];
     $lines = [implode(',', array_map('csv_cell', $hdr))];
-    $stmt = $pdo->query('SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
-        LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id) ORDER BY c.id');
+    $where = $ownerIds === null ? '' : ($ownerIds ? 'WHERE c.owner_member_id IN (' . implode(',', array_map('intval', $ownerIds)) . ')' : 'WHERE 1 = 0');
+    $stmt = $pdo->query("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
+        LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id) $where ORDER BY c.id");
     foreach ($stmt as $c) {
         $s = candidate_summary($c, $map);
         $lines[] = implode(',', array_map('csv_cell', [$s['id'], $c['started_at'], $c['completed_at'], $s['name'], $s['mobile'], $s['email'], $s['purpose'],

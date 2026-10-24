@@ -17,7 +17,7 @@ function public_member(array $m): array
     return [
         'id' => (int)$m['id'], 'email' => $m['email'], 'name' => $m['name'],
         'rank' => $m['rank_label'], 'upline_id' => $m['upline_id'] === null ? null : (int)$m['upline_id'],
-        'is_admin' => (bool)$m['is_admin'], 'referral_code' => $m['referral_code'],
+        'is_admin' => (bool)$m['is_admin'], 'is_team_admin' => (bool)($m['is_team_admin'] ?? 0), 'referral_code' => $m['referral_code'],
         'is_active' => (bool)$m['is_active'],
     ];
 }
@@ -110,6 +110,18 @@ function update_member(PDO $pdo, int $actorId, int $id, array $in): array
         }
         $set['name'] = $name;
     }
+    if (array_key_exists('email', $in)) {
+        $email = strtolower(trim((string)$in['email']));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190) {
+            throw new HttpError(422, 'A valid email is required.');
+        }
+        foreach ($map as $other) {
+            if ($other['id'] !== $id && $other['email'] === $email) {
+                throw new HttpError(409, 'A member with this email already exists.');
+            }
+        }
+        $set['email'] = $email;
+    }
     if (array_key_exists('rank', $in)) {
         if (!in_array($in['rank'], RANKS, true)) {
             throw new HttpError(422, 'Unknown rank.');
@@ -172,7 +184,7 @@ function update_member(PDO $pdo, int $actorId, int $id, array $in): array
         $pdo->commit();
     } catch (PDOException $e) {
         $pdo->rollBack();
-        throw new HttpError(409, 'Referral code is already taken.');
+        throw new HttpError(409, 'Email or referral code is already taken.');
     }
     return public_member(load_member_map($pdo)[$id]);
 }

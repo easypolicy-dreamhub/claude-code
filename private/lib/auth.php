@@ -26,6 +26,8 @@ function authenticate_member(PDO $pdo, CfAccess $cf, ?string $jwt): array
     $m['id'] = (int)$m['id'];
     $m['upline_id'] = $m['upline_id'] === null ? null : (int)$m['upline_id'];
     $m['is_admin'] = (int)$m['is_admin'];
+    $m['is_active'] = (int)$m['is_active'];
+    $m['is_team_admin'] = (int)($m['is_team_admin'] ?? 0);
     return $m;
 }
 

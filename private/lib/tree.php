@@ -16,6 +16,9 @@ function load_member_map(PDO $pdo): array
     foreach ($pdo->query('SELECT * FROM members') as $row) {
         $row['id'] = (int)$row['id'];
         $row['upline_id'] = $row['upline_id'] === null ? null : (int)$row['upline_id'];
+        $row['is_admin'] = (int)$row['is_admin'];
+        $row['is_active'] = (int)$row['is_active'];
+        $row['is_team_admin'] = (int)($row['is_team_admin'] ?? 0);   // column added by schema_phase3b.sql
         $map[$row['id']] = $row;
     }
     return $map;

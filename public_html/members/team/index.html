@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>Team | DreamHub E3</title>
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="apple-touch-icon" href="/images/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --slate:#24333A; --taupe:#B9AFA7; --brown:#6E625A;
+  --bg:#F4F2EF; --surface:#FFFFFF; --ink:#24333A; --muted:#5C6870; --line:#E2DDD8; --hover:#EFEAE5;
+  --ok:#2E9466; --warn:#B7791F; --bad:#B9433A;
+  color-scheme: light only; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{ box-sizing:inherit; }
+body{ margin:0; background:var(--bg); color:var(--ink); font:400 1rem/1.55 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  background-image:radial-gradient(rgba(36,51,58,0.06) 1px,transparent 1px); background-size:22px 22px; }
+a{ color:inherit; }
+[hidden]{ display:none !important; }
+:focus-visible{ outline:3px solid var(--taupe); outline-offset:3px; border-radius:8px; }
+h1,h2,h3{ font-family:Poppins,system-ui,sans-serif; margin:0; line-height:1.25; }
+.top{ background-color:var(--slate); color:#fff;
+  background-image:radial-gradient(circle at 85% 10%,rgba(185,175,167,0.28),transparent 50%),linear-gradient(rgba(255,255,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.035) 1px,transparent 1px); background-size:auto,48px 48px,48px 48px; }
+.bar,.hero,main{ max-width:64rem; margin:0 auto; padding-left:1.25rem; padding-right:1.25rem; }
+.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-top:1rem; padding-bottom:1rem; }
+.brand{ font-family:Poppins,sans-serif; font-weight:700; font-size:1.1rem; text-decoration:none; color:#fff; } .brand span{ color:var(--taupe); }
+.back{ display:inline-flex; align-items:center; min-height:44px; padding:0 1rem; border:1px solid rgba(255,255,255,0.28); border-radius:999px; color:#fff; text-decoration:none; font-size:.92rem; font-weight:500; }
+.hero{ padding-top:1rem; padding-bottom:4rem; }
+.hero .kicker{ margin:0 0 .5rem; color:var(--taupe); font-weight:500; font-size:.95rem; }
+.hero h1{ font-size:clamp(1.9rem,5.5vw,2.8rem); letter-spacing:-.02em; margin-bottom:.5rem; }
+.hero p.intro{ margin:0; color:#CFD5D8; max-width:40rem; }
+main{ margin-top:-2.2rem; padding-bottom:3rem; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.1rem; box-shadow:0 10px 30px rgba(36,51,58,0.1); }
+.toolbar{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.7rem; }
+.check{ display:flex; align-items:center; gap:.5rem; font-size:.9rem; color:var(--muted); min-height:40px; } .check input{ width:20px; height:20px; }
+.btn{ display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 1.1rem; border-radius:999px; border:1px solid var(--slate); background:var(--slate); color:#fff; font:inherit; font-weight:600; font-size:.92rem; cursor:pointer; text-decoration:none; }
+.btn.plain{ background:#fff; color:var(--ink); border-color:var(--line); font-weight:500; }
+.btn.danger{ background:#fff; color:var(--bad); border-color:var(--bad); }
+.btn.small{ min-height:36px; padding:0 .8rem; font-size:.85rem; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+.tree,.tree ul{ list-style:none; margin:0; padding:0; }
+.tree ul{ margin-left:1.1rem; padding-left:.9rem; border-left:2px solid var(--line); }
+.tree{ margin-top:1rem; }
+.node{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .8rem; justify-content:space-between; padding:.75rem .9rem; margin:.45rem 0; background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+.node.inactive{ background:#F3F3F2; color:var(--muted); border-style:dashed; }
+.node .who{ min-width:0; }
+.node .name{ font-family:Poppins,sans-serif; font-weight:600; }
+.node .sub{ color:var(--muted); font-size:.84rem; word-break:break-all; }
+.pills{ display:inline-flex; flex-wrap:wrap; gap:.3rem; vertical-align:middle; margin-left:.3rem; }
+.pill{ display:inline-block; padding:1px 9px; border-radius:999px; font-size:.75rem; font-weight:500; background:#EFEAE5; }
+.pill.gm{ background:#24333A; color:#fff } .pill.um{ background:#6E625A; color:#fff } .pill.admin{ background:#E3ECF6; color:#2A4E7E } .pill.warn{ background:#FBEFD5; color:#7A5410 } .pill.off{ background:#E9ECEE; color:var(--muted) }
+.acts{ display:flex; gap:.4rem; flex-wrap:wrap; }
+.error{ background:#FBEAE8; border:1px solid var(--bad); color:#7C2A24; border-radius:12px; padding:.9rem 1rem; margin:1rem 0; }
+dialog{ border:0; border-radius:18px; padding:0; width:min(560px,calc(100vw - 24px)); max-height:calc(100vh - 40px); box-shadow:0 20px 60px rgba(0,0,0,.3); color:var(--ink); }
+dialog::backdrop{ background:rgba(20,28,32,.55); }
+.dlg{ padding:1.2rem; }
+.dlg h2{ font-size:1.2rem; margin-bottom:.2rem; }
+.dlg h3{ font-size:.95rem; margin:1.1rem 0 .4rem; }
+.dlg .sec{ border-top:1px solid var(--line); padding-top:.3rem; margin-top:1rem; }
+label.f{ display:block; font-size:.8rem; font-weight:500; color:var(--muted); margin:.6rem 0 .25rem; }
+input[type=text],input[type=email],select{ width:100%; min-height:44px; padding:.5rem .7rem; font:inherit; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:12px; }
+.row{ display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem; }
+.plan{ background:#FBF8F5; border:1px solid var(--taupe); border-radius:12px; padding:.7rem .9rem; margin-top:.7rem; font-size:.92rem; }
+.plan label{ display:flex; gap:.5rem; align-items:flex-start; margin:.35rem 0; } .plan input{ width:20px; height:20px; margin-top:2px; flex:none; }
+.note{ font-size:.85rem; color:var(--muted); margin:.5rem 0 0; }
+.toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--slate); color:#fff; padding:.7rem 1.1rem; border-radius:999px; font-size:.9rem; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.25); max-width:calc(100vw - 30px); }
+.toast.bad{ background:var(--bad); }
+.legend{ font-size:.84rem; color:var(--muted); margin-top:.6rem; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <a class="brand" href="/members/">Dream<span>Hub</span> E3</a>
+    <a class="back" href="/members/">Back to toolkit</a>
+  </div>
+  <div class="hero">
+    <p class="kicker" id="who">E3 member area</p>
+    <h1>Team</h1>
+    <p class="intro" id="intro">Your place in the team, and everyone under you. Who you can see here is who you can see in every tool.</p>
+  </div>
+</div>
+<main>
+  <div class="card">
+    <div class="toolbar">
+      <label class="check"><input type="checkbox" id="showInactive"> Show removed members</label>
+      <button class="btn" id="addBtn" hidden>Add member</button>
+    </div>
+    <p class="legend">⚠ = ranked above their upline (placed there by hand). Each person's "Copy link" is their personal Career Code link.</p>
+  </div>
+  <div id="msg"></div>
+  <ul class="tree" id="tree"></ul>
+</main>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="team.js"></script>
+</body>
+</html>

@@ -53,8 +53,8 @@ check('key rotation: refetches once on a miss', $rotating->verify(mint($key, $go
 function fresh_db(): PDO {
     $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
     $pdo->exec('CREATE TABLE members (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, rank_label TEXT NOT NULL DEFAULT "agent",
-        upline_id INTEGER NULL, is_admin INTEGER NOT NULL DEFAULT 0, referral_code TEXT UNIQUE NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, deactivated_at TEXT NULL)');
+        upline_id INTEGER NULL, is_admin INTEGER NOT NULL DEFAULT 0, is_team_admin INTEGER NOT NULL DEFAULT 0, referral_code TEXT UNIQUE NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, deactivated_at TEXT NULL, removal_batch TEXT NULL)');
     $pdo->exec('CREATE TABLE audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id INTEGER, action TEXT, subject_id INTEGER, detail TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
     return $pdo;
 }

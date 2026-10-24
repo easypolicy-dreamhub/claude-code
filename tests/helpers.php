@@ -15,8 +15,8 @@ function fresh_db(): PDO {
 }
 function init_db(PDO $pdo): PDO {
     $pdo->exec('CREATE TABLE members (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, rank_label TEXT NOT NULL DEFAULT "agent",
-        upline_id INTEGER NULL, is_admin INTEGER NOT NULL DEFAULT 0, referral_code TEXT UNIQUE NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, deactivated_at TEXT NULL)');
+        upline_id INTEGER NULL, is_admin INTEGER NOT NULL DEFAULT 0, is_team_admin INTEGER NOT NULL DEFAULT 0, referral_code TEXT UNIQUE NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, deactivated_at TEXT NULL, removal_batch TEXT NULL)');
     $pdo->exec('CREATE TABLE audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_id INTEGER, action TEXT, subject_id INTEGER, detail TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
     $pdo->exec('CREATE TABLE candidates (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_member_id INTEGER NOT NULL, purpose TEXT NOT NULL DEFAULT "career", source TEXT NOT NULL,
         name TEXT NOT NULL, mobile TEXT NOT NULL, email TEXT NULL, age_group INTEGER NULL, education INTEGER NULL, work_status INTEGER NULL, field TEXT NULL, lang TEXT NOT NULL DEFAULT "en",

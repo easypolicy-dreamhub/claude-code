@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * GET                 members you may see (admin: everyone; others: self + downline)
  * POST   {…}          admin: add a member
- * PATCH  ?id=N {…}    admin: edit / deactivate / re-parent a member
+ * PATCH  ?id=N {…}    admin: edit name / email / referral code (structure changes: api/team.php)
  */
 require_once __DIR__ . '/../../../private/bootstrap.php';
 
@@ -29,7 +29,9 @@ try {
         if ($id <= 0) {
             throw new HttpError(400, 'Missing ?id=');
         }
-        json_response(200, ['member' => update_member($pdo, $me['id'], $id, json_body())]);
+        // Ranks, moves and removals go through the Team page rules (api/team.php), never straight here.
+        $in = array_intersect_key(json_body(), array_flip(['name', 'email', 'referral_code']));
+        json_response(200, ['member' => update_member($pdo, $me['id'], $id, $in)]);
     }
     throw new HttpError(405, 'Method not allowed.');
 } catch (HttpError $e) {
