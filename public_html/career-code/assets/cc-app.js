@@ -207,7 +207,7 @@ $('#d-next').addEventListener('click', function () {
   var btn = $('#d-next'); btn.disabled = true;
   if (LIVE && !clientId) clientId = newClientId();   // reused if this tap is retried, so a lost reply never makes two candidates
   var details = { name: name, mobile: mobile, email: email, age: $('#d-age').value, edu: $('#d-edu').value, status: $('#d-status').value,
-    field: $('#d-field').value.trim(), lang: lang, purpose: purpose, consent: true };
+    field: $('#d-field').value.trim(), lang: lang, purpose: $('#d-purpose') ? $('#d-purpose').value : purpose, consent: true };
   (LIVE ? api('live.php', Object.assign({ action: 'start', client_id: clientId }, details)) : api('start.php', Object.assign({ ref: ref, turnstile: tsToken }, details)))
     .then(function (r) { state = freshState(); state.token = r.submit_token; state.advisor = r.advisor_name; state.name = name; state.candidateId = r.candidate_id || null; clientId = null; save(); tsToken = LIVE ? 'live' : null; renderPart(); })
     .catch(function (e) { $('#d-err').textContent = friendly(e); resetTurnstile(); })
