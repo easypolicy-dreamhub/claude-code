@@ -36,7 +36,7 @@ function draw(d) {
   $('#fuNote').textContent = 'Finished tests still marked New after ' + d.follow_up_days + ' days.';
   $('#fu').innerHTML = d.follow_up.length ? d.follow_up.map(function (f) { return '<li><span>' + cand(f.id, f.name) + ' <span class="muted">· ' + esc(f.owner) + '</span></span><span class="d">' + f.days + ' days</span></li>'; }).join('') : '<li><span class="muted">Nobody is waiting. Nice.</span></li>';
   $('#people').innerHTML = '<thead><tr><th>Name</th><th>Added</th><th>Finished</th><th>Joined</th><th>Last active</th></tr></thead><tbody>' + d.people.map(function (p) {
-    return '<tr class="' + (p.active ? '' : 'off') + '"><td style="padding-left:' + (0.4 + p.depth * 1.1) + 'rem"><a href="/members/career-code/dashboard/?owner=' + p.id + '">' + esc(p.name) + '</a><span class="rk">' + esc(RANK[p.rank] || '') + (p.active ? '' : ' · removed') + '</span></td><td>' + p.added + '</td><td>' + p.completed + '</td><td>' + p.joined + '</td><td>' + esc(ago(p.last_active)) + '</td></tr>';
+    return '<tr class="' + (p.active ? '' : 'off') + '"><td style="padding-left:' + (0.4 + p.depth * 1.1) + 'rem"><a href="/members/career-code/dashboard/?owner=' + p.id + '&amp;name=' + encodeURIComponent(p.name) + '">' + esc(p.name) + '</a><span class="rk">' + esc(RANK[p.rank] || '') + (p.active ? '' : ' · removed') + '</span></td><td>' + p.added + '</td><td>' + p.completed + '</td><td>' + p.joined + '</td><td>' + esc(ago(p.last_active)) + '</td></tr>';
   }).join('') + '</tbody>';
   $('#feed').innerHTML = d.feed.length ? d.feed.map(function (e) { return '<li><span>' + sentence(e) + '</span><time datetime="' + esc(e.at) + '">' + esc(ago(e.at)) + '</time></li>'; }).join('') : '<li><span class="muted">Nothing yet.</span></li>';
 }

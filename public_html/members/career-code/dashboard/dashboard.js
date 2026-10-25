@@ -47,7 +47,9 @@ function codeHtml(code, big) {
 function filters() {
   return { q: $('#q').value.trim(), status: $('#fStatus').value, purpose: $('#fPurpose').value, mine: $('#fScope').value === 'mine', unfinished: $('#fUnfinished').checked };
 }
-var ownerFilter = +new URLSearchParams(location.search).get('owner') || 0;   // from the Team Activity page
+var ownerFilter = +new URLSearchParams(location.search).get('owner') || 0;
+var ownerName = (new URLSearchParams(location.search).get('name') || '').slice(0, 80);
+var ownerLabel = ownerName ? ownerName + '’s candidates' : 'one person’s candidates';   // from the Team Activity page
 function listUrl(page) {
   var f = filters(), p = ['page=' + page];
   if (f.q) p.push('q=' + encodeURIComponent(f.q));
@@ -80,8 +82,9 @@ function setViewer() {
 function renderList() {
   var v = st.viewer;
   $('#count').textContent = st.total ? 'Showing ' + st.items.length + ' of ' + st.total + ' candidate' + (st.total === 1 ? '' : 's') : '';
-  if (ownerFilter) $('#count').innerHTML = esc($('#count').textContent || 'No candidates') + ' for one person · <a href="?">Show everyone</a>';
-  if (!st.items.length) { $('#list').innerHTML = '<li class="empty card">No candidates match. Results appear here as soon as someone finishes the test.</li>'; $('#more').hidden = true; return; }
+  if (ownerFilter) $('#ownerBar').innerHTML = 'Showing <b>' + esc(ownerLabel) + '</b> only · <a href="?">Show everyone</a>';
+  $('#ownerBar').hidden = !ownerFilter;
+  if (!st.items.length) { $('#list').innerHTML = '<li class="empty card">' + (ownerFilter ? esc(ownerName || 'This person') + ' has no candidates yet.' : 'No candidates match. Results appear here as soon as someone finishes the test.') + '</li>'; $('#more').hidden = true; return; }
   $('#list').innerHTML = st.items.map(function (c) {
     var pills = '';
     if (c.verdict) pills += '<span class="pill ' + esc(c.verdict.key) + '">' + esc(c.verdict.title) + '</span>';

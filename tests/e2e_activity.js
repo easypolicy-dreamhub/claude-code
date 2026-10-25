@@ -48,7 +48,10 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1', typ: 'JWT' })
   check('period pills switch', true);
   await adm.click('#people a:has-text("Amy")'); await adm.waitForSelector('#list .item');
   check('tapping a name opens the candidate list for that person only', JSON.stringify(await adm.$$eval('#list .item .name', (e) => e.map((x) => x.textContent).sort())) === JSON.stringify(['Cara Chin']), page_url(adm));
-  check('...with a "Show everyone" link', /Show everyone/.test(await adm.textContent('#count')));
+  check('...labelled "Showing Amy’s candidates only" with a "Show everyone" link', /Showing\s+Amy’s candidates\s+only/.test(await adm.textContent('#ownerBar')) && /Show everyone/.test(await adm.textContent('#ownerBar')), await adm.textContent('#ownerBar'));
+  await adm.goBack(); await adm.waitForSelector('#people tbody a');
+  await adm.click('#people a:has-text("Dormant")'); await adm.waitForSelector('#list .empty');
+  check('a person with no candidates says so by name', /Dormant has no candidates yet/.test(await adm.textContent('#list')) && /Dormant’s candidates/.test(await adm.textContent('#ownerBar')), await adm.textContent('#list'));
   function page_url(p) { return p.url(); }
 
   console.log('\nAmy (unit manager)');
