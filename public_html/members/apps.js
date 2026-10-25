@@ -75,6 +75,14 @@ const APPS = [
     note:  "You see your own candidates and your team's."
   },
   {
+    name:  "Team Activity",
+    url:   "/members/activity/",
+    icon:  "📈",
+    about: "Who is adding candidates, where everyone stands, and who needs a follow-up",
+    group: "Leader Tools",
+    note:  "You see yourself and your team. Nothing from other teams."
+  },
+  {
     name:  "Million Income Calculator",
     url:   "/members/million-income/",
     icon:  "💰",

@@ -47,6 +47,7 @@ function codeHtml(code, big) {
 function filters() {
   return { q: $('#q').value.trim(), status: $('#fStatus').value, purpose: $('#fPurpose').value, mine: $('#fScope').value === 'mine', unfinished: $('#fUnfinished').checked };
 }
+var ownerFilter = +new URLSearchParams(location.search).get('owner') || 0;   // from the Team Activity page
 function listUrl(page) {
   var f = filters(), p = ['page=' + page];
   if (f.q) p.push('q=' + encodeURIComponent(f.q));
@@ -54,6 +55,7 @@ function listUrl(page) {
   if (f.purpose) p.push('purpose=' + f.purpose);
   if (f.mine) p.push('mine=1');
   if (f.unfinished) p.push('include_unfinished=1');
+  if (ownerFilter) p.push('owner_id=' + ownerFilter);
   return API + '?' + p.join('&');
 }
 function loadList(append) {
@@ -78,6 +80,7 @@ function setViewer() {
 function renderList() {
   var v = st.viewer;
   $('#count').textContent = st.total ? 'Showing ' + st.items.length + ' of ' + st.total + ' candidate' + (st.total === 1 ? '' : 's') : '';
+  if (ownerFilter) $('#count').innerHTML = esc($('#count').textContent || 'No candidates') + ' for one person · <a href="?">Show everyone</a>';
   if (!st.items.length) { $('#list').innerHTML = '<li class="empty card">No candidates match. Results appear here as soon as someone finishes the test.</li>'; $('#more').hidden = true; return; }
   $('#list').innerHTML = st.items.map(function (c) {
     var pills = '';
