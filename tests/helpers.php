@@ -21,7 +21,8 @@ function init_db(PDO $pdo): PDO {
     $pdo->exec('CREATE TABLE candidates (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_member_id INTEGER NOT NULL, referred_by_member_id INTEGER NULL, purpose TEXT NOT NULL DEFAULT "career", source TEXT NOT NULL,
         name TEXT NOT NULL, mobile TEXT NOT NULL, email TEXT NULL, age_group INTEGER NULL, education INTEGER NULL, work_status INTEGER NULL, field TEXT NULL, lang TEXT NOT NULL DEFAULT "en",
         consent_at TEXT DEFAULT CURRENT_TIMESTAMP, consent_version TEXT NOT NULL, pipeline_status TEXT NOT NULL DEFAULT "new", duplicate_of INTEGER NULL, submit_token_hash TEXT NULL,
-        ip_hash TEXT NULL, started_at TEXT DEFAULT CURRENT_TIMESTAMP, completed_at TEXT NULL, result_emailed_at TEXT NULL, notified_at TEXT NULL)');
+        ip_hash TEXT NULL, started_at TEXT DEFAULT CURRENT_TIMESTAMP, completed_at TEXT NULL, result_emailed_at TEXT NULL, notified_at TEXT NULL, client_id TEXT NULL)');
+    $pdo->exec('CREATE UNIQUE INDEX uq_cand_client ON candidates (client_id)');
     $pdo->exec('CREATE TABLE assessments (id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER NOT NULL, mode TEXT NOT NULL DEFAULT "test", answers_json TEXT NULL,
         scores_json TEXT NOT NULL, code TEXT NOT NULL, entered_by_member_id INTEGER NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
     return $pdo;

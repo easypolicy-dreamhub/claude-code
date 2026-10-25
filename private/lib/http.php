@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 final class HttpError extends RuntimeException
 {
-    public function __construct(public readonly int $status, string $message)
+    public function __construct(public readonly int $status, string $message, public readonly array $data = [])
     {
         parent::__construct($message);
     }

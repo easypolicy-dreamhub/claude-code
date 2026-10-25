@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live Career Code | DreamHub E3</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="apple-touch-icon" href="/images/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --slate:#24333A; --slate-2:#2F4049; --taupe:#B9AFA7; --brown:#6E625A;
+  --ink:#24333A; --muted:#5C6870; --paper:#F4F2EF; --card:#FFFFFF; --line:#E2DDD8;
+  --brand:#24333A; --brand-ink:#FFFFFF;
+  --R:#B8642A; --I:#3567A8; --A:#8A4FA0; --S:#2E9466; --E:#C8961A; --C:#5E6E80;
+  --bad:#B9433A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:400;line-height:1.55;font-size:16px;-webkit-text-size-adjust:100%;
+  background-image:radial-gradient(rgba(36,51,58,0.06) 1px,transparent 1px);background-size:22px 22px}
+h1,h2,h3{font-family:Poppins,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-weight:600;line-height:1.25;margin:0 0 .5em}
+h1{font-size:clamp(1.8rem,5vw,2.5rem);letter-spacing:-.01em;font-weight:700}
+h2{font-size:1.35rem}h3{font-size:1.05rem}
+p{margin:0 0 1em}
+[hidden]{ display:none !important; }
+.muted{color:var(--muted)}.small{font-size:.88rem}
+:focus-visible{outline:3px solid var(--taupe);outline-offset:2px;border-radius:8px}
+.top{background:var(--slate);color:#fff}
+.bar{max-width:760px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:Poppins,sans-serif;font-weight:700;font-size:1.1rem;color:#fff;text-decoration:none}
+.brand span{color:var(--taupe)}
+.topright{display:flex;align-items:center;gap:12px}
+.stepinfo{color:#CFD5D8;font-size:.85rem}
+.langbtn{min-height:40px;padding:6px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font:inherit;font-weight:500;font-size:.9rem;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:20px 18px 64px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+.panel+.panel{margin-top:16px}
+button{font:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 24px;border-radius:999px;border:1px solid var(--brand);background:var(--brand);color:var(--brand-ink);font-weight:700;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn.plain{border-color:var(--line);background:var(--card);color:var(--ink);font-weight:500}
+.btn.wa{background:var(--taupe);border-color:var(--taupe);color:var(--slate)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.actions.split{justify-content:space-between}
+label.f{display:block;font-weight:500;font-size:.92rem;margin:14px 0 6px}
+input[type=text],input[type=tel],input[type=email],select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.consent{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:.88rem;color:var(--muted)}
+.consent input{width:22px;height:22px;margin-top:2px;flex:none}
+.err{color:var(--bad);font-size:.9rem;margin-top:10px;min-height:1.2em}
+#ts{margin-top:16px;min-height:0}
+.notice{border:1px solid var(--taupe);background:#FBF8F5;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-hex{width:190px;height:190px}
+@media (max-width:600px){.hero{grid-template-columns:1fr}.hero-hex{width:160px;height:160px;margin:0 auto;order:-1}}
+.typestrip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.typestrip div{border-left:4px solid;padding:4px 10px;font-size:.85rem}
+.progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 18px}
+.progress span{display:block;height:100%;background:var(--brand);transition:width .3s}
+.group{margin-top:22px}.group h3{font-size:.9rem;color:var(--muted);font-weight:500;margin-bottom:8px;font-family:"DM Sans",sans-serif}
+.items{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.items{grid-template-columns:1fr}}
+.item{display:flex;align-items:center;gap:12px;text-align:left;min-height:50px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font-size:.94rem}
+.item::before{content:"";flex:none;width:22px;height:22px;border:2px solid var(--line);border-radius:6px;background:#fff center/14px no-repeat}
+.item[aria-pressed=true]{border-color:var(--brand);background:#F1EEEA}
+.item[aria-pressed=true]::before{background-color:var(--brand);border-color:var(--brand);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.counter{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:22px;background:var(--slate);color:#fff;border-radius:999px;padding:8px 10px 8px 18px}
+.counter .btn{min-height:42px;background:#fff;color:var(--ink);border-color:#fff}
+.counter .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.rateblock{padding:14px 0;border-top:1px solid var(--line)}
+.rate{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+.rate button{min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-weight:500}
+.rate button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.rate button:disabled{background:#EEF1F4;color:#A9B4BE;border-style:dashed;cursor:not-allowed}
+.rateset{margin:20px 0 4px;font-size:.95rem}
+.ratescale{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-top:4px}
+.result-head{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:center}
+@media (max-width:640px){.result-head{grid-template-columns:1fr}}
+.code{display:flex;gap:8px;margin:6px 0 14px}
+.code span{display:grid;place-items:center;width:64px;height:64px;border-radius:14px;color:#fff;font-family:Poppins,sans-serif;font-size:2rem;font-weight:700}
+.code span:nth-child(2){opacity:.85}.code span:nth-child(3){opacity:.7}
+.hexchart svg{width:100%;height:auto;display:block}
+.typecard{border-left:5px solid;padding:4px 0 4px 14px;margin:16px 0}
+.typecard h3{margin-bottom:.2em}.typecard p{margin:0;font-size:.95rem}
+.orient{margin:12px 0 18px}
+.orient .ends{display:flex;justify-content:space-between;font-size:.85rem;font-weight:500}
+.orient .bar2{position:relative;height:10px;border-radius:10px;background:linear-gradient(90deg,#DDE5E8,#EFEDEA 50%,#E8E0D4);margin:6px 0}
+.orient .bar2 i{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 0 0 1px var(--ink);transform:translate(-50%,-50%)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips span{padding:6px 12px;border-radius:999px;background:#EFEAE5;font-size:.85rem}
+.scoretable{width:100%;border-collapse:collapse;font-size:.9rem;min-width:420px}
+.scoretable th,.scoretable td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:center}
+.scoretable th{font-weight:500;color:var(--muted);font-size:.8rem}
+.scoretable td:first-child,.scoretable th:first-child{text-align:left}
+.scroll{overflow-x:auto}
+.tletter{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:600;font-size:.85rem;margin-right:8px}
+.disclaimer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+.print-head{display:none}
+noscript .panel{margin:20px auto;max-width:760px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;font-size:11pt}
+  .no-print,.top,.actions,.counter{display:none !important}
+  .wrap{max-width:none;padding:0}.panel{border:0;padding:0;margin-top:14px}
+  .print-head{display:block;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  .typecard,table{break-inside:avoid}
+  .code span,.tletter{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="top no-print">
+  <div class="bar">
+    <a class="brand" href="/members/career-code/">Dream<span>Hub</span> E3 · Live</a>
+    <div class="topright"><span class="stepinfo" id="stepinfo"></span><button class="langbtn" id="langBtn" type="button"></button></div>
+  </div>
+</header>
+<noscript><div class="panel">Please turn on JavaScript to take the Career Code assessment.</div></noscript>
+
+<div class="wrap">
+  <section class="screen" id="s-welcome">
+    <div class="panel" id="resumePanel" hidden>
+      <div class="notice" role="status">
+        <h3 id="resumeTitle"></h3><p class="small" id="resumeText"></p>
+        <div class="actions" style="margin-top:8px"><button class="btn" id="resumeGo" type="button"></button><button class="btn plain" id="resumeNew" type="button"></button></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="hero">
+        <div>
+          <h1 id="wTitle"></h1>
+          <p id="wLead"></p>
+          <p class="muted small" data-i18n="wP2"></p>
+        </div>
+        <div class="hero-hex" id="heroHex"></div>
+      </div>
+      <div class="typestrip" id="typestrip"></div>
+      <div class="actions"><button class="btn" id="startBtn" type="button" data-i18n="start"></button><a class="btn plain" id="waPre" href="#" rel="noopener"></a></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-details" hidden>
+    <div class="panel">
+      <h2 data-i18n="dTitle"></h2>
+      <p class="muted small" data-i18n="dReq"></p>
+      <div class="grid2">
+        <div><label class="f" for="d-name" data-i18n="fName"></label><input type="text" id="d-name" autocomplete="name" maxlength="120"></div>
+        <div><label class="f" for="d-mobile" data-i18n="fMobile"></label><input type="tel" id="d-mobile" autocomplete="tel" inputmode="tel" placeholder="012-345 6789"></div>
+        <div><label class="f" for="d-email" id="fEmailLabel" data-i18n="fEmail"></label><input type="email" id="d-email" autocomplete="email" maxlength="190"></div>
+        <div><label class="f" for="d-age" data-i18n="fAge"></label><select id="d-age" data-opts="age"></select></div>
+        <div><label class="f" for="d-edu" data-i18n="fEdu"></label><select id="d-edu" data-opts="edu"></select></div>
+        <div><label class="f" for="d-status" data-i18n="fStatus"></label><select id="d-status" data-opts="status"></select></div>
+        <div style="grid-column:1/-1"><label class="f" for="d-field" data-i18n="fField"></label><input type="text" id="d-field" maxlength="190"></div>
+      </div>
+      <label class="consent"><input type="checkbox" id="d-consent"><span id="consentText"></span></label>
+      <div id="ts"></div>
+      <div class="err" id="d-err" role="alert"></div>
+      <div class="actions split"><button class="btn plain" id="d-back" type="button" data-i18n="back"></button><button class="btn" id="d-next" type="button" data-i18n="continue"></button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-test" hidden>
+    <div class="panel">
+      <div class="progress" aria-hidden="true"><span id="t-prog"></span></div>
+      <h2 id="t-title"></h2>
+      <p id="t-intro" class="muted"></p>
+      <div id="t-body"></div>
+      <div class="err" id="t-err" role="alert"></div>
+      <div class="counter">
+        <button class="btn ghost" id="t-back" type="button"></button>
+        <span id="t-count" class="small" aria-live="polite"></span>
+        <button class="btn" id="t-next" type="button"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-results" hidden>
+    <div class="panel">
+      <div class="print-head" id="printHead"></div>
+      <div class="result-head">
+        <div>
+          <p class="muted small" id="r-for"></p>
+          <h2 data-i18n="rCode"></h2>
+          <div class="code" id="r-code"></div>
+          <p id="r-summary"></p>
+        </div>
+        <div class="hexchart" id="r-hex"></div>
+      </div>
+      <div id="r-types"></div>
+      <h3 style="margin-top:22px" data-i18n="rOrient"></h3>
+      <div id="r-orient"></div>
+      <h3 data-i18n="rStrengths"></h3>
+      <div class="chips" id="r-strengths"></div>
+      <h3 style="margin-top:20px" data-i18n="rFields"></h3>
+      <div class="chips" id="r-fields"></div>
+      <h3 style="margin-top:22px" data-i18n="rScores"></h3>
+      <div class="scroll"><table class="scoretable" id="r-scores"></table></div>
+      <p class="disclaimer" id="r-disc"></p>
+    </div>
+    <div class="panel no-print">
+      <h3 id="r-next-title"></h3>
+      <p id="r-next-text"></p>
+      <div class="actions"><a class="btn wa" id="waPost" href="#" rel="noopener"></a><button class="btn plain" id="printBtn" type="button" data-i18n="printCand"></button><button class="btn plain" id="againBtn" type="button"></button></div>
+    </div>
+  </section>
+</div>
+
+<script>window.CC_SITE = { live: true, apiBase: '/members/api/' };</script>
+<script src="/career-code/assets/cc-data.js"></script>
+<script src="/career-code/assets/cc-app.js"></script>
+</body>
+</html>

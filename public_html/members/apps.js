@@ -64,7 +64,7 @@ const APPS = [
     icon:  "🧭",
     about: "Holland career interest test for screening advisor candidates",
     group: "Recruitment",
-    note:  "Advisor notes are PIN-protected. Ask your leader for the PIN."
+    note:  "Your own login protects it. Live tests and paper scores are saved to your candidate list."
   },
   {
     name:  "Career Code Candidates",

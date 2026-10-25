@@ -41,7 +41,7 @@ function candidate_summary(array $c, array $map): array
         'owner' => $owner ? ['id' => (int)$owner['id'], 'name' => $owner['name'], 'active' => (bool)$owner['is_active']] : null,
         'via_link' => $via,
         'status' => $c['pipeline_status'], 'duplicate_of' => $c['duplicate_of'] === null ? null : (int)$c['duplicate_of'],
-        'completed' => $c['completed_at'] !== null, 'code' => $c['a_code'] ?? null,
+        'completed' => $c['completed_at'] !== null, 'code' => $c['a_code'] ?? null, 'entry' => ($c['a_mode'] ?? null) === 'manual' ? 'paper' : (($c['a_mode'] ?? null) === null ? null : 'online'),
         'verdict' => $verdict ? ['key' => $verdict['key'], 'title' => $verdict['title']] : null,
         'started_at' => iso($c['started_at']), 'completed_at' => iso($c['completed_at']),
         'result_emailed' => $c['result_emailed_at'] !== null, 'advisor_notified' => $c['notified_at'] !== null,
@@ -99,7 +99,7 @@ function list_candidates(PDO $pdo, array $map, array $viewer, array $f): array
     $total = (int)$stmt->fetchColumn();
 
     $page = max(1, (int)($f['page'] ?? 1));
-    $stmt = $pdo->prepare("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
+    $stmt = $pdo->prepare("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores, a.mode AS a_mode FROM candidates c
         LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id)
         $w ORDER BY c.id DESC LIMIT " . LIST_PAGE_SIZE . ' OFFSET ' . (($page - 1) * LIST_PAGE_SIZE));
     $stmt->execute($args);
@@ -111,7 +111,7 @@ function list_candidates(PDO $pdo, array $map, array $viewer, array $f): array
 
 function load_candidate_row(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare('SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
+    $stmt = $pdo->prepare('SELECT c.*, a.code AS a_code, a.scores_json AS a_scores, a.mode AS a_mode FROM candidates c
         LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id) WHERE c.id = ?');
     $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
@@ -249,7 +249,7 @@ function export_candidates_csv(PDO $pdo, array $map, array $viewer, ?array $owne
     $hdr = ['id', 'started (UTC)', 'completed (UTC)', 'name', 'mobile', 'email', 'purpose', 'source', 'advisor', 'link used', 'code', 'verdict', 'status', 'duplicate of'];
     $lines = [implode(',', array_map('csv_cell', $hdr))];
     $where = $ownerIds === null ? '' : ($ownerIds ? 'WHERE c.owner_member_id IN (' . implode(',', array_map('intval', $ownerIds)) . ')' : 'WHERE 1 = 0');
-    $stmt = $pdo->query("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores FROM candidates c
+    $stmt = $pdo->query("SELECT c.*, a.code AS a_code, a.scores_json AS a_scores, a.mode AS a_mode FROM candidates c
         LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id) $where ORDER BY c.id");
     foreach ($stmt as $c) {
         $s = candidate_summary($c, $map);

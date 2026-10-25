@@ -1,10 +1,13 @@
-/* Career Code - public page. Contains NO advisor logic: scores come back from the server. */
+/* Career Code questionnaire. Contains NO advisor logic: scores come back from the server.
+   Used by the public page and, with CC_SITE.live = true, by the members-only live session page
+   (advisor sitting with the candidate: no spam check, no ?ref=, email optional, saved via /members/api/live.php). */
 (function () {
 'use strict';
 
 var SITE = window.CC_SITE || {};
 var API = SITE.apiBase || 'api/';
-var STORE_KEY = 'e3cc.v1', MAX_AGE_MS = 24 * 3600 * 1000;
+var LIVE = !!SITE.live;
+var STORE_KEY = LIVE ? 'e3cc.live.v1' : 'e3cc.v1', MAX_AGE_MS = 24 * 3600 * 1000;
 var params = new URLSearchParams(location.search);
 var purpose = params.get('p') === 'internship' ? 'internship' : 'career';
 var ref = (params.get('ref') || '').slice(0, 32);
@@ -58,11 +61,12 @@ var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, f
 var wa = function (msg) { return 'https://wa.me/' + (SITE.whatsapp || '60126718056') + '?text=' + encodeURIComponent(msg); };
 
 /* ---------- state + saved progress (Fix 6) ---------- */
-var state, current = 'welcome';
+var state, current = 'welcome', clientId = null;
+function newClientId() { var b = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(b); return Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
 function freshState() {
   var ans = {}; ['A', 'B', 'C'].forEach(function (p) { ans[p] = {}; TYPES.forEach(function (t) { ans[p][t] = new Set(); }); });
   var rat = {}; TYPES.forEach(function (t) { rat[t] = [null, null]; });
-  return { token: null, advisor: null, name: '', part: 0, answers: ans, ratings: rat, scores: null, code: null };
+  return { token: null, candidateId: null, advisor: null, name: '', part: 0, answers: ans, ratings: rat, scores: null, code: null };
 }
 state = freshState();
 
@@ -70,7 +74,7 @@ function save() {
   if (!state.token || state.scores) return;
   try {
     var a = {}; ['A', 'B', 'C'].forEach(function (p) { a[p] = {}; TYPES.forEach(function (t) { a[p][t] = Array.from(state.answers[p][t]); }); });
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, advisor: state.advisor, name: state.name, part: state.part, a: a, r: state.ratings }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, cid: state.candidateId, advisor: state.advisor, name: state.name, part: state.part, a: a, r: state.ratings }));
   } catch (e) { /* private mode or storage full: the test still works, just without resume */ }
 }
 function clearSaved() { try { localStorage.removeItem(STORE_KEY); } catch (e) {} }
@@ -83,7 +87,7 @@ function loadSaved() {
 }
 function restore(s) {
   state = freshState();
-  state.token = s.token; state.advisor = s.advisor; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
+  state.token = s.token; state.candidateId = s.cid || null; state.advisor = s.advisor; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
   ['A', 'B', 'C'].forEach(function (p) { TYPES.forEach(function (t) { ((s.a && s.a[p] && s.a[p][t]) || []).forEach(function (i) { state.answers[p][t].add(i); }); }); });
   TYPES.forEach(function (t) { if (s.r && Array.isArray(s.r[t])) state.ratings[t] = s.r[t].slice(0, 2); });
   if (s.lang === 'zh' || s.lang === 'en') lang = s.lang;
@@ -119,6 +123,7 @@ function applyStatic() {
   $('#resumeTitle').textContent = P().resumeTitle; $('#resumeText').textContent = P().resumeText;
   $('#resumeGo').textContent = P().resumeGo; $('#resumeNew').textContent = P().resumeNew;
   $('#againBtn').textContent = P().again;
+  if (LIVE) { $('#fEmailLabel').textContent = L().fEmail.replace(' *', '') + ' (optional)'; $('#waPre').hidden = true; }
   fillSelects();
   ['#d-err', '#t-err'].forEach(function (s) { $(s).textContent = ''; });
 }
@@ -156,6 +161,7 @@ function hexSVG(scores) {
 var tsToken = null, tsWidget = null, tsMounted = false;
 function mountTurnstile() {
   if (tsMounted) return; tsMounted = true;
+  if (LIVE) { tsToken = 'live'; return; }   // the advisor is logged in; no spam check needed
   if (SITE.turnstileSiteKey === 'TEST') { tsToken = 'good-token'; return; }   // test hook: the server still verifies the token
   var s = document.createElement('script');
   s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; s.async = true;
@@ -165,7 +171,7 @@ function mountTurnstile() {
   };
   document.head.appendChild(s);
 }
-function resetTurnstile() { tsToken = SITE.turnstileSiteKey === 'TEST' ? 'good-token' : null; if (tsWidget !== null && window.turnstile) window.turnstile.reset(tsWidget); }
+function resetTurnstile() { if (LIVE) { tsToken = 'live'; return; } tsToken = SITE.turnstileSiteKey === 'TEST' ? 'good-token' : null; if (tsWidget !== null && window.turnstile) window.turnstile.reset(tsWidget); }
 
 /* ---------- server calls ---------- */
 function api(path, body) {
@@ -193,15 +199,17 @@ $('#d-next').addEventListener('click', function () {
   var name = $('#d-name').value.trim(), mobile = $('#d-mobile').value.trim(), email = $('#d-email').value.trim(), errs = [];
   if (!name) errs.push(L().eName);
   if (!/^(?:\+?60|0)1\d[\d\s-]{7,12}$/.test(mobile)) errs.push(L().eMobile);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errs.push(L().eEmail);
+  if ((email || !LIVE) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errs.push(L().eEmail);
   if (!$('#d-consent').checked) errs.push(L().eConsent);
   if (!errs.length && !tsToken) errs.push(P().eSpamWait);
   $('#d-err').textContent = errs.join(' ');
   if (errs.length) return;
   var btn = $('#d-next'); btn.disabled = true;
-  api('start.php', { name: name, mobile: mobile, email: email, age: $('#d-age').value, edu: $('#d-edu').value, status: $('#d-status').value,
-    field: $('#d-field').value.trim(), lang: lang, purpose: purpose, ref: ref, consent: true, turnstile: tsToken })
-    .then(function (r) { state = freshState(); state.token = r.submit_token; state.advisor = r.advisor_name; state.name = name; save(); tsToken = null; renderPart(); })
+  if (LIVE && !clientId) clientId = newClientId();   // reused if this tap is retried, so a lost reply never makes two candidates
+  var details = { name: name, mobile: mobile, email: email, age: $('#d-age').value, edu: $('#d-edu').value, status: $('#d-status').value,
+    field: $('#d-field').value.trim(), lang: lang, purpose: purpose, consent: true };
+  (LIVE ? api('live.php', Object.assign({ action: 'start', client_id: clientId }, details)) : api('start.php', Object.assign({ ref: ref, turnstile: tsToken }, details)))
+    .then(function (r) { state = freshState(); state.token = r.submit_token; state.advisor = r.advisor_name; state.name = name; state.candidateId = r.candidate_id || null; clientId = null; save(); tsToken = LIVE ? 'live' : null; renderPart(); })
     .catch(function (e) { $('#d-err').textContent = friendly(e); resetTurnstile(); })
     .then(function () { btn.disabled = false; });
 });
@@ -274,8 +282,8 @@ function payload() {
 }
 function submit() {
   var next = $('#t-next'); next.disabled = true; $('#t-err').textContent = P().submitting;
-  api('submit.php', { submit_token: state.token, answers: payload() })
-    .then(function (r) { state.scores = r.scores; state.code = r.code; state.advisor = r.advisor_name || state.advisor; clearSaved(); renderResults(); })
+  (LIVE ? api('live.php', { action: 'submit', submit_token: state.token, answers: payload() }) : api('submit.php', { submit_token: state.token, answers: payload() }))
+    .then(function (r) { state.scores = r.scores; state.code = r.code; state.advisor = r.advisor_name || state.advisor; state.candidateId = r.candidate_id || state.candidateId; state.candidateEmail = !!r.candidate_emailed; clearSaved(); renderResults(); })
     .catch(function (e) { $('#t-err').textContent = friendly(e); })
     .then(function () { next.disabled = false; });
 }
@@ -307,7 +315,11 @@ function renderResults() {
   $('#r-disc').textContent = P().disclaimer;
   $('#r-next-title').textContent = P().nextTitle;
   $('#r-next-text').textContent = (state.advisor ? P().advisor(state.advisor) + ' ' : '') + P().nextText;
-  $('#waPost').textContent = P().waPost; $('#waPost').href = wa(P().waAdv);
+  if (LIVE) {
+    $('#r-next-title').textContent = 'Saved to your candidate list';
+    $('#r-next-text').textContent = 'Their result is saved' + (state.candidateEmail ? ' and emailed to them.' : '. No email address was given, so nothing was emailed to them.') + ' Open the candidate to see your advisor notes.';
+    $('#waPost').textContent = 'Open advisor view'; $('#waPost').href = '/members/career-code/dashboard/?candidate=' + (state.candidateId || '');
+  } else { $('#waPost').textContent = P().waPost; $('#waPost').href = wa(P().waAdv); }
   var old = document.title; document.title = Lx.fileName(state.name || Lx.candidate); setTimeout(function () { document.title = old; }, 0);
   show('results');
 }

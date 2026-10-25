@@ -61,9 +61,13 @@ function opt_index(mixed $v, int $count, string $label): ?int
 
 /**
  * Step 1 of the public flow: details + consent -> a candidate row and a one-time token for submitting answers.
- * @return array{submit_token:string, advisor_name:string, candidate_id:int}
+ * $live = a logged-in advisor conducting the session (live test or paper-score entry): they become the owner
+ * (or the "link used" advisor when the person already belongs to someone else), email is optional and there is
+ * no IP rate limit. $clientId makes retries safe: the same id never creates a second candidate.
+ * @param array{member:array, client_id:?string}|null $live
+ * @return array{submit_token:string, advisor_name:string, candidate_id:int, existing:bool, completed:bool}
  */
-function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
+function start_candidate(PDO $pdo, array $config, array $in, ?string $ip, ?array $live = null): array
 {
     $name = trim((string)($in['name'] ?? ''));
     if ($name === '' || mb_strlen($name) > 120) {
@@ -74,7 +78,7 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
         throw new HttpError(422, 'Enter a valid Malaysian mobile number.');
     }
     $email = strtolower(trim((string)($in['email'] ?? '')));
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190) {
+    if (!($live !== null && $email === '') && (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190)) {
         throw new HttpError(422, 'Enter a valid email address.');
     }
     if (($in['consent'] ?? false) !== true) {
@@ -94,7 +98,24 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
     }
     $ref = isset($in['ref']) && is_string($in['ref']) ? substr($in['ref'], 0, 32) : null;
 
-    $ipH = ip_hash($config, $ip);
+    $clientId = $live['client_id'] ?? null;
+    if ($live !== null && $clientId !== null) {
+        if (preg_match('/^[a-f0-9]{32}$/', $clientId) !== 1) {
+            throw new HttpError(422, 'Invalid session id.');
+        }
+        $stmt = $pdo->prepare('SELECT id, owner_member_id, completed_at FROM candidates WHERE client_id = ?');
+        $stmt->execute([$clientId]);
+        if ($again = $stmt->fetch()) {      // a retry of something already saved: hand back a fresh token, create nothing
+            $token = bin2hex(random_bytes(32));
+            $pdo->prepare('UPDATE candidates SET submit_token_hash = ? WHERE id = ?')->execute([hash('sha256', $token), (int)$again['id']]);
+            $own = $pdo->prepare('SELECT name FROM members WHERE id = ?');
+            $own->execute([(int)$again['owner_member_id']]);
+            return ['submit_token' => $token, 'advisor_name' => (string)$own->fetchColumn(), 'candidate_id' => (int)$again['id'],
+                'existing' => true, 'completed' => $again['completed_at'] !== null];
+        }
+    }
+
+    $ipH = $live !== null ? null : ip_hash($config, $ip);
     $limit = (int)($config['rate_limit_per_hour'] ?? 10);
     if ($ipH !== null) {
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM candidates WHERE ip_hash = ? AND started_at >= ?');
@@ -104,10 +125,10 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
         }
     }
 
-    [$owner, $source] = resolve_owner($pdo, $config, $ref);
-    $referrerId = $source === 'referral' ? (int)$owner['id'] : null;   // whose link was used, even if a repeat applicant stays elsewhere
+    [$owner, $source] = $live !== null ? [$live['member'], 'live'] : resolve_owner($pdo, $config, $ref);
+    $referrerId = $source === 'referral' || $source === 'live' ? (int)$owner['id'] : null;   // whose link was used, even if a repeat applicant stays elsewhere
     $dupOf = null;
-    $stmt = $pdo->prepare('SELECT id, owner_member_id, duplicate_of FROM candidates WHERE mobile = ? OR email = ? ORDER BY id LIMIT 1');
+    $stmt = $pdo->prepare("SELECT id, owner_member_id, duplicate_of FROM candidates WHERE mobile = ? OR (email = ? AND email <> '') ORDER BY id LIMIT 1");
     $stmt->execute([$mobile, $email]);
     if ($first = $stmt->fetch()) {           // first advisor keeps the candidate (Fix 12)
         $dupOf = (int)($first['duplicate_of'] ?? $first['id']);
@@ -119,10 +140,26 @@ function start_candidate(PDO $pdo, array $config, array $in, ?string $ip): array
     $token = bin2hex(random_bytes(32));
     $now = gmdate('Y-m-d H:i:s');
     $pdo->prepare('INSERT INTO candidates (owner_member_id, referred_by_member_id, purpose, source, name, mobile, email, age_group, education, work_status, field, lang,
-            consent_at, consent_version, duplicate_of, submit_token_hash, ip_hash, started_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-        ->execute([(int)$owner['id'], $referrerId, $purpose, $source, $name, $mobile, $email, $age, $edu, $status, $field === '' ? null : $field, $lang,
-            $now, CONSENT_VERSION, $dupOf, hash('sha256', $token), $ipH, $now]);
-    return ['submit_token' => $token, 'advisor_name' => $owner['name'], 'candidate_id' => (int)$pdo->lastInsertId()];
+            consent_at, consent_version, duplicate_of, submit_token_hash, ip_hash, started_at, client_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        ->execute([(int)$owner['id'], $referrerId, $purpose, $source, $name, $mobile, $email === '' ? null : $email, $age, $edu, $status, $field === '' ? null : $field, $lang,
+            $now, CONSENT_VERSION, $dupOf, hash('sha256', $token), $ipH, $now, $clientId]);
+    return ['submit_token' => $token, 'advisor_name' => $owner['name'], 'candidate_id' => (int)$pdo->lastInsertId(), 'existing' => false, 'completed' => false];
+}
+
+/** Saves one assessment and marks the candidate completed, atomically. $enteredBy = the advisor who keyed in a paper test. */
+function store_assessment(PDO $pdo, int $candidateId, string $mode, ?string $answersJson, array $scores, string $code, ?int $enteredBy): void
+{
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('INSERT INTO assessments (candidate_id, mode, answers_json, scores_json, code, entered_by_member_id) VALUES (?,?,?,?,?,?)')
+            ->execute([$candidateId, $mode, $answersJson, json_encode($scores), $code, $enteredBy]);
+        $pdo->prepare('UPDATE candidates SET completed_at = ? WHERE id = ? AND completed_at IS NULL')
+            ->execute([gmdate('Y-m-d H:i:s'), $candidateId]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
 
 /**
@@ -156,17 +193,7 @@ function submit_assessment(PDO $pdo, string $token, mixed $answers): array
 
     $scores = score_test($answers);
     $code = holland_code($scores);
-    $pdo->beginTransaction();
-    try {
-        $pdo->prepare('INSERT INTO assessments (candidate_id, mode, answers_json, scores_json, code) VALUES (?,?,?,?,?)')
-            ->execute([(int)$cand['id'], 'test', json_encode($answers), json_encode($scores), $code]);
-        $pdo->prepare('UPDATE candidates SET completed_at = ? WHERE id = ? AND completed_at IS NULL')
-            ->execute([gmdate('Y-m-d H:i:s'), (int)$cand['id']]);
-        $pdo->commit();
-    } catch (Throwable $e) {
-        $pdo->rollBack();
-        throw $e;
-    }
+    store_assessment($pdo, (int)$cand['id'], 'test', json_encode($answers), $scores, $code, null);
     return ['candidate' => $cand, 'scores' => $scores, 'code' => $code, 'advisor_name' => $owner['name'], 'already' => false];
 }
 
@@ -175,7 +202,7 @@ function submit_assessment(PDO $pdo, string $token, mixed $answers): array
  * lose a candidate. Timestamps record what was actually sent so the dashboard can show "email not sent".
  * @return array{candidate_sent:bool, notified:int}
  */
-function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand, array $scores, string $code): array
+function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand, array $scores, string $code, ?int $skipMemberId = null): array
 {
     $result = ['candidate_sent' => false, 'notified' => 0];
     $map = load_member_map($pdo);
@@ -200,7 +227,7 @@ function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand,
     $sentTo = [];
     foreach (upline_chain($map, (int)$owner['id']) as $mid) {
         $r = $map[$mid];
-        if (!$r['is_active'] || isset($sentTo[$r['email']])) {
+        if (!$r['is_active'] || isset($sentTo[$r['email']]) || (int)$r['id'] === $skipMemberId) {   // skip: the advisor who is doing the session right now
             continue;
         }
         try {
@@ -213,7 +240,7 @@ function notify_completion(PDO $pdo, array $config, Mailer $mailer, array $cand,
         }
     }
     // The agent whose link was used, when the person stays with someone else: tell them, minimally, so nothing is silent.
-    if ($referrer !== null && $referrer['is_active'] && !isset($sentTo[$referrer['email']])) {
+    if ($referrer !== null && $referrer['is_active'] && !isset($sentTo[$referrer['email']]) && (int)$referrer['id'] !== $skipMemberId) {
         try {
             $m = build_referrer_notice($cand, $referrer);
             $mailer->send($referrer['email'], $m['subject'], $m['html'], $m['text']);
