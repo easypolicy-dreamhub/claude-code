@@ -6,7 +6,7 @@ declare(strict_types=1);
  *   GET                       list   ?status= &purpose= &q= &mine=1 &owner_id= &include_unfinished=1 &page=
  *   GET  ?id=N [&lang=en|zh]  one candidate with results and advisor notes
  *   GET  ?export=csv          admin: everything as CSV
- *   PATCH ?id=N {pipeline_status?, owner_member_id?}
+ *   PATCH ?id=N {pipeline_status?, owner_member_id?, purpose?}
  *   DELETE ?id=N              admin: erase a candidate (PDPA request)
  */
 require_once __DIR__ . '/../../../private/bootstrap.php';

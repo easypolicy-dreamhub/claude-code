@@ -66,7 +66,7 @@ function newClientId() { var b = new Uint8Array(16); (window.crypto || window.ms
 function freshState() {
   var ans = {}; ['A', 'B', 'C'].forEach(function (p) { ans[p] = {}; TYPES.forEach(function (t) { ans[p][t] = new Set(); }); });
   var rat = {}; TYPES.forEach(function (t) { rat[t] = [null, null]; });
-  return { token: null, candidateId: null, advisor: null, name: '', part: 0, answers: ans, ratings: rat, scores: null, code: null };
+  return { token: null, copyMe: false, candidateId: null, advisor: null, name: '', part: 0, answers: ans, ratings: rat, scores: null, code: null };
 }
 state = freshState();
 
@@ -74,7 +74,7 @@ function save() {
   if (!state.token || state.scores) return;
   try {
     var a = {}; ['A', 'B', 'C'].forEach(function (p) { a[p] = {}; TYPES.forEach(function (t) { a[p][t] = Array.from(state.answers[p][t]); }); });
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, cid: state.candidateId, advisor: state.advisor, name: state.name, part: state.part, a: a, r: state.ratings }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, copyMe: state.copyMe, cid: state.candidateId, advisor: state.advisor, name: state.name, part: state.part, a: a, r: state.ratings }));
   } catch (e) { /* private mode or storage full: the test still works, just without resume */ }
 }
 function clearSaved() { try { localStorage.removeItem(STORE_KEY); } catch (e) {} }
@@ -87,7 +87,7 @@ function loadSaved() {
 }
 function restore(s) {
   state = freshState();
-  state.token = s.token; state.candidateId = s.cid || null; state.advisor = s.advisor; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
+  state.token = s.token; state.copyMe = !!s.copyMe; state.candidateId = s.cid || null; state.advisor = s.advisor; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
   ['A', 'B', 'C'].forEach(function (p) { TYPES.forEach(function (t) { ((s.a && s.a[p] && s.a[p][t]) || []).forEach(function (i) { state.answers[p][t].add(i); }); }); });
   TYPES.forEach(function (t) { if (s.r && Array.isArray(s.r[t])) state.ratings[t] = s.r[t].slice(0, 2); });
   if (s.lang === 'zh' || s.lang === 'en') lang = s.lang;
@@ -209,7 +209,7 @@ $('#d-next').addEventListener('click', function () {
   var details = { name: name, mobile: mobile, email: email, age: $('#d-age').value, edu: $('#d-edu').value, status: $('#d-status').value,
     field: $('#d-field').value.trim(), lang: lang, purpose: $('#d-purpose') ? $('#d-purpose').value : purpose, consent: true };
   (LIVE ? api('live.php', Object.assign({ action: 'start', client_id: clientId }, details)) : api('start.php', Object.assign({ ref: ref, turnstile: tsToken }, details)))
-    .then(function (r) { state = freshState(); state.token = r.submit_token; state.advisor = r.advisor_name; state.name = name; state.candidateId = r.candidate_id || null; clientId = null; save(); tsToken = LIVE ? 'live' : null; renderPart(); })
+    .then(function (r) { state = freshState(); state.token = r.submit_token; state.advisor = r.advisor_name; state.name = name; state.candidateId = r.candidate_id || null; state.copyMe = !!($('#d-copyme') && $('#d-copyme').checked); clientId = null; save(); tsToken = LIVE ? 'live' : null; renderPart(); })
     .catch(function (e) { $('#d-err').textContent = friendly(e); resetTurnstile(); })
     .then(function () { btn.disabled = false; });
 });
@@ -282,7 +282,7 @@ function payload() {
 }
 function submit() {
   var next = $('#t-next'); next.disabled = true; $('#t-err').textContent = P().submitting;
-  (LIVE ? api('live.php', { action: 'submit', submit_token: state.token, answers: payload() }) : api('submit.php', { submit_token: state.token, answers: payload() }))
+  (LIVE ? api('live.php', { action: 'submit', submit_token: state.token, answers: payload(), copy_me: !!state.copyMe }) : api('submit.php', { submit_token: state.token, answers: payload() }))
     .then(function (r) { state.scores = r.scores; state.code = r.code; state.advisor = r.advisor_name || state.advisor; state.candidateId = r.candidate_id || state.candidateId; state.candidateEmail = !!r.candidate_emailed; clearSaved(); renderResults(); })
     .catch(function (e) { $('#t-err').textContent = friendly(e); })
     .then(function () { next.disabled = false; });

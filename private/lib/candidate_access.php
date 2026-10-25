@@ -163,7 +163,7 @@ function reassign_options(array $map, array $viewer): array
     return $opts;
 }
 
-/** @param array $in pipeline_status? owner_member_id? */
+/** @param array $in pipeline_status? owner_member_id? purpose? */
 function update_candidate(PDO $pdo, array $map, array $viewer, int $id, array $in): void
 {
     $row = load_candidate_row($pdo, $id);
@@ -178,6 +178,15 @@ function update_candidate(PDO $pdo, array $map, array $viewer, int $id, array $i
         }
         $set['pipeline_status'] = $in['pipeline_status'];
         $audit[] = ['candidate.status', ['from' => $row['pipeline_status'], 'to' => $in['pipeline_status']]];
+    }
+    if (array_key_exists('purpose', $in)) {
+        if (!in_array($in['purpose'], PURPOSES, true)) {
+            throw new HttpError(422, 'Unknown purpose.');
+        }
+        if ($in['purpose'] !== $row['purpose']) {
+            $set['purpose'] = $in['purpose'];
+            $audit[] = ['candidate.purpose', ['from' => $row['purpose'], 'to' => $in['purpose']]];
+        }
     }
     if (array_key_exists('owner_member_id', $in)) {
         $to = (int)$in['owner_member_id'];

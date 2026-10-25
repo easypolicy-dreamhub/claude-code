@@ -165,6 +165,7 @@ function renderDetail(c) {
       '<dt>Age group</dt><dd>' + opt(STR.en.opts.age, d.age) + '</dd><dt>Qualification</dt><dd>' + opt(STR.en.opts.edu, d.edu) + '</dd><dt>Status</dt><dd>' + opt(STR.en.opts.status, d.status) + '</dd><dt>Job / studies</dt><dd>' + esc(d.field || '-') + '</dd>' +
       '<dt>Consent</dt><dd>' + esc(fmt(c.consent.at)) + '</dd></dl>' +
     '<div class="no-print"><label class="f" for="dStatus">Follow-up status</label><select id="dStatus">' + c.pipeline.map(function (p) { return '<option value="' + p + '"' + (p === c.status ? ' selected' : '') + '>' + esc(STATUS[p]) + '</option>'; }).join('') + '</select>' +
+      '<label class="f" for="dPurpose" style="margin-top:.8rem">Applying for</label><select id="dPurpose"><option value="career"' + (c.purpose === 'career' ? ' selected' : '') + '>Career</option><option value="internship"' + (c.purpose === 'internship' ? ' selected' : '') + '>Internship</option></select>' +
       '<label class="f" for="dOwner" style="margin-top:.8rem">Advisor</label><select id="dOwner">' + o + '</select>' +
       '<p class="sub" style="margin-top:.6rem">Email: result ' + (c.result_emailed ? 'sent' : '<b>not sent</b>') + ' · advisors ' + (c.advisor_notified ? 'told' : '<b>not told</b>') + '</p></div></div>' +
     results + advisor +
@@ -204,6 +205,9 @@ $('#detail').addEventListener('change', function (e) {
   if (t.id === 'dStatus') {
     req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { pipeline_status: t.value } })
       .then(function (d) { st.current = d.candidate; toast('Status saved: ' + STATUS[t.value]); }).catch(function (er) { toast(er.message, true); t.value = c.status; });
+  } else if (t.id === 'dPurpose') {
+    req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { purpose: t.value } })
+      .then(function (d) { st.current = d.candidate; toast('Now labelled: ' + (t.value === 'internship' ? 'Internship' : 'Career')); }).catch(function (er) { toast(er.message, true); t.value = c.purpose; });
   } else if (t.id === 'dOwner') {
     var name = t.options[t.selectedIndex].textContent;
     if (!confirm('Assign ' + c.name + ' to ' + name + '? ' + (st.viewer && st.viewer.is_admin ? '' : 'You will still see them only if ' + name + ' is you or in your team.'))) { t.value = c.owner.id; return; }

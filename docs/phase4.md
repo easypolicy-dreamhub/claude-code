@@ -23,3 +23,7 @@ Server: `public_html/members/api/live.php`, `private/lib/live.php`. Replaces the
 3. Re-upload `members/apps.js` is included in the zip. Purge the Cloudflare cache.
 
 Tests: `php tests/phase4.php`, `node tests/e2e_live.js`.
+
+## Additions
+- **Change label:** on a candidate's detail page, "Applying for" (Career / Internship) can be changed by anyone who can see the candidate (audited as `candidate.purpose`). Affects the list tag, filters, CSV and email wording only.
+- **Also email me:** a tick on the live test details screen and on the paper-score page. When ticked, the advisor running the session also receives the advisor notice (by default they are skipped). Not remembered between sessions.

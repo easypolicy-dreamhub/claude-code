@@ -84,4 +84,17 @@ $sd = submit_assessment($pdo, $dupe['submit_token'], sample_answers());
 notify_completion($pdo, $cfg, $mail3, $sd['candidate'], $sd['scores'], $sd['code'], $B['id']);
 $t = array_column($mail3->sent, 'to'); sort($t);
 check('Amy and You are told; Bob (in the room) is not nagged', in_array('a@x.com', $t, true) && in_array('you@x.com', $t, true) && !in_array('b@x.com', $t, true));
+
+echo "\nChange the Career / Internship label\n";
+$map = load_member_map($pdo);
+$cand = $m['candidate_id'];
+update_candidate($pdo, $map, $A, $cand, ['purpose' => 'internship']);
+check('owner can relabel to internship', $pdo->query("SELECT purpose FROM candidates WHERE id = $cand")->fetchColumn() === 'internship');
+check('the change is audited', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'candidate.purpose' AND subject_id = $cand")->fetchColumn() === 1);
+update_candidate($pdo, $map, $A, $cand, ['purpose' => 'internship']);
+check('setting the same value again writes no second audit row', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'candidate.purpose' AND subject_id = $cand")->fetchColumn() === 1);
+throws('unknown purpose refused', 422, fn () => update_candidate($pdo, $map, $A, $cand, ['purpose' => 'sales']));
+throws('someone who cannot see the candidate gets 404', 404, fn () => update_candidate($pdo, $map, $B, $cand, ['purpose' => 'career']));
+update_candidate($pdo, $map, $me, $cand, ['purpose' => 'career']);
+check('upline/admin can relabel back', $pdo->query("SELECT purpose FROM candidates WHERE id = $cand")->fetchColumn() === 'career');
 finish();

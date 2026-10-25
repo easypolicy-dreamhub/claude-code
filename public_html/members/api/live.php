@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Advisor live mode (members only, any active member).
  *   POST {action:'start',  client_id?, name, mobile, email?, age?, edu?, status?, field?, lang, purpose, consent:true}
  *        -> { submit_token, candidate_id, advisor_name, existing, completed }
- *   POST {action:'submit', submit_token, answers}            -> { scores, code, candidate_id }  (server scores it)
+ *   POST {action:'submit', submit_token, answers, copy_me?}            -> { scores, code, candidate_id }  (server scores it)
  *   POST {action:'manual', client_id?, <details as above>, scores:{R:{a,b,c,d},...}, confirm_d?}
  *        -> { candidate_id, code, scores, already }
  * The candidate is owned by the advisor running the session; uplines are told by email like any other completion.
@@ -21,6 +21,7 @@ try {
     }
     $in = json_body();
     $action = (string)($in['action'] ?? '');
+    $copyMe = ($in['copy_me'] ?? false) === true;   // "also email me": the advisor in the room gets the same notice as their uplines
     if ($action === 'start') {
         $r = live_start($pdo, $config, $me, $in);
         audit($pdo, (int)$me['id'], 'live.start', $r['candidate_id'], ['existing' => $r['existing']]);
@@ -29,7 +30,7 @@ try {
     if ($action === 'submit') {
         $r = submit_assessment($pdo, (string)($in['submit_token'] ?? ''), $in['answers'] ?? null);
         if (!$r['already']) {
-            $sent = notify_completion($pdo, $config, make_mailer($config), $r['candidate'], $r['scores'], $r['code'], (int)$me['id']);
+            $sent = notify_completion($pdo, $config, make_mailer($config), $r['candidate'], $r['scores'], $r['code'], $copyMe ? null : (int)$me['id']);
         }
         json_response(200, ['scores' => $r['scores'], 'code' => $r['code'], 'candidate_id' => (int)$r['candidate']['id'], 'advisor_name' => $r['advisor_name'],
             'candidate_emailed' => $sent['candidate_sent'] ?? false]);
@@ -39,7 +40,7 @@ try {
         $sent = ['candidate_sent' => false];
         if (!$r['already']) {
             audit($pdo, (int)$me['id'], 'live.manual', $r['candidate_id'], []);
-            $sent = notify_completion($pdo, $config, make_mailer($config), $r['cand'], $r['scores'], $r['code'], (int)$me['id']);
+            $sent = notify_completion($pdo, $config, make_mailer($config), $r['cand'], $r['scores'], $r['code'], $copyMe ? null : (int)$me['id']);
         }
         json_response(200, ['candidate_id' => $r['candidate_id'], 'code' => $r['code'], 'scores' => $r['scores'], 'already' => $r['already'],
             'candidate_emailed' => $sent['candidate_sent']]);

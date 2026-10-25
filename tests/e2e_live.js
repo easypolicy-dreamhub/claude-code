@@ -5,7 +5,9 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
 
 const ROOT = path.resolve(__dirname, '..');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'e3live-'));
-const DB = path.join(tmp, 'db.sqlite'), CFG = path.join(tmp, 'config.php');
+const DB = path.join(tmp, 'db.sqlite'), CFG = path.join(tmp, 'config.php'), MAILS = path.join(tmp, 'mails.jsonl'), SMTPPORT = 8187;
+const mails = () => (fs.existsSync(MAILS) ? fs.readFileSync(MAILS, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : []);
+const rcpt = (from) => mails().slice(from).map((m) => m.to.join(',')).sort();
 const PORT = 8189, JWKS = 8188, BASE = `http://127.0.0.1:${PORT}`, TEAM = 'test.cloudflareaccess.com', AUD = 'aud-test';
 const SHOTS = process.env.SHOTS || tmp;
 let pass = 0, fail = 0;
@@ -31,8 +33,10 @@ const TYPES = 'RIASEC'.split('');
   fs.writeFileSync(CFG, `<?php return [
     'db' => ['dsn' => 'sqlite:${DB}', 'user' => null, 'pass' => null],
     'cf_access' => ['team_domain' => '${TEAM}', 'aud' => '${AUD}', 'cache_dir' => '${path.join(tmp, 'cache')}', 'jwks_url' => 'http://127.0.0.1:${JWKS}/certs'],
-    'allowed_origins' => ['127.0.0.1'], 'base_url' => 'https://dreamhub-e3.com',
+    'allowed_origins' => ['127.0.0.1'], 'base_url' => 'https://dreamhub-e3.com', 'default_owner_email' => 'you@x.com',
+    'mail' => ['transport' => 'smtp', 'host' => '127.0.0.1', 'port' => ${SMTPPORT}, 'secure' => '', 'user' => 'mailer@example.com', 'pass' => 'secret', 'from' => 'hello@dreamhub-e3.com', 'from_name' => 'DreamHub E3'],
   ];`);
+  procs.push(spawn('python3', [path.join(ROOT, 'tests/fakes/smtp.py'), String(SMTPPORT), MAILS], { stdio: 'ignore' }));
   http.createServer((q, r) => { r.setHeader('Content-Type', 'application/json'); r.end(JSON.stringify({ keys: [jwk] })); }).listen(JWKS);
   procs.push(spawn('php', ['-S', `127.0.0.1:${PORT}`, '-t', path.join(ROOT, 'public_html')], { env: { ...process.env, E3_CONFIG: CFG, PHP_CLI_SERVER_WORKERS: '4' }, stdio: 'ignore' }));
   await sleep(1200);
@@ -93,7 +97,12 @@ const TYPES = 'RIASEC'.split('');
   check('saved: owner Alice, source live, no email, completed, 1 assessment', larry && larry.source === 'live' && larry.purpose === 'internship' && larry.email === null && larry.completed_at && d.assessments.filter((a) => a.candidate_id == larry.id).length === 1);
   check('no leftover saved test on the device', await alice.evaluate(() => localStorage.getItem('e3cc.live.v1') === null));
   await alice.click('#waPost'); await alice.waitForSelector('#detail:not([hidden])', { timeout: 8000 });
+  check('detail shows the "Applying for" label as Internship', (await alice.inputValue('#dPurpose')) === 'internship');
+  await alice.selectOption('#dPurpose', 'career');
+  await alice.waitForFunction(() => /Now labelled: Career/.test(document.querySelector('#toast').textContent));
+  check('label changed to Career and saved on the server', dump().candidates.find((c) => c.name === 'Live Larry').purpose === 'career');
   check('advisor view opens the candidate with the advisor notes', /Live Larry/.test(await alice.textContent('#detail')) && /Live session/.test(await alice.textContent('#detail')));
+  check('Larry (no email given, no copy ticked): Amy and You told, Alice (in the room) not', JSON.stringify(rcpt(0)) === JSON.stringify(['<amy@x.com>', '<you@x.com>']), JSON.stringify(rcpt(0)));
   const amy = await open('amy@x.com'), ben = await open('ben@x.com');
   await amy.goto(`${BASE}/members/career-code/dashboard/`); await ben.goto(`${BASE}/members/career-code/dashboard/`);
   check('Amy (Alice\'s upline) can see Larry', (await apiGet(amy, `?id=${larry.id}`))[0] === 200);
@@ -128,8 +137,29 @@ const TYPES = 'RIASEC'.split('');
   const patRow = await apiGet(alice, `?id=${pat.id}`);
   check('dashboard says paper scores typed in', patRow[0] === 200 && patRow[1].candidate.entry === 'paper');
 
-  console.log('\nPaper entry while offline');
+  console.log('\nAlso email me');
   await alice.click('#another'); await alice.waitForSelector('#f:not([hidden])');
+  await alice.fill('#name', 'Copy Cora'); await alice.fill('#mobile', '018-222 3344'); await fillScores(); await alice.click('#consent');
+  const before = mails().length;
+  await alice.check('#copyme'); await alice.click('#save'); await alice.waitForSelector('#done:not([hidden])');
+  check('paper entry with "Also email me" ticked: Alice, Amy and You are all emailed', JSON.stringify(rcpt(before)) === JSON.stringify(['<alice@x.com>', '<amy@x.com>', '<you@x.com>']), JSON.stringify(rcpt(before)));
+  await alice.click('#another'); await alice.waitForSelector('#f:not([hidden])');
+  await alice.fill('#name', 'Plain Paul'); await alice.fill('#mobile', '018-222 5566'); await fillScores(); await alice.click('#consent');
+  const before2 = mails().length;
+  await alice.click('#save'); await alice.waitForSelector('#done:not([hidden])');
+  check('...and without the tick, Alice is not emailed (Amy and You only)', JSON.stringify(rcpt(before2)) === JSON.stringify(['<amy@x.com>', '<you@x.com>']), JSON.stringify(rcpt(before2)));
+  // live test with the tick
+  await alice.goto(`${BASE}/members/career-code/live/`); await alice.click('#startBtn');
+  await alice.fill('#d-name', 'Live Lena'); await alice.fill('#d-mobile', '018-333 4455'); await alice.click('#d-consent'); await alice.check('#d-copyme');
+  const before3 = mails().length;
+  await alice.click('#d-next'); await alice.waitForSelector('#s-test:not([hidden])');
+  await tickPart('A'); await alice.click('#t-next'); await tickPart('B'); await alice.click('#t-next'); await tickPart('C'); await alice.click('#t-next');
+  for (const t of TYPES) for (const k of [0, 1]) await alice.click(`#t-body .rate button[data-t="${t}"][data-k="${k}"][data-v="${RATE[t][k]}"]`);
+  await alice.click('#t-next'); await alice.waitForSelector('#s-results:not([hidden])');
+  check('live test with "Also email me" ticked: Alice, Amy and You are all emailed', JSON.stringify(rcpt(before3)) === JSON.stringify(['<alice@x.com>', '<amy@x.com>', '<you@x.com>']), JSON.stringify(rcpt(before3)));
+
+  console.log('\nPaper entry while offline');
+  await alice.goto(`${BASE}/members/career-code/manual/`);
   check('form is blank again', (await alice.inputValue('#name')) === '' && (await alice.inputValue('input[data-t="S"][data-k="d"]')) === '');
   await alice.fill('#name', 'Offline Olive'); await alice.fill('#mobile', '017-111 2200'); await fillScores({ S: [6, 6, 4, 13] }); await alice.click('#consent');
   await alice.context().setOffline(true);

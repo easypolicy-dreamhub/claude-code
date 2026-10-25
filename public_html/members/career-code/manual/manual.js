@@ -82,7 +82,7 @@ function reset() {
 }
 function collect() {
   var r = read();
-  return { name: $('#name').value.trim(), mobile: $('#mobile').value.trim(), email: $('#email').value.trim(), purpose: $('#purpose').value, lang: $('#lang').value, consent: $('#consent').checked, scores: r.scores, missing: r.missing };
+  return { name: $('#name').value.trim(), mobile: $('#mobile').value.trim(), email: $('#email').value.trim(), purpose: $('#purpose').value, lang: $('#lang').value, consent: $('#consent').checked, copyMe: $('#copyme').checked, scores: r.scores, missing: r.missing };
 }
 function validate(c) {
   var errs = [];
@@ -110,7 +110,7 @@ function save(force) {
   $('#err').textContent = errs.join(' ');
   if (errs.length) return;
   if (!clientId) clientId = newId();
-  var body = { client_id: clientId, name: c.name, mobile: c.mobile, email: c.email, purpose: c.purpose, lang: c.lang, consent: true, scores: c.scores };
+  var body = { client_id: clientId, name: c.name, mobile: c.mobile, email: c.email, purpose: c.purpose, lang: c.lang, consent: true, scores: c.scores, copy_me: c.copyMe };
   if (force || confirmD) body.confirm_d = true;
   var btn = $('#save'); btn.disabled = true;
   post(Object.assign({ action: 'manual' }, body))
