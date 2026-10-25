@@ -75,14 +75,6 @@ const APPS = [
     note:  "You see your own candidates and your team's."
   },
   {
-    name:  "Team Activity",
-    url:   "/members/activity/",
-    icon:  "📈",
-    about: "Who is adding candidates, where everyone stands, and who needs a follow-up",
-    group: "Leader Tools",
-    note:  "You see yourself and your team. Nothing from other teams."
-  },
-  {
     name:  "Million Income Calculator",
     url:   "/members/million-income/",
     icon:  "💰",
@@ -111,6 +103,14 @@ const APPS = [
     about: "Your team tree and personal Career Code links; admins change ranks, move and remove members",
     group: "Leader Tools",
     note:  "Everyone sees their own team. Changes: super admin and team admins only."
+  },
+  {
+    name:  "Team Activity",
+    url:   "/members/activity/",
+    icon:  "📈",
+    about: "Who is adding candidates, where everyone stands, and who needs a follow-up",
+    group: "Leader Tools",
+    note:  "You see yourself and your team. Nothing from other teams."
   },
   {
     name:  "Agency Report Generator",
