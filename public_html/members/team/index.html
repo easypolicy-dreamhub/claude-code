@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="/images/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Barlow:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
   --slate:#24333A; --taupe:#B9AFA7; --brown:#6E625A;
@@ -36,7 +36,7 @@ h1,h2,h3{ font-family:Poppins,system-ui,sans-serif; margin:0; line-height:1.25; 
 .hero .kicker{ margin:0 0 .5rem; color:var(--taupe); font-weight:500; font-size:.95rem; }
 .hero h1{ font-size:clamp(1.9rem,5.5vw,2.8rem); letter-spacing:-.02em; margin-bottom:.5rem; }
 .hero p.intro{ margin:0; color:#CFD5D8; max-width:40rem; }
-main{ margin-top:-2.2rem; padding-bottom:3rem; }
+main{ margin-top:1.25rem; padding-bottom:3rem; }
 .card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.1rem; box-shadow:0 10px 30px rgba(36,51,58,0.1); }
 .toolbar{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.7rem; }
 .check{ display:flex; align-items:center; gap:.5rem; font-size:.9rem; color:var(--muted); min-height:40px; } .check input{ width:20px; height:20px; }
@@ -74,19 +74,11 @@ input[type=text],input[type=email],select{ width:100%; min-height:44px; padding:
 .toast.bad{ background:var(--bad); }
 .legend{ font-size:.84rem; color:var(--muted); margin-top:.6rem; }
 </style>
+<link rel="stylesheet" href="/members/e3-toolkit.css?v=1">
 </head>
 <body>
-<div class="top">
-  <div class="bar">
-    <a class="brand" href="/members/">Dream<span>Hub</span> E3</a>
-    <a class="back" href="/members/">Back to toolkit</a>
-  </div>
-  <div class="hero">
-    <p class="kicker" id="who">E3 member area</p>
-    <h1>Team</h1>
-    <p class="intro" id="intro">Your place in the team, and everyone under you. Who you can see here is who you can see in every tool.</p>
-  </div>
-</div>
+<nav class="e3-bar no-print" aria-label="E3 toolkit"><a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>E3 Toolkit</a><span class="e3-brand">Dream<span>Hub</span> E3</span></nav>
+<header class="topbar"><h1>Team<small id="intro">Your place in the team, and everyone under you. Who you can see here is who you can see in every tool.</small></h1><span class="who" id="who"></span></header>
 <main>
   <div class="card">
     <div class="toolbar">

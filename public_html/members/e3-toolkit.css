@@ -1,0 +1,17 @@
+/* E3 Toolkit page header: the same two-part header as Agency Report Generator, shared by every Career Code and Team page.
+   1) .e3-bar: the slim dark bar with "E3 Toolkit" on the left and the DreamHub E3 name on the right.
+   2) .topbar: the white strip with the page title, a short subtitle and any buttons on the right. */
+.e3-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;min-height:46px;background:#24333A;color:#FFFFFF;font:500 14px/1.2 "DM Sans",system-ui,sans-serif;position:relative;z-index:100}
+.e3-bar a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#FFFFFF;text-decoration:none}
+.e3-bar a:hover{color:#B9AFA7}
+.e3-bar .e3-brand{font:700 15px/1 Poppins,"DM Sans",system-ui,sans-serif;color:#FFFFFF}
+.e3-bar .e3-brand span{color:#B9AFA7}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:12px 20px;background:#ffffff;border-bottom:1px solid #E2DDD8}
+.topbar h1{font:700 19px/1.2 Poppins,Montserrat,sans-serif;margin:0;flex:1;min-width:0;letter-spacing:-.01em;color:#24333A}
+.topbar h1 small{display:block;font:500 13px Barlow,"DM Sans",sans-serif;color:#5C6870;letter-spacing:0}
+.topbar .who{font:500 13px Barlow,"DM Sans",sans-serif;color:#5C6870;text-align:right}
+.topbar .stepinfo{font:500 13px Barlow,"DM Sans",sans-serif;color:#5C6870}
+.tb-btn{border:1px solid #E2DDD8;background:#ffffff;border-radius:10px;padding:9px 14px;font:600 14px "DM Sans",system-ui,sans-serif;color:#24333A;min-height:42px;cursor:pointer}
+.tb-btn.primary{background:#24333A;color:#ffffff;border-color:#24333A}
+@media (max-width:560px){.topbar{flex-wrap:wrap}.topbar .who{text-align:left;flex-basis:100%}}
+@media print{.e3-bar,.topbar{display:none !important}}
