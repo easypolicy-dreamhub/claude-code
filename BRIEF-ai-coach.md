@@ -49,6 +49,9 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 ## Knowledge (PDFs)
 - None at build time. The leader uploads about 8 PDFs after launch, and adds more over time.
 - Upload: PDF only, checked on the server (file type and size limit).
+- **Multiple PDFs in one go:** the upload lets the leader pick several PDFs at once (or drag them in together). Show each file's result separately: added, replaced, or failed and why. One bad file must not stop the others.
+- Check the hosting's PHP upload limits (`upload_max_filesize`, `post_max_size`, `max_file_uploads`) so about 10 PDFs can go up together. If the host can't allow that, send the files one after another in the background so it still feels like one upload.
+- The Claude API limits how much PDF content fits in one request. Show the total size in the Settings status line and warn the leader before the knowledge gets too big.
 - **Same file name = replace.** Uploading a PDF with an existing name overwrites the old one, so there are no duplicates.
 - The super admin can delete a PDF.
 - **How Claude uses them:** the knowledge is small, so send all the PDFs with every request (no RAG) and use **prompt caching** so repeat requests are cheap and fast. The cache refreshes automatically when a PDF changes.
@@ -89,6 +92,7 @@ Use a current Claude model through the Anthropic API. The developer should pick 
 - [ ] A normal member calling the upload, save, delete, restore or usage endpoints directly gets 403.
 - [ ] PDFs, instructions and chats can't be opened by URL.
 - [ ] Uploading a PDF with the same name replaces the old one.
+- [ ] Uploading 8 PDFs in one go works, and each file shows its own result.
 - [ ] A 6th instruction save removes the oldest version, so only 5 remain.
 - [ ] Alan's memory carries over to the next day, and Brenda can't see any of Alan's chats.
 - [ ] Asking in Chinese gets a Simplified Chinese reply, asking in English gets an English reply.
