@@ -48,7 +48,7 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 - Memory carries across chats. When Alan comes back another day, the coach remembers his earlier chats and progress.
 - **Each agent's memory is private.** Brenda never sees Alan's chats, and Alan never sees hers. Memory is keyed by the member ID that `boot_member_request()` returns, never by anything the browser sends.
 - Store each agent's recent messages plus a short "coaching notes" summary that the coach updates, so the conversation history doesn't grow without limit.
-- Agents can see their own past chats. The super admin can see questions through the usage view (agents should be told this).
+- Agents can see their own past chats. The super admin can see their questions (not the coach's answers) in the Usage tab.
 
 ## Handoff to the team leader (WhatsApp)
 - When the coach can't answer, or the answer isn't in the PDFs, it says so and shows an **"Ask my leader on WhatsApp"** button.
@@ -56,16 +56,21 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 - The leader's WhatsApp number goes in `config.php`.
 
 ## Usage view (super admin only, the Usage tab on the coach page)
-- **Agent list:** each agent's name, last used date, and number of chats. Agents who never used it are shown too, so the leader can see who needs a nudge.
-- **Tap an agent:** see their chats, newest first.
-- **Handoffs:** questions sent to the leader on WhatsApp are flagged, so gaps in the PDFs are easy to spot.
-- **Date filter:** this week, this month, all time.
-- Enforced on the server with `require_admin`, like every other admin action. Agents can never open another agent's chats.
-- **Open question for the team leader:** should the leader see full conversations, or only the agents' questions?
+- **Style it like the existing Team Activity page**, so it feels part of the same toolkit:
+  - The same **Last 7 days / Last 30 days / All time** buttons.
+  - **Number tiles:** Chats, Agents using it, Handoffs to leader.
+  - **"Needs a nudge":** agents who haven't used the coach in 7 days (like "Needs follow-up").
+  - **People table:** Name, Chats, Handoffs, Last active. Tap a name to see that agent's questions, newest first.
+- **The leader sees only the agents' questions, never the coach's answers.** The server must leave the answers out of the usage data it sends. Hiding them in the page is not enough.
+- Questions sent to the leader on WhatsApp are flagged, so gaps in the PDFs are easy to spot.
+- Agents who never used the coach are listed too.
+- Enforced on the server with `require_admin`, like every other admin action. Agents can never see another agent's chats.
+- Agents are told on the coach page that the team leader can see the questions they ask.
+- **Do not add anything to the Team Activity page.** Other leaders can see Team Activity, and coach usage is for the super admin only.
 
 ## Languages
-- The coach replies in **English or Chinese**, matching the language the agent writes in. The PDFs stay as they are.
-- **Open question for the team leader:** Simplified or Traditional Chinese?
+- The coach replies in **English or Simplified Chinese**, matching the language the agent writes in. The PDFs stay as they are.
+- If an agent writes in Traditional Chinese, the coach still replies in Simplified Chinese.
 
 ## Model
 Use a current Claude model through the Anthropic API. The developer should pick the model and check prices at build time.
@@ -77,6 +82,7 @@ Use a current Claude model through the Anthropic API. The developer should pick 
 - [ ] Uploading a PDF with the same name replaces the old one.
 - [ ] A 6th instruction save removes the oldest version, so only 5 remain.
 - [ ] Alan's memory carries over to the next day, and Brenda can't see any of Alan's chats.
-- [ ] Asking in Chinese gets a Chinese reply, asking in English gets an English reply.
+- [ ] Asking in Chinese gets a Simplified Chinese reply, asking in English gets an English reply.
+- [ ] The Usage tab's data from the server contains agents' questions only, no coach answers.
 - [ ] The WhatsApp button opens a chat to the leader with the question filled in.
 - [ ] The API key never appears in the page source or the browser's network traffic.
