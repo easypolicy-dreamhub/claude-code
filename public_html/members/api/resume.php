@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../../private/lib/candidate_access.php';
 try {
     $map = load_member_map($pdo);
     $method = $_SERVER['REQUEST_METHOD'];
-    if ($method === 'POST' && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 && !$_POST && !$_FILES) {
+    if ($method === 'POST' && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 && stripos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') === 0 && !$_POST && !$_FILES) {
         throw new HttpError(413, 'That file is too big. The limit is 5 MB.');
     }
     $id = (int)($method === 'POST' ? ($_POST['candidate_id'] ?? 0) : ($_GET['candidate_id'] ?? 0));

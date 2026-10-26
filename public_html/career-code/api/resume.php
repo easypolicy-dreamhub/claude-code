@@ -14,7 +14,7 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new HttpError(405, 'Method not allowed.');
     }
-    if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 && !$_POST && !$_FILES) {   // bigger than the server's post_max_size: PHP drops everything
+    if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 && stripos($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data') === 0 && !$_POST && !$_FILES) {   // bigger than the server's post_max_size: PHP drops everything
         throw new HttpError(413, 'That file is too big. The limit is 5 MB.');
     }
     $file = $_FILES['file'] ?? null;
