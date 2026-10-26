@@ -45,12 +45,15 @@ export const BUSINESS_TYPE_LABEL = {
   sole: "Sole proprietorship",
   partnership: "Partnership",
   sdn: "Sdn Bhd (private limited company)",
+  holdco: "Investment holding company",
 };
 
 export const BUSINESS_TYPE_HINT = {
   sole: "A sole proprietor can will away the business assets, but not the business itself. The SSM registration must be closed on death.",
   partnership:
     "Under the Partnership Act a partnership is dissolved on a partner's death unless the partnership agreement says otherwise. Only the business interest can pass to heirs.",
+  holdco:
+    "Only the shares pass on death; the properties and investments stay in the company, so there is no separate transfer for each one. Make sure another director can act and the constitution covers a shareholder's death, otherwise the company can freeze until probate is granted.",
   sdn: "Only the deceased's shares pass under the will. The company's assets belong to the company, not the shareholder, and cannot be given away as personal estate.",
 };
 

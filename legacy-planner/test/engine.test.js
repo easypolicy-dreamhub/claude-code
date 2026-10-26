@@ -264,3 +264,12 @@ test("scenario 7b: no surviving parent → Amanah Raya holds the minor's trust p
   const o = analyse(planWith([cindy], [asset("Policy", "insurance", 100000, "nominee", [{ personId: cindy.id, pct: 100 }])]));
   assert.ok(flag(o, /Amanah Raya/));
 });
+
+test("investment holding company: checklist item exists and is flagged until reviewed", () => {
+  const kid = person("Kid", "son");
+  const plan = planWith([kid], [asset("Family Holdings Sdn Bhd", "business", 3000000, "estate", [], { businessType: "holdco" })]);
+  assert.equal(plan.checklist.holding_company.status, "todo");
+  assert.ok(flag(analyse(plan), /investment holding company are recorded/));
+  plan.checklist.holding_company = { status: "done", notes: "" };
+  assert.ok(!flag(analyse(plan), /investment holding company are recorded/));
+});

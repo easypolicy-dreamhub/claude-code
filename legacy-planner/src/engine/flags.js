@@ -108,11 +108,18 @@ export function buildFlags(plan, current, defaultLaw, willInPlace) {
 
   // --- Business -----------------------------------------------------------------
   if (
-    plan.assets.some((a) => a.category === "business" && a.route === "estate" && a.value > 0) &&
+    plan.assets.some((a) => a.category === "business" && a.route === "estate" && a.value > 0 && !(a.businessType === "holdco" && done("holding_company"))) &&
     !done("business_trust") &&
     !done("business_agreement")
   ) {
     add("medium", "Business interests sit in the estate with no succession trust or shareholder / partnership agreement recorded. Control may be split among heirs and delayed by probate.");
+  }
+  const holdcos = plan.assets.filter((a) => a.category === "business" && a.businessType === "holdco" && a.value > 0);
+  if (holdcos.length && !done("holding_company")) {
+    add(
+      "medium",
+      `Shares in an investment holding company are recorded (${holdcos.map((a) => a.name).join(", ")}), but the checklist item for reviewing it isn't marked done. Check that a second director can act, the constitution covers a shareholder's death, and a will or trust says who takes the shares.`,
+    );
   }
   plan.assets
     .filter((a) => a.category === "business" && a.value > 0 && a.businessType)

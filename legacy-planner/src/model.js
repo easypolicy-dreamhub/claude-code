@@ -10,7 +10,7 @@ export const GROUPS = [
 
 const CHECKLIST_IDS = [
   "will", "executor", "guardian", "insurance", "retirement", "joint", "living_trust", "testamentary_trust",
-  "business_trust", "business_agreement", "foundation", "foreign_assets", "hibah", "charity", "poa", "amd",
+  "business_trust", "business_agreement", "holding_company", "foundation", "foreign_assets", "hibah", "charity", "poa", "amd",
   "inventory", "digital", "letter", "review",
 ];
 
@@ -83,6 +83,12 @@ export function checklistItems(muslim) {
       group: "Trusts and structures",
       title: "Shareholder / partnership agreement and key-person cover",
       why: "Buy-sell terms, who steps in, and funding for a buy-out. A partnership is dissolved on a partner’s death unless the agreement says otherwise. Mark N/A if there is no business.",
+    },
+    {
+      id: "holding_company",
+      group: "Trusts and structures",
+      title: "Investment holding company reviewed",
+      why: "A private company (Sdn Bhd) that owns the properties or investments, so only its shares pass on death instead of each asset. This avoids a separate transfer (and roughly 1% in fees) for every property and keeps heirs out of fractional co-ownership of land titles. The company can keep collecting rent and paying loans during probate \u2014 but only if another director can act, so appoint a second director and make sure the constitution says what happens to a shareholder\u2019s shares on death (pre-emption, share classes for control versus income). The shares still need a will or trust, minors\u2019 shares still need a trustee, and moving existing properties into a company can trigger stamp duty and RPGT, so confirm the costs with a tax adviser first. Company money cannot be used to pay personal debts or estate costs. Mark N/A if not applicable. Record the shares in the Assets tab as a business interest of type \u201CInvestment holding company.\u201D",
     },
     {
       id: "foundation",
