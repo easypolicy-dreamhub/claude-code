@@ -24,7 +24,8 @@ function activity_summary(PDO $pdo, array $map, array $viewer, string $period, ?
     $inScope = static fn (int $ownerId): bool => $scope === null || in_array($ownerId, $scope, true);
 
     $cands = [];
-    foreach ($pdo->query('SELECT id, owner_member_id, name, pipeline_status, source, purpose, started_at, completed_at FROM candidates ORDER BY id') as $c) {
+    foreach ($pdo->query('SELECT c.id, c.owner_member_id, c.name, c.pipeline_status, c.source, c.purpose, c.started_at, c.completed_at, a.scores_json AS a_scores FROM candidates c
+        LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id) ORDER BY c.id') as $c) {
         if ($inScope((int)$c['owner_member_id'])) {
             $cands[(int)$c['id']] = $c;
         }
@@ -67,6 +68,26 @@ function activity_summary(PDO $pdo, array $map, array $viewer, string $period, ?
         unset($row);
     }
     usort($followUp, static fn (array $a, array $b): int => $b['days'] <=> $a['days'] ?: $a['id'] <=> $b['id']);
+
+    // DISC step: who is ready to be invited, and who was invited but has not done it. Same tags as the candidate list.
+    $open = array_filter($cands, static fn (array $c): bool => $c['completed_at'] !== null && !in_array($c['pipeline_status'], DISC_CLOSED_STATUSES, true) && $c['a_scores'] !== null);
+    $latestDisc = disc_latest($pdo, array_keys($open));
+    $ready = [];
+    $waiting = [];
+    foreach ($open as $cid => $c) {
+        $l = $latestDisc[$cid];
+        $st = disc_state(assess_candidate(json_decode((string)$c['a_scores'], true), 'en')['verdict']['key'], true, (string)$c['pipeline_status'], $l['invite'], $l['result'], $now);
+        $owner = $map[(int)$c['owner_member_id']]['name'] ?? '';
+        if ($st['tag'] === 'ready') {
+            $ready[] = ['id' => $cid, 'name' => $c['name'], 'owner' => $owner, 'since' => iso($c['completed_at']), 'days' => (int)floor(($now - strtotime($c['completed_at'] . ' UTC')) / 86400)];
+        } elseif ($st['tag'] === 'overdue' || $st['tag'] === 'expired') {
+            $from = $l['invite']['last_sent_at'] ?? $l['invite']['created_at'];
+            $waiting[] = ['id' => $cid, 'name' => $c['name'], 'owner' => $owner, 'tag' => $st['tag'], 'since' => iso($from), 'days' => (int)floor(($now - strtotime($from . ' UTC')) / 86400)];
+        }
+    }
+    $byDays = static fn (array $a, array $b): int => $b['days'] <=> $a['days'] ?: $a['id'] <=> $b['id'];
+    usort($ready, $byDays);
+    usort($waiting, $byDays);
 
     // Staff actions on candidates (status changes, reassigns), only on candidates this viewer may see.
     $events = [];
@@ -119,5 +140,5 @@ function activity_summary(PDO $pdo, array $map, array $viewer, string $period, ?
     }
 
     return ['period' => $period, 'totals' => $totals, 'status_now' => $statusNow, 'people' => $rows, 'follow_up' => array_slice($followUp, 0, 20),
-        'follow_up_days' => FOLLOW_UP_DAYS, 'feed' => $feed, 'viewer' => ['id' => (int)$viewer['id'], 'name' => $viewer['name'], 'is_admin' => (bool)$viewer['is_admin']]];
+        'follow_up_days' => FOLLOW_UP_DAYS, 'ready_to_invite' => array_slice($ready, 0, 20), 'disc_waiting' => array_slice($waiting, 0, 20), 'feed' => $feed, 'viewer' => ['id' => (int)$viewer['id'], 'name' => $viewer['name'], 'is_admin' => (bool)$viewer['is_admin']]];
 }

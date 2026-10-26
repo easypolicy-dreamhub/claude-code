@@ -273,7 +273,7 @@ function plan_remove_group(PDO $pdo, array $map, array $actor, int $id): array
 }
 
 /** Deactivates the whole group (so it can be reactivated later) and deletes their candidates for their privacy. */
-function remove_group(PDO $pdo, array $actor, int $id, string $confirm): array
+function remove_group(PDO $pdo, array $actor, int $id, string $confirm, array $config = []): array
 {
     if ($confirm !== 'REMOVE') {
         throw new HttpError(422, 'Type REMOVE to confirm.');
@@ -283,13 +283,23 @@ function remove_group(PDO $pdo, array $actor, int $id, string $confirm): array
     $ids = array_column($plan['people'], 'id');
     $in = implode(',', array_map('intval', $ids));
     $now = gmdate('Y-m-d H:i:s');
+    $files = [];
     $pdo->beginTransaction();
     try {
         $cids = $pdo->query("SELECT id FROM candidates WHERE owner_member_id IN ($in)")->fetchAll(PDO::FETCH_COLUMN);
+        $files = resume_collect($pdo, $cids);
         if ($cids) {
             $cin = implode(',', array_map('intval', $cids));
             $pdo->exec("UPDATE candidates SET duplicate_of = NULL WHERE duplicate_of IN ($cin)");
-            $pdo->exec("DELETE FROM assessments WHERE candidate_id IN ($cin)");
+            foreach (['candidate_files', 'disc_results', 'disc_invites', 'assessments'] as $tbl) {
+                try {
+                    $pdo->exec("DELETE FROM $tbl WHERE candidate_id IN ($cin)");
+                } catch (PDOException $e) {
+                    if ($tbl === 'assessments') {
+                        throw $e;                       // the others may not exist yet on an older database
+                    }
+                }
+            }
             $pdo->exec("DELETE FROM candidates WHERE id IN ($cin)");
         }
         // One batch id for this removal, set only on people still active: "reactivate with team" then brings
@@ -301,6 +311,7 @@ function remove_group(PDO $pdo, array $actor, int $id, string $confirm): array
         $pdo->rollBack();
         throw $e;
     }
+    resume_unlink($config, $files);
     return ['removed' => count($ids), 'candidates_deleted' => count($cids), 'emails' => array_column($plan['people'], 'email')];
 }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/candidates.php';
 require_once __DIR__ . '/advisor.php';
 require_once __DIR__ . '/disc_emails.php';
+require_once __DIR__ . '/resume.php';
 
 /**
  * DISC (working-style) questionnaire for candidates. 28 questions; for each one the person picks the word that is
@@ -312,7 +313,7 @@ function disc_find_invite(PDO $pdo, string $token): array
     if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
         throw new HttpError(404, 'This link is not valid.');
     }
-    $stmt = $pdo->prepare('SELECT i.*, c.name AS c_name, c.mobile AS c_mobile, c.lang AS c_lang, c.email AS c_email FROM disc_invites i JOIN candidates c ON c.id = i.candidate_id WHERE i.token = ?');
+    $stmt = $pdo->prepare('SELECT i.*, c.name AS c_name, c.mobile AS c_mobile, c.lang AS c_lang, c.email AS c_email, c.purpose AS c_purpose FROM disc_invites i JOIN candidates c ON c.id = i.candidate_id WHERE i.token = ?');
     $stmt->execute([$token]);
     $r = $stmt->fetch();
     if (!$r) {
@@ -333,7 +334,9 @@ function disc_public_info(PDO $pdo, string $token, ?int $now = null): array
     $now ??= time();
     $i = disc_find_invite($pdo, $token);
     $state = $i['completed_at'] !== null ? 'done' : (disc_ts($i['expires_at']) <= $now ? 'expired' : ((int)$i['wrong_tries'] >= DISC_MAX_WRONG && $i['mode'] === 'email' ? 'locked' : 'ok'));
-    return ['first_name' => disc_first_name((string)$i['c_name']), 'lang' => $i['c_lang'], 'needs_digits' => $i['mode'] === 'email', 'state' => $state];
+    $res = resume_get($pdo, (int)$i['candidate_id']);
+    return ['first_name' => disc_first_name((string)$i['c_name']), 'lang' => $i['c_lang'], 'needs_digits' => $i['mode'] === 'email', 'state' => $state,
+        'resume' => ['required' => $i['c_purpose'] === 'internship', 'have' => $res !== null, 'name' => $res['name'] ?? null]];
 }
 
 function disc_last4(string $mobile): string
@@ -376,6 +379,9 @@ function disc_submit(PDO $pdo, string $token, string $last4, bool $consent, mixe
     $now ??= time();
     $i = disc_find_invite($pdo, $token);
     disc_gate($pdo, $i, $last4, $now);
+    if ($i['c_purpose'] === 'internship' && resume_get($pdo, (int)$i['candidate_id']) === null) {
+        throw new HttpError(422, 'Please upload your resume before you continue.');
+    }
     if (!$consent) {
         throw new HttpError(422, 'Consent is required to continue.');
     }
@@ -461,4 +467,13 @@ function disc_detail(array $config, array $cand, array $latest, string $lang, ?i
         ],
         'result' => $latest['result'] === null ? null : disc_advisor_view($latest['result'], $cand['a_code'] ?? null, $lang),
     ];
+}
+
+/** The candidate uploads their resume from the first DISC screen (same link + digits as the questionnaire). */
+function disc_resume_upload(PDO $pdo, array $config, string $token, string $last4, array $file, ?int $now = null): array
+{
+    $i = disc_find_invite($pdo, $token);
+    disc_gate($pdo, $i, $last4, $now ?? time());
+    $r = resume_store($pdo, $config, (int)$i['candidate_id'], $file, 'candidate');
+    return ['name' => $r['name'], 'size' => $r['size']];
 }

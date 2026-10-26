@@ -74,7 +74,7 @@ try {
             $result = plan_remove_group($pdo, $map, $me, $id);
             break;
         case 'remove_group':
-            $result = remove_group($pdo, $me, $id, (string)($in['confirm'] ?? ''));
+            $result = remove_group($pdo, $me, $id, (string)($in['confirm'] ?? ''), $config);
             break;
         case 'preview_reactivate':
             $result = plan_reactivate($map, $me, $id);

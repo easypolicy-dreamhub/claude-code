@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/candidates.php';
 require_once __DIR__ . '/advisor.php';
 require_once __DIR__ . '/disc.php';
+require_once __DIR__ . '/resume.php';
 
 const PIPELINE = ['new', 'contacted', 'interviewed', 'joined', 'not_suitable'];
 const LIST_PAGE_SIZE = 25;
@@ -29,7 +30,7 @@ function iso(?string $utc): ?string
 }
 
 /** @param ?array $row joined assessment columns a_scores / a_code (null when unfinished) */
-function candidate_summary(array $c, array $map, ?array $disc = null): array
+function candidate_summary(array $c, array $map, ?array $disc = null, ?bool $hasResume = null): array
 {
     $scores = isset($c['a_scores']) ? json_decode((string)$c['a_scores'], true) : null;
     $verdict = $scores ? assess_candidate($scores, 'en')['verdict'] : null;
@@ -47,7 +48,7 @@ function candidate_summary(array $c, array $map, ?array $disc = null): array
         'verdict' => $verdict ? ['key' => $verdict['key'], 'title' => $verdict['title']] : null,
         'started_at' => iso($c['started_at']), 'completed_at' => iso($c['completed_at']),
         'result_emailed' => $c['result_emailed_at'] !== null, 'advisor_notified' => $c['notified_at'] !== null,
-        'disc' => ['tag' => $ds['tag']],
+        'disc' => ['tag' => $ds['tag']], 'resume' => $hasResume,
     ];
 }
 
@@ -108,8 +109,9 @@ function list_candidates(PDO $pdo, array $map, array $viewer, array $f): array
     $stmt->execute($args);
     $rows = $stmt->fetchAll();
     $discs = disc_latest($pdo, array_column($rows, 'id'));
+    $withResume = resume_flags($pdo, array_column($rows, 'id'));
     return [
-        'candidates' => array_map(static fn (array $c) => candidate_summary($c, $map, $discs[(int)$c['id']] ?? null), $rows),
+        'candidates' => array_map(static fn (array $c) => candidate_summary($c, $map, $discs[(int)$c['id']] ?? null, isset($withResume[(int)$c['id']])), $rows),
         'total' => $total, 'page' => $page, 'page_size' => LIST_PAGE_SIZE,
     ];
 }
@@ -132,6 +134,8 @@ function get_candidate(PDO $pdo, array $map, array $viewer, int $id, string $lan
     $latest = disc_latest($pdo, [$id])[$id];
     $out = candidate_summary($row, $map, $latest);
     $out['disc'] = disc_detail($config, $row, $latest, $lang);
+    $rs = resume_get($pdo, $id);
+    $out['resume'] = $rs === null ? null : ['name' => $rs['name'], 'size' => $rs['size'], 'at' => iso($rs['created_at']), 'by_candidate' => $rs['uploaded_by'] === 'candidate'];
     foreach (['age_group' => 'age', 'education' => 'edu', 'work_status' => 'status'] as $col => $key) {
         $out['details'][$key] = $row[$col] === null ? null : (int)$row[$col];
     }
@@ -224,7 +228,7 @@ function update_candidate(PDO $pdo, array $map, array $viewer, int $id, array $i
 }
 
 /** PDPA: an admin can erase a candidate (and their results) on request. The audit entry keeps no personal data. */
-function delete_candidate(PDO $pdo, array $map, array $viewer, int $id): void
+function delete_candidate(PDO $pdo, array $map, array $viewer, int $id, array $config = []): void
 {
     if (!$viewer['is_admin']) {
         throw new HttpError(403, 'Admins only.');
@@ -233,9 +237,11 @@ function delete_candidate(PDO $pdo, array $map, array $viewer, int $id): void
     if (!$row) {
         throw new HttpError(404, 'Candidate not found.');
     }
+    $files = resume_collect($pdo, [$id]);
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE candidates SET duplicate_of = NULL WHERE duplicate_of = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM candidate_files WHERE candidate_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM disc_results WHERE candidate_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM disc_invites WHERE candidate_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM assessments WHERE candidate_id = ?')->execute([$id]);
@@ -246,6 +252,7 @@ function delete_candidate(PDO $pdo, array $map, array $viewer, int $id): void
         $pdo->rollBack();
         throw $e;
     }
+    resume_unlink($config, $files);
 }
 
 /** Spreadsheet formulas in names ("=HYPERLINK(...)") must not run when an admin opens the CSV. */

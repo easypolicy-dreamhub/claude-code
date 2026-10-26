@@ -30,7 +30,7 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1', typ: 'JWT' })
   fs.writeFileSync(CFG, `<?php return [
     'db' => ['dsn' => 'sqlite:${DB}', 'user' => null, 'pass' => null],
     'cf_access' => ['team_domain' => '${TEAM}', 'aud' => '${AUD}', 'cache_dir' => '${path.join(tmp, 'cache')}', 'jwks_url' => 'http://127.0.0.1:${JWKS}/certs'],
-    'allowed_origins' => ['127.0.0.1'], 'base_url' => '${BASE}', 'default_owner_email' => 'you@x.com', 'ip_salt' => 'e2e',
+    'allowed_origins' => ['127.0.0.1'], 'base_url' => '${BASE}', 'default_owner_email' => 'you@x.com', 'ip_salt' => 'e2e', 'upload_dir' => '${path.join(tmp, 'uploads')}',
     'mail' => ['transport' => 'smtp', 'host' => '127.0.0.1', 'port' => ${SMTPPORT}, 'secure' => '', 'user' => 'mailer@example.com', 'pass' => 'secret', 'from' => 'hello@dreamhub-e3.com', 'from_name' => 'DreamHub E3'],
   ];`);
   http.createServer((q, r) => { r.setHeader('Content-Type', 'application/json'); r.end(JSON.stringify({ keys: [jwk] })); }).listen(JWKS);
@@ -74,6 +74,8 @@ const mint = (email) => { const h = b64({ alg: 'RS256', kid: 'k1', typ: 'JWT' })
   check('page contains no style letters / scoring text', !/most.*DISC_TYPES|score\(/i.test(await cand.content()));
   await cand.click('#startBtn');
   check('empty digits refused', /last 4 digits/i.test(await cand.textContent('#iErr')));
+  fs.writeFileSync(path.join(tmp, 'cv.pdf'), '%PDF-1.4\n%%EOF\n');   // Dina applies for the internship, so a resume is required (covered in e2e_resume.js)
+  await cand.setInputFiles('#resumeFile', path.join(tmp, 'cv.pdf'));
   await cand.fill('#digits', '0000'); await cand.click('#consent'); await cand.click('#startBtn');
   await cand.waitForFunction(() => /do not match/i.test(document.querySelector('#iErr').textContent));
   check('wrong digits: "do not match … tries left"', /tries left/.test(await cand.textContent('#iErr')));

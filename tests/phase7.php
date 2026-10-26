@@ -150,7 +150,8 @@ check('first screen shows only the first name, the language and that digits are 
 $kian2 = $mk('alice', 'Kenny Lau');
 $ri = $act($AA, 'invite', $kian2['id']);
 $tok = $ri['invite']['token'];
-check('info for a fresh invite: state ok, digits needed', disc_public_info($pdo, $tok) === ['first_name' => 'Kenny', 'lang' => 'en', 'needs_digits' => true, 'state' => 'ok']);
+$inf = disc_public_info($pdo, $tok);
+check('info for a fresh invite: state ok, digits needed, resume optional and not yet uploaded', array_diff_key($inf, ['resume' => 1]) === ['first_name' => 'Kenny', 'lang' => 'en', 'needs_digits' => true, 'state' => 'ok'] && $inf['resume'] === ['required' => false, 'have' => false, 'name' => null]);
 throws('unknown token: 404', 404, fn () => disc_public_info($pdo, str_repeat('a', 64)));
 throws('malformed token: 404', 404, fn () => disc_public_info($pdo, 'abc'));
 $ans = $answers('I', 'C');

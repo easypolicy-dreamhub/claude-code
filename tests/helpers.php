@@ -25,6 +25,8 @@ function init_db(PDO $pdo): PDO {
     $pdo->exec('CREATE UNIQUE INDEX uq_cand_client ON candidates (client_id)');
     $pdo->exec('CREATE TABLE assessments (id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER NOT NULL, mode TEXT NOT NULL DEFAULT "test", answers_json TEXT NULL,
         scores_json TEXT NOT NULL, code TEXT NOT NULL, entered_by_member_id INTEGER NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
+    $pdo->exec('CREATE TABLE candidate_files (id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT "resume", original_name TEXT NOT NULL, stored_name TEXT NOT NULL,
+        mime TEXT NOT NULL, size_bytes INTEGER NOT NULL, uploaded_by TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)');
     $pdo->exec('CREATE TABLE disc_invites (id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id INTEGER NOT NULL, token TEXT NOT NULL UNIQUE, mode TEXT NOT NULL DEFAULT "email",
         created_by_member_id INTEGER NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, expires_at TEXT NOT NULL, last_sent_at TEXT NULL, sent_count INTEGER NOT NULL DEFAULT 0,
         wrong_tries INTEGER NOT NULL DEFAULT 0, completed_at TEXT NULL)');

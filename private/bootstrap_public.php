@@ -6,11 +6,11 @@ require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/candidates.php';
 require_once __DIR__ . '/lib/turnstile.php';
 
-function boot_public_request(): array
+function boot_public_request(bool $allowUpload = false): array
 {
     try {
         $config = load_config();
-        require_same_site_write($config, $_SERVER);
+        require_same_site_write($config, $_SERVER, $allowUpload);
         return [$config, connect_db($config)];
     } catch (HttpError $e) {
         json_response($e->status, ['error' => $e->getMessage()]);

@@ -39,7 +39,7 @@ function json_body(): array
  * state-changing requests must be JSON, carry a custom header and, when the
  * browser sends an Origin, come from one of our own hostnames.
  */
-function require_same_site_write(array $config, array $server): void
+function require_same_site_write(array $config, array $server, bool $allowUpload = false): void
 {
     $method = strtoupper($server['REQUEST_METHOD'] ?? 'GET');
     if (in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
@@ -48,7 +48,8 @@ function require_same_site_write(array $config, array $server): void
     if (($server['HTTP_X_REQUESTED_WITH'] ?? '') !== 'fetch') {
         throw new HttpError(403, 'Missing X-Requested-With header.');
     }
-    if (stripos($server['CONTENT_TYPE'] ?? '', 'application/json') !== 0) {
+    $type = $server['CONTENT_TYPE'] ?? '';
+    if (stripos($type, 'application/json') !== 0 && !($allowUpload && stripos($type, 'multipart/form-data') === 0)) {
         throw new HttpError(415, 'Content-Type must be application/json.');
     }
     $origin = $server['HTTP_ORIGIN'] ?? '';

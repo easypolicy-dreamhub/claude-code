@@ -9,11 +9,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/auth.php';
 
-function boot_member_request(): array
+function boot_member_request(bool $allowUpload = false): array
 {
     try {
         $config = load_config();
-        require_same_site_write($config, $_SERVER);
+        require_same_site_write($config, $_SERVER, $allowUpload);
         $pdo = connect_db($config);
         $cf = new CfAccess(
             $config['cf_access']['team_domain'],

@@ -47,7 +47,7 @@ try {
         json_response(200, ['candidate' => get_candidate($pdo, $map, $me, $id, 'en', $config)]);
     }
     if ($method === 'DELETE') {
-        delete_candidate($pdo, $map, $me, $id);
+        delete_candidate($pdo, $map, $me, $id, $config);
         json_response(200, ['deleted' => true]);
     }
     throw new HttpError(405, 'Method not allowed.');

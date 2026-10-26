@@ -54,6 +54,23 @@ function discSummary(r) {
   h += '<p class="sub">' + esc(L.done) + ': ' + esc(fmt(r.created_at)) + (r.duration_sec != null ? ' · ' + Math.round(r.duration_sec / 60) + ' min' : '') + '</p>';
   return h;
 }
+var RES_API = '/members/api/resume.php';
+function kb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function resumeBlock(c) {
+  if (!c.completed) return '';
+  var r = c.resume, h = '<section class="block resume" id="resumeBlock"><h2>Resume' + (r ? ' <span class="pill disc">Received</span>' : (c.purpose === 'internship' ? ' <span class="pill warn">Required for internship</span>' : '')) + '</h2>';
+  if (r) h += '<p>' + esc(r.name) + ' <span class="sub">· ' + esc(kb(r.size)) + ' · ' + (r.by_candidate ? 'uploaded by the candidate' : 'added by an advisor') + ' · ' + esc(fmt(r.at)) + '</span></p>';
+  else h += '<p class="sub">No resume yet. The candidate can upload it on the DISC page' + (c.purpose === 'internship' ? ' (required for internship)' : '') + ', or you can add one they sent you.</p>';
+  h += '<div class="btnrow no-print">' + (r ? '<a class="btn plain" href="' + RES_API + '?candidate_id=' + c.id + '">Download</a>' : '') +
+    '<label class="btn plain" style="cursor:pointer">' + (r ? 'Replace' : 'Upload resume') + '<input type="file" id="resumeUp" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label>' +
+    (r ? '<button type="button" class="btn danger" data-resdel="1">Remove</button>' : '') + '</div></section>';
+  return h;
+}
+function refreshResume() {
+  var html = resumeBlock(st.current), el = $('#resumeBlock');
+  if (el) { if (html) el.outerHTML = html; else el.remove(); }
+  else if (html) { var a = $('#discBlock') || document.querySelector('#detail .actions'); if (a) a.insertAdjacentHTML('beforebegin', html); }
+}
 function discBlock(c) {
   var d = c.disc;
   if (!d || !c.completed || (!d.eligible && !d.result)) return '';
@@ -131,6 +148,7 @@ function renderList() {
     pills += '<span class="pill">' + esc(STATUS[c.status] || c.status) + '</span>';
     pills += '<span class="pill' + (c.purpose === 'internship' ? ' intern' : '') + '">' + (c.purpose === 'internship' ? 'Internship' : 'Career') + '</span>';
     if (!c.completed) pills += '<span class="pill grey">Unfinished</span>';
+    if (c.completed && c.purpose === 'internship' && c.resume === false) pills += '<span class="pill warn">Resume: not yet</span>';
     if (c.duplicate_of) pills += '<span class="pill warn">Repeat applicant</span>';
     if (c.via_link) pills += '<span class="pill warn">Via ' + esc(c.via_link.name) + '\u2019s link</span>';
     if (c.disc && c.disc.tag) pills += '<span class="pill ' + ((c.disc.tag === 'overdue' || c.disc.tag === 'expired') ? 'discw' : 'disc') + '">' + esc(DISC_TAG[c.disc.tag]) + '</span>';
@@ -209,7 +227,7 @@ function renderDetail(c) {
       '<label class="f" for="dPurpose" style="margin-top:.8rem">Applying for</label><select id="dPurpose"><option value="career"' + (c.purpose === 'career' ? ' selected' : '') + '>Career</option><option value="internship"' + (c.purpose === 'internship' ? ' selected' : '') + '>Internship</option></select>' +
       '<label class="f" for="dOwner" style="margin-top:.8rem">Advisor</label><select id="dOwner">' + o + '</select>' +
       '<p class="sub" style="margin-top:.6rem">Email: result ' + (c.result_emailed ? 'sent' : '<b>not sent</b>') + ' · advisors ' + (c.advisor_notified ? 'told' : '<b>not told</b>') + '</p></div></div>' +
-    results + advisor + discBlock(c) +
+    results + advisor + resumeBlock(c) + discBlock(c) +
     '<div class="actions no-print"><button class="btn" id="printBtn">Print advisor report</button>' + (st.viewer && st.viewer.is_admin ? '<button class="btn danger" id="delBtn">Delete candidate…</button>' : '') + '</div></div>';
   $('#listview').hidden = true; $('#detail').hidden = false; window.scrollTo(0, 0);
 }
@@ -255,6 +273,10 @@ $('#detail').addEventListener('click', function (e) {
     if (confirm('Permanently delete ' + c.name + ' and their results? This cannot be undone. Use it for a data-deletion request.')) {
       req(API + '?id=' + c.id, { method: 'DELETE' }).then(function () { toast('Candidate deleted.'); showList(true); }).catch(function (er) { toast(er.message, true); });
     }
+  } else if (t.dataset && t.dataset.resdel) {
+    if (confirm('Remove ' + st.current.name + '\u2019s resume? This cannot be undone.')) {
+      req(RES_API + '?candidate_id=' + st.current.id, { method: 'DELETE', body: {} }).then(function () { st.current.resume = null; refreshResume(); toast('Resume removed.'); }).catch(function (er) { toast(er.message, true); });
+    }
   } else if (t.dataset && t.dataset.disc) {
     discAct(t.dataset.disc, t.dataset.channel, t);
   } else if (t.dataset && t.dataset.copy) {
@@ -269,6 +291,17 @@ $('#detail').addEventListener('click', function (e) {
 });
 $('#detail').addEventListener('change', function (e) {
   var c = st.current, t = e.target;
+  if (t.id === 'resumeUp') {
+    var f = t.files[0]; if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { toast('That file is too big. The limit is 5 MB.', true); t.value = ''; return; }
+    var fd = new FormData(); fd.append('candidate_id', c.id); fd.append('file', f);
+    toast('Uploading...');
+    fetch(RES_API, { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin', body: fd })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.error || 'Upload failed (' + r.status + ').'); return d; }); })
+      .then(function (d) { c.resume = d.resume; refreshResume(); toast('Resume saved.'); })
+      .catch(function (er) { toast(er.message, true); t.value = ''; });
+    return;
+  }
   if (t.id === 'dStatus') {
     req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { pipeline_status: t.value } })
       .then(function (d) { st.current = d.candidate; refreshDisc(); toast('Status saved: ' + STATUS[t.value]); }).catch(function (er) { toast(er.message, true); t.value = c.status; });
