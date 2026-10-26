@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { personLabel } from "../labels.js";
 
 export function Field({ label, children }) {
@@ -18,17 +19,42 @@ export function Group({ label, children }) {
   );
 }
 
-export function NumInput({ value, onChange, step = 1, ariaLabel }) {
+// Amount in whole ringgit, shown with thousand separators (60,000) as you type.
+export function MoneyInput({ value, onChange, ariaLabel }) {
+  const ref = useRef(null);
+  const digitsBeforeCaret = useRef(null);
+  const shown = value ? Math.round(Number(value)).toLocaleString("en-US") : "";
+
+  // After React re-renders with the formatted text, put the caret back after the same number of digits.
+  useLayoutEffect(() => {
+    const input = ref.current;
+    if (digitsBeforeCaret.current !== null && input && document.activeElement === input) {
+      let pos = 0;
+      let seen = 0;
+      while (pos < input.value.length && seen < digitsBeforeCaret.current) {
+        if (/\d/.test(input.value[pos])) seen++;
+        pos++;
+      }
+      input.setSelectionRange(pos, pos);
+    }
+    digitsBeforeCaret.current = null;
+  });
+
   return (
     <input
-      type="number"
-      inputMode="decimal"
-      min={0}
-      step={step}
+      ref={ref}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
       aria-label={ariaLabel}
-      value={value === 0 ? "" : value}
+      value={shown}
       placeholder="0"
-      onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+      onChange={(e) => {
+        const raw = e.target.value;
+        const caret = e.target.selectionStart ?? raw.length;
+        digitsBeforeCaret.current = raw.slice(0, caret).replace(/\D/g, "").length;
+        onChange(Number(raw.replace(/\D/g, "")) || 0);
+      }}
     />
   );
 }

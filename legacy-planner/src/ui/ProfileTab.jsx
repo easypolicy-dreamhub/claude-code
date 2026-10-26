@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { REL_LABEL, RELATIONSHIPS, STATE_LABEL, personName } from "../labels.js";
 import { uid } from "../format.js";
-import { Field, Group, NumInput, Seg } from "./controls.jsx";
+import { Field, Group, MoneyInput, Seg } from "./controls.jsx";
 
 const newPerson = (relationship) => ({ id: uid(), name: "", relationship, alive: true, minor: false });
 
@@ -38,10 +38,10 @@ export function ProfileTab({ plan, update }) {
             />
           </Group>
           <Field label="Debts and funeral costs (paid from the estate)">
-            <NumInput value={plan.liabilities} onChange={(v) => update((p) => ({ ...p, liabilities: v }))} step={1000} ariaLabel="Liabilities" />
+            <MoneyInput value={plan.liabilities} onChange={(v) => update((p) => ({ ...p, liabilities: v }))} ariaLabel="Liabilities" />
           </Field>
           <Field label="Estimated executor, legal and probate costs (optional)">
-            <NumInput value={plan.adminCostEstimate ?? 0} onChange={(v) => update((p) => ({ ...p, adminCostEstimate: v }))} step={1000} ariaLabel="Administration costs" />
+            <MoneyInput value={plan.adminCostEstimate ?? 0} onChange={(v) => update((p) => ({ ...p, adminCostEstimate: v }))} ariaLabel="Administration costs" />
           </Field>
           {!plan.muslim && (
             <Field label="State where they live">
@@ -79,7 +79,7 @@ export function ProfileTab({ plan, update }) {
           </>
         )}
 
-        <div className="mt">
+        <div className="mt row" style={{ gap: "4px 24px" }}>
           <label className="check">
             <input type="checkbox" checked={plan.muslim} onChange={(e) => update((p) => ({ ...p, muslim: e.target.checked }))} />
             Muslim (faraid applies to the estate)

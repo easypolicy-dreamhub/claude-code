@@ -2,7 +2,7 @@ import { uid, money } from "../format.js";
 import { BUSINESS_TYPE_HINT, BUSINESS_TYPE_LABEL, CATEGORY_LABEL, NOMINATION_LABEL, ROUTE_LABEL, personLabel } from "../labels.js";
 import { deceasedValue, jointHolderCount, willIsDone } from "../model.js";
 import { classifyNominee, usesMalaysianNomineeRules } from "../engine/insurance.js";
-import { Allocator, Field, NumInput } from "./controls.jsx";
+import { Allocator, Field, MoneyInput } from "./controls.jsx";
 
 const ROUTE_HINT = {
   estate: "Follows the will or wasiat. Without one, it follows the default law.",
@@ -68,7 +68,7 @@ export function AssetsTab({ plan, update }) {
                 </select>
               </Field>
               <Field label="Value (RM)">
-                <NumInput value={asset.value} onChange={(v) => patch(asset.id, { value: v })} step={1000} ariaLabel="Value" />
+                <MoneyInput value={asset.value} onChange={(v) => patch(asset.id, { value: v })} ariaLabel="Value" />
               </Field>
               <Field label="How it passes on death">
                 <select value={asset.route} onChange={(e) => patch(asset.id, { route: e.target.value, allocations: [] })}>
