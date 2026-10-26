@@ -38,6 +38,46 @@ function req(url, opts) {
       });
     });
 }
+var DISC_API = '/members/api/disc.php';
+var DISC_TAG = { ready: 'Ready to invite', invited: 'DISC invited', overdue: 'DISC not done after 3 days', expired: 'DISC link expired', done: 'DISC done' };
+function discSummary(r) {
+  var L = r.labels, h = '<h3>' + esc(L.style) + ': ' + esc(r.label) + ' <span class="sub">(' + esc(r.tag) + ')</span></h3>';
+  h += '<div>' + r.rows.map(function (x) {
+    var w = Math.min(Math.abs(x.score), 28) / 28 * 50, left = x.score >= 0 ? 50 : 50 - w;
+    return '<div class="dscore"><span><b>' + esc(x.type) + '</b> ' + esc(x.name) + '</span><span>' + (x.score > 0 ? '+' : '') + x.score + '</span><span class="bar"><i style="left:' + left + '%;width:' + w + '%"></i></span><span class="sub">' + esc(x.level) + '</span></div>';
+  }).join('') + '</div>';
+  if (r.also) h += '<p class="sub">' + esc(r.also) + '</p>';
+  if (r.flags.length) h += '<h3>' + esc(L.flags) + '</h3>' + r.flags.map(function (f) { return '<div class="flag">' + esc(f) + '</div>'; }).join('');
+  h += '<h3>' + esc(L.align) + '</h3><p>' + esc(r.align.text) + '</p>';
+  var list = function (a) { return '<ul>' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; };
+  h += '<h3>' + esc(L.talk) + '</h3>' + list(r.talk) + '<h3>' + esc(L.pressure) + '</h3>' + list(r.pressure) + '<h3>' + esc(L.role) + '</h3><p>' + esc(r.role) + '</p><h3>' + esc(L.questions) + '</h3>' + list(r.questions);
+  h += '<p class="sub">' + esc(L.done) + ': ' + esc(fmt(r.created_at)) + (r.duration_sec != null ? ' · ' + Math.round(r.duration_sec / 60) + ' min' : '') + '</p>';
+  return h;
+}
+function discBlock(c) {
+  var d = c.disc;
+  if (!d || !c.completed || (!d.eligible && !d.result)) return '';
+  var h = '<section class="block disc" id="discBlock"><h2>DISC working style' + (d.tag ? ' <span class="pill ' + ((d.tag === 'overdue' || d.tag === 'expired') ? 'discw' : 'disc') + '">' + esc(DISC_TAG[d.tag]) + '</span>' : '') + '</h2>';
+  var btn = function (act, ch, label, plain) { return '<button type="button" class="btn' + (plain ? ' plain' : '') + '" data-disc="' + act + '" data-channel="' + ch + '">' + esc(label) + '</button>'; };
+  if (d.closed && d.eligible) {
+    h += '<p class="sub">DISC invites and reminders are switched off because this candidate is marked ' + (c.status === 'joined' ? 'Joined' : 'Not suitable') + '.</p>';
+  } else if (d.can_invite) {
+    var inv = d.invite && d.invite.open ? d.invite : null, rows = '';
+    if (inv) {
+      h += '<p class="sub">' + (inv.mode === 'live' ? 'In-the-room link, valid until ' : 'Link valid until ') + esc(fmt(inv.expires_at)) + (inv.mode === 'email' ? (inv.sent_count ? ' · emailed ' + inv.sent_count + (inv.sent_count === 1 ? ' time' : ' times') + ', last ' + esc(ago(inv.last_sent_at)) : ' · not emailed yet') : '') + '</p>';
+      h += '<div class="linkrow"><input type="text" readonly id="discLink" value="' + esc(inv.link) + '" aria-label="Invite link"><button type="button" class="btn plain" data-copy="1">Copy link</button></div>';
+    } else if (d.tag === 'expired') { h += '<p class="sub">The last invite expired without being completed.</p>'; }
+    h += '<div class="btnrow no-print">';
+    if (d.tag === 'ready') { if (d.has_email) h += btn('invite', 'email', 'Send invite by email'); h += btn('invite', 'link', 'Create link to copy', true) + btn('live', 'link', 'Start DISC now', true); }
+    else if (d.tag === 'invited' || d.tag === 'overdue') { if (d.has_email) h += btn('remind', 'email', 'Send reminder'); h += btn('live', 'link', 'Start DISC now', true); }
+    else if (d.tag === 'expired') { if (d.has_email) h += btn('reinvite', 'email', 'Re-invite by email'); h += btn('reinvite', 'link', 'Re-invite, copy link', true); }
+    else if (d.tag === 'done') { if (d.has_email) h += btn('reinvite', 'email', 'Invite to redo by email', true); h += btn('reinvite', 'link', 'Invite to redo, copy link', true); }
+    h += '</div>';
+    if (!d.has_email) h += '<p class="sub">No email address on file, so use the link and send it yourself (for example by WhatsApp).</p>';
+  }
+  if (d.result) h += discSummary(d.result);
+  return h + '</section>';
+}
 function codeHtml(code, big) {
   if (!code) return '<div class="code none' + (big ? ' big' : '') + '" title="Not finished"><span>?</span><span>?</span><span>?</span></div>';
   return '<div class="code' + (big ? ' big' : '') + '">' + code.split('').map(function (t) { return '<span style="background:' + COLOR(t) + '">' + esc(t) + '</span>'; }).join('') + '</div>';
@@ -93,6 +133,7 @@ function renderList() {
     if (!c.completed) pills += '<span class="pill grey">Unfinished</span>';
     if (c.duplicate_of) pills += '<span class="pill warn">Repeat applicant</span>';
     if (c.via_link) pills += '<span class="pill warn">Via ' + esc(c.via_link.name) + '\u2019s link</span>';
+    if (c.disc && c.disc.tag) pills += '<span class="pill ' + ((c.disc.tag === 'overdue' || c.disc.tag === 'expired') ? 'discw' : 'disc') + '">' + esc(DISC_TAG[c.disc.tag]) + '</span>';
     if (c.completed && !c.result_emailed) pills += '<span class="pill warn">Result email not sent</span>';
     var advisor = c.owner && (!v || c.owner.id !== v.id) ? ' · Advisor: ' + esc(c.owner.name) : '';
     return '<li><button class="item" data-id="' + c.id + '">' + codeHtml(c.code) + '<span><span class="name">' + esc(c.name) + '</span><br><span class="sub">' + esc(c.mobile) + advisor + '</span><span class="pills">' + pills + '</span></span><span class="when">' + esc(ago(c.completed_at || c.started_at)) + '</span></button></li>';
@@ -168,9 +209,28 @@ function renderDetail(c) {
       '<label class="f" for="dPurpose" style="margin-top:.8rem">Applying for</label><select id="dPurpose"><option value="career"' + (c.purpose === 'career' ? ' selected' : '') + '>Career</option><option value="internship"' + (c.purpose === 'internship' ? ' selected' : '') + '>Internship</option></select>' +
       '<label class="f" for="dOwner" style="margin-top:.8rem">Advisor</label><select id="dOwner">' + o + '</select>' +
       '<p class="sub" style="margin-top:.6rem">Email: result ' + (c.result_emailed ? 'sent' : '<b>not sent</b>') + ' · advisors ' + (c.advisor_notified ? 'told' : '<b>not told</b>') + '</p></div></div>' +
-    results + advisor +
+    results + advisor + discBlock(c) +
     '<div class="actions no-print"><button class="btn" id="printBtn">Print advisor report</button>' + (st.viewer && st.viewer.is_admin ? '<button class="btn danger" id="delBtn">Delete candidate…</button>' : '') + '</div></div>';
   $('#listview').hidden = true; $('#detail').hidden = false; window.scrollTo(0, 0);
+}
+function refreshDisc() {
+  var html = discBlock(st.current), el = $('#discBlock');
+  if (el) { if (html) el.outerHTML = html; else el.remove(); }
+  else if (html) { var a = document.querySelector('#detail .actions'); if (a) a.insertAdjacentHTML('beforebegin', html); }
+}
+function discAct(action, channel, btn) {
+  var c = st.current, w = null;
+  if (action === 'live') { try { w = window.open('', '_blank'); } catch (x) { w = null; } }   // opened now, inside the tap, so the pop-up blocker allows it
+  btn.disabled = true;
+  req(DISC_API, { method: 'POST', body: { action: action, candidate_id: c.id, channel: channel } }).then(function (r) {
+    c.disc = r.disc; c.status = r.status; refreshDisc();
+    if (action === 'live') { if (w) w.location.href = r.link; else toast('The pop-up was blocked. Copy the link shown and open it yourself.', true); return; }
+    toast(r.emailed ? 'Email sent.' : (channel === 'email' ? 'The email could not be sent. Copy the link and send it yourself.' : 'Link ready. Tap Copy link.'), channel === 'email' && !r.emailed);
+    if ((r.emailed || channel === 'link') && c.status === 'new' && confirm('Invite sent to ' + c.name + '. Mark them as Contacted?')) {
+      req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { pipeline_status: 'contacted' } })
+        .then(function (d) { st.current = d.candidate; if ($('#dStatus')) $('#dStatus').value = 'contacted'; refreshDisc(); toast('Status saved: Contacted'); }).catch(function (er) { toast(er.message, true); });
+    }
+  }).catch(function (er) { if (w) w.close(); toast(er.message, true); btn.disabled = false; });
 }
 function openDetail(id, push) {
   return req(API + '?id=' + id + '&lang=' + st.lang).then(function (d) {
@@ -195,6 +255,13 @@ $('#detail').addEventListener('click', function (e) {
     if (confirm('Permanently delete ' + c.name + ' and their results? This cannot be undone. Use it for a data-deletion request.')) {
       req(API + '?id=' + c.id, { method: 'DELETE' }).then(function () { toast('Candidate deleted.'); showList(true); }).catch(function (er) { toast(er.message, true); });
     }
+  } else if (t.dataset && t.dataset.disc) {
+    discAct(t.dataset.disc, t.dataset.channel, t);
+  } else if (t.dataset && t.dataset.copy) {
+    var el = $('#discLink'); el.select(); el.setSelectionRange(0, 999);
+    var done = function () { toast('Link copied.'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(el.value).then(done, function () { try { document.execCommand('copy'); done(); } catch (x) { toast('Press and hold the link to copy it.', true); } });
+    else { try { document.execCommand('copy'); done(); } catch (x) { toast('Press and hold the link to copy it.', true); } }
   } else if (t.dataset && t.dataset.lang) {
     st.lang = t.dataset.lang;
     req(API + '?id=' + st.current.id + '&lang=' + st.lang).then(function (d) { st.current = d.candidate; renderDetail(d.candidate); });
@@ -204,7 +271,7 @@ $('#detail').addEventListener('change', function (e) {
   var c = st.current, t = e.target;
   if (t.id === 'dStatus') {
     req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { pipeline_status: t.value } })
-      .then(function (d) { st.current = d.candidate; toast('Status saved: ' + STATUS[t.value]); }).catch(function (er) { toast(er.message, true); t.value = c.status; });
+      .then(function (d) { st.current = d.candidate; refreshDisc(); toast('Status saved: ' + STATUS[t.value]); }).catch(function (er) { toast(er.message, true); t.value = c.status; });
   } else if (t.id === 'dPurpose') {
     req(API + '?id=' + c.id + '&lang=' + st.lang, { method: 'PATCH', body: { purpose: t.value } })
       .then(function (d) { st.current = d.candidate; toast('Now labelled: ' + (t.value === 'internship' ? 'Internship' : 'Career')); }).catch(function (er) { toast(er.message, true); t.value = c.purpose; });

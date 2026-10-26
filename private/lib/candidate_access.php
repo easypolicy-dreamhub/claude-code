@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/candidates.php';
 require_once __DIR__ . '/advisor.php';
+require_once __DIR__ . '/disc.php';
 
 const PIPELINE = ['new', 'contacted', 'interviewed', 'joined', 'not_suitable'];
 const LIST_PAGE_SIZE = 25;
@@ -28,13 +29,14 @@ function iso(?string $utc): ?string
 }
 
 /** @param ?array $row joined assessment columns a_scores / a_code (null when unfinished) */
-function candidate_summary(array $c, array $map): array
+function candidate_summary(array $c, array $map, ?array $disc = null): array
 {
     $scores = isset($c['a_scores']) ? json_decode((string)$c['a_scores'], true) : null;
     $verdict = $scores ? assess_candidate($scores, 'en')['verdict'] : null;
     $owner = $map[(int)$c['owner_member_id']] ?? null;
     $rb = isset($c['referred_by_member_id']) && $c['referred_by_member_id'] !== null ? (int)$c['referred_by_member_id'] : null;
     $via = $rb !== null && $owner && $rb !== (int)$owner['id'] && isset($map[$rb]) ? ['id' => $rb, 'name' => $map[$rb]['name']] : null;   // link used by someone else
+    $ds = disc_state($verdict['key'] ?? null, $c['completed_at'] !== null, (string)$c['pipeline_status'], $disc['invite'] ?? null, $disc['result'] ?? null);
     return [
         'id' => (int)$c['id'], 'name' => $c['name'], 'mobile' => $c['mobile'], 'email' => $c['email'],
         'purpose' => $c['purpose'], 'source' => $c['source'], 'lang' => $c['lang'],
@@ -45,6 +47,7 @@ function candidate_summary(array $c, array $map): array
         'verdict' => $verdict ? ['key' => $verdict['key'], 'title' => $verdict['title']] : null,
         'started_at' => iso($c['started_at']), 'completed_at' => iso($c['completed_at']),
         'result_emailed' => $c['result_emailed_at'] !== null, 'advisor_notified' => $c['notified_at'] !== null,
+        'disc' => ['tag' => $ds['tag']],
     ];
 }
 
@@ -103,8 +106,10 @@ function list_candidates(PDO $pdo, array $map, array $viewer, array $f): array
         LEFT JOIN assessments a ON a.id = (SELECT MAX(id) FROM assessments WHERE candidate_id = c.id)
         $w ORDER BY c.id DESC LIMIT " . LIST_PAGE_SIZE . ' OFFSET ' . (($page - 1) * LIST_PAGE_SIZE));
     $stmt->execute($args);
+    $rows = $stmt->fetchAll();
+    $discs = disc_latest($pdo, array_column($rows, 'id'));
     return [
-        'candidates' => array_map(static fn (array $c) => candidate_summary($c, $map), $stmt->fetchAll()),
+        'candidates' => array_map(static fn (array $c) => candidate_summary($c, $map, $discs[(int)$c['id']] ?? null), $rows),
         'total' => $total, 'page' => $page, 'page_size' => LIST_PAGE_SIZE,
     ];
 }
@@ -118,13 +123,15 @@ function load_candidate_row(PDO $pdo, int $id): ?array
 }
 
 /** Candidates the viewer may not see are reported as 404, so their existence is not revealed. */
-function get_candidate(PDO $pdo, array $map, array $viewer, int $id, string $lang = 'en'): array
+function get_candidate(PDO $pdo, array $map, array $viewer, int $id, string $lang = 'en', array $config = []): array
 {
     $row = load_candidate_row($pdo, $id);
     if (!$row || !can_see_candidate($map, $viewer, (int)$row['owner_member_id'])) {
         throw new HttpError(404, 'Candidate not found.');
     }
-    $out = candidate_summary($row, $map);
+    $latest = disc_latest($pdo, [$id])[$id];
+    $out = candidate_summary($row, $map, $latest);
+    $out['disc'] = disc_detail($config, $row, $latest, $lang);
     foreach (['age_group' => 'age', 'education' => 'edu', 'work_status' => 'status'] as $col => $key) {
         $out['details'][$key] = $row[$col] === null ? null : (int)$row[$col];
     }
@@ -229,6 +236,8 @@ function delete_candidate(PDO $pdo, array $map, array $viewer, int $id): void
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE candidates SET duplicate_of = NULL WHERE duplicate_of = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM disc_results WHERE candidate_id = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM disc_invites WHERE candidate_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM assessments WHERE candidate_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM candidates WHERE id = ?')->execute([$id]);
         audit($pdo, (int)$viewer['id'], 'candidate.delete', $id, ['owner_member_id' => (int)$row['owner_member_id']]);

@@ -30,7 +30,7 @@ try {
             exit;
         }
         if ($id > 0) {
-            json_response(200, ['candidate' => get_candidate($pdo, $map, $me, $id, ($_GET['lang'] ?? 'en') === 'zh' ? 'zh' : 'en')]);
+            json_response(200, ['candidate' => get_candidate($pdo, $map, $me, $id, ($_GET['lang'] ?? 'en') === 'zh' ? 'zh' : 'en', $config)]);
         }
         $r = list_candidates($pdo, $map, $me, [
             'status' => $_GET['status'] ?? '', 'purpose' => $_GET['purpose'] ?? '', 'q' => $_GET['q'] ?? '',
@@ -44,7 +44,7 @@ try {
     }
     if ($method === 'PATCH') {
         update_candidate($pdo, $map, $me, $id, json_body());
-        json_response(200, ['candidate' => get_candidate($pdo, $map, $me, $id)]);
+        json_response(200, ['candidate' => get_candidate($pdo, $map, $me, $id, 'en', $config)]);
     }
     if ($method === 'DELETE') {
         delete_candidate($pdo, $map, $me, $id);
