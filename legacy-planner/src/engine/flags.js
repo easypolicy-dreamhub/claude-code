@@ -250,7 +250,7 @@ export function buildFlags(plan, current, defaultLaw, willInPlace) {
             ? `"${a.name}" is still nominated to an ex-spouse. Divorce does not automatically cancel a life insurance nomination in Singapore, whether trust or revocable — update it with the insurer if this is not intended.`
             : plan.muslim
               ? `"${a.name}" is still nominated to an ex-spouse. Confirm with the insurer or takaful operator whether the nomination has been updated since the divorce.`
-              : `"${a.name}" is still nominated to an ex-spouse. A spouse nominated during the marriage holds a trust nomination, and trust status is fixed on the day of nomination, so the divorce does not undo it: the ex-spouse would keep the payout, and the will cannot override it. Change the nomination with the insurer if this is not intended.`,
+              : `"${a.name}" is still nominated to an ex-spouse. Confirm with the insurer or takaful operator whether the nomination has been updated since the divorce.`,
         ),
       );
     plan.assets

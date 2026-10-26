@@ -27,7 +27,7 @@ export function classifyNominee(person, plan, asset) {
   }
 
   if (rel === "ex-spouse") {
-    return { kind: "trust", reason: "nominated while they were married (assumed); divorce does not undo a trust nomination" };
+    return { kind: "trust", reason: "former spouse \u2014 shown as receiving it, as in the original version; confirm with the insurer" };
   }
 
   if (rel === "father" || rel === "mother") {

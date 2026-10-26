@@ -20,7 +20,7 @@ So the app's faraid engine, its Muslim-specific flags and its Singapore/CPF rule
 
 **Update after the *Estate Planning Scenarios Summary* handout (4 pages, 11 scenarios):**
 - **Trust status is fixed on the date of nomination (scenario 5).** A parent nominated before marriage stays a trust nominee; a parent nominated after marriage, or a fiancé(e) nominated before it, holds the money for the estate. The app now has a "Date the current nomination was made" field on Malaysian policies and applies this rule; without dates it falls back to the family as it stands today.
-- **Ex-spouse nominee: corrected.** The first rebuild treated an ex-spouse as a non-trust nominee. Following the same scenario-5 principle, a spouse nominated during the marriage holds a trust nomination that the divorce does not undo, so the ex-spouse keeps the payout and the will cannot override it (scenario 3). The app and the David Tan sample now show this.
+- **Ex-spouse nominee:** not covered by the documents, so the app keeps the original version's behaviour (the ex-spouse is shown as receiving the payout) and its original "confirm with the insurer" message.
 - **Minor child nominee (scenarios 6, 7, 7b, 10).** The payout is held by the surviving parent as statutory trustee, or by Amanah Raya if no parent survives; a guardian named in the will does not control it. The app now says so and no longer raises the "minor needs a trust" warning for that money.
 - **Trusts and insolvency (scenario 9).** Added a note that transfers into a non-insurance trust within 5 years before death can be clawed back if the person was insolvent at the time.
 - **Confirmed:** scenarios 1–4 and 8 match the app (probate freeze, trust policy outside the will and creditors, nomination overrides will, sibling nominee holds for the estate, living trust overrides will).
@@ -225,11 +225,13 @@ The app has one generic business flag. **Suggested fix:** add a "Business type" 
 
 ---
 
-## Document inconsistency to raise with the training team
+## Document inconsistencies
 
 This doesn't affect the app as it stands. It matters if the trust-nominee rule is built in.
 
 1. ~~**Trust nominee who dies first.**~~ **Resolved.** *Part I*, p. 47 says the money "reverts to the Estate"; p. 51 (para 6(2)) says surviving nominees take it all. The *Estate Planning Scenarios Summary* (scenario 11) confirms p. 47 describes a **sole** nominee who dies first: the nomination is revoked and the money falls into the estate. With several nominees, the survivors share it. This is what the app does.
+2. **Parent as trust nominee.** *Part I*, p. 38 says a parent qualifies "only if there is no living spouse or children". The *Scenarios* handout (scenario 5) shows this is judged on the **date of nomination**, not the date of death. The app follows the handout.
+3. **How long administration takes (cosmetic only).** Probate: 3–6 months (*Scenarios*), 6–12 months (*2.3a*), 9–18 months (*Debt Cancellation*). Letter of Administration: 6–24 months (*Part I*), 9–24 months (*2.2*), 2–6 years (*Debt Cancellation*). The app quotes 9–24 months for a Letter of Administration (*2.2*) and at least 5–6 months for Small Estate (*2.1*); it gives no figure for probate.
 
 ---
 

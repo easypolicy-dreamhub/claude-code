@@ -210,7 +210,7 @@ test("sample profiles run without errors and keep their intended story", () => {
   const [ahmad, david, michelle] = samplePlans().map(analyse);
   assert.ok(flag(ahmad, /ignored: an heir cannot take under a wasiat/));
   assert.ok(flag(david, /still names an ex-spouse as a beneficiary/));
-  assert.ok(flag(david, /the ex-spouse would keep the payout/));
+  assert.ok(flag(david, /whether the nomination has been updated since the divorce/));
   assert.ok(flag(michelle, /marriage automatically revokes an existing CPF nomination/));
 });
 
