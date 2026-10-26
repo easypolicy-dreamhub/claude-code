@@ -16,7 +16,16 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
   - **Super admin (team leader) only:** also sees two more tabs on the same page, **Settings** (instructions editor and PDF upload, replace and delete) and **Usage**.
   - The extra tabs are only drawn for the super admin, and every Settings and Usage action is also checked on the server (see below).
 
-## Login and permissions (reuse existing code)
+## Ships empty: the leader sets it up
+- **Do not include any PDFs or instructions in the build.** The developer won't be given them. The team leader adds both through the Settings tab after it goes live, and that is also how they test it.
+- **First-run state:**
+  - Settings tab: an empty instructions box with a short hint of what to write (who the coach is, how it should coach, what it must not do), and an empty knowledge list with an "Upload PDF" button.
+  - Agents opening the coach before instructions are saved see *"The coach is being set up. Check back soon."* and can't chat yet.
+  - The super admin can chat at any time, even before setup, to test it.
+- **Testing:** the super admin uses the normal Chat tab, the same chat agents get. Their test chats show in the Usage tab like anyone else's.
+- **Status line in Settings:** shows the number of PDFs loaded, their total size, and when the instructions were last saved. If a PDF can't be read (for example a scanned image with no text), it is flagged so the leader knows to replace it.
+
+ (reuse existing code)
 - Every endpoint starts with the existing `boot_member_request()`. No new login system.
 - Admin actions (upload, replace or delete a PDF, save instructions, restore a version, usage view) call the existing `require_admin` **on the server, inside that endpoint**.
 - **Hiding the admin controls in the page is not security.** If a non-admin member calls an admin endpoint directly, the server must refuse it (403), even though the button was never shown to them.
@@ -38,7 +47,7 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 - New instructions apply to the next message any agent sends.
 
 ## Knowledge (PDFs)
-- About 8 PDFs at the start, more added over time.
+- None at build time. The leader uploads about 8 PDFs after launch, and adds more over time.
 - Upload: PDF only, checked on the server (file type and size limit).
 - **Same file name = replace.** Uploading a PDF with an existing name overwrites the old one, so there are no duplicates.
 - The super admin can delete a PDF.
@@ -86,3 +95,4 @@ Use a current Claude model through the Anthropic API. The developer should pick 
 - [ ] The Usage tab's data from the server contains agents' questions only, no coach answers.
 - [ ] The WhatsApp button opens a chat to the leader with the question filled in.
 - [ ] The API key never appears in the page source or the browser's network traffic.
+- [ ] On a fresh install with no instructions, agents see "being set up" and the super admin can still chat.
