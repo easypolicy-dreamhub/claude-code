@@ -25,7 +25,18 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 - **Testing:** the super admin uses the normal Chat tab, the same chat agents get. Their test chats show in the Usage tab like anyone else's.
 - **Status line in Settings:** shows the number of PDFs loaded, their total size, and when the instructions were last saved. If a PDF can't be read (for example a scanned image with no text), it is flagged so the leader knows to replace it.
 
- (reuse existing code)
+## Hosting: cPanel
+The site runs on cPanel hosting. Build to fit it:
+- **Plain PHP only**, like the rest of the site. No Node, Python, background workers or build step. The files are uploaded through cPanel's File Manager or FTP.
+- **Private folder:** in the cPanel home directory, beside `public_html` and not inside it (e.g. `/home/<cpanel-user>/<existing private folder>/ai-coach/`). Reuse the private folder the site already uses.
+- **Saved data:** follow what the site already does. If it uses MySQL (cPanel's MySQL Databases), keep chats, memory and usage there. Otherwise use files in the private folder.
+- **Calling Claude:** PHP cURL to `api.anthropic.com`. Check that the cURL extension is on (cPanel → Select PHP Version → Extensions) and that the host allows outgoing HTTPS.
+- **Timeouts:** a coach reply can take 10–60 seconds. Set the cURL timeout to around 120 seconds and check PHP's `max_execution_time`. Show a "Coach is typing…" indicator.
+- **Streaming:** shared hosts often buffer output, so word-by-word streaming may not work. Build the simple version (send, wait, show the full reply) first. Add streaming only if it works on this host.
+- **Upload limits:** set `upload_max_filesize`, `post_max_size` and `max_file_uploads` in cPanel → MultiPHP INI Editor (or Select PHP Version → Options).
+- Write down for the leader which cPanel settings were changed, so they can be checked after a hosting upgrade.
+
+## Login and permissions (reuse existing code)
 - Every endpoint starts with the existing `boot_member_request()`. No new login system.
 - Admin actions (upload, replace or delete a PDF, save instructions, restore a version, usage view) call the existing `require_admin` **on the server, inside that endpoint**.
 - **Hiding the admin controls in the page is not security.** If a non-admin member calls an admin endpoint directly, the server must refuse it (403), even though the button was never shown to them.
