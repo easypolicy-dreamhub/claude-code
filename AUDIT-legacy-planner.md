@@ -2,7 +2,7 @@
 
 **Prepared:** 26 Oct 2026
 **What was audited:** the Legacy Planner single-file app (`/members/legacy-planner/`, version built 7 Oct 2026). The app's source is the minified React bundle inside its `index.html`. Function names below are the minified names in that bundle.
-**Audited against:** 13 PDFs from the Legacy Advisory Program V1.10 (listed at the end).
+**Audited against:** 11 PDFs from the Legacy Advisory Program V1.10 (listed at the end).
 **Scope:** audit only. Nothing has been changed. This file is the handover for whoever builds the fixes.
 
 ---
@@ -152,7 +152,7 @@ The app subtracts one "Debts and funeral costs" number and stops there.
   - an estimated administration cost
   - property transfer cost of about **1% of each estate property's value** (*2.3b Asset Coverage*, p. 11, and *KB02*)
 - If cash is less than what's needed → `high` flag with the shortfall amount, suggesting life cover or a cash reserve.
-- Keep the admin-cost estimate simple and visibly labelled as an estimate, or let the adviser type it in. The fee tables in the documents disagree with each other (see "Document inconsistencies" below). Don't hard-code one provider's rates.
+- Keep the admin-cost estimate simple and visibly labelled as an estimate, or let the adviser type it in. Fee rates vary by provider, so don't hard-code one provider's rates.
 
 ### 8. Administration route — LOW (new feature)
 
@@ -215,20 +215,11 @@ The app has one generic business flag. **Suggested fix:** add a "Business type" 
 
 ---
 
-## Document inconsistencies to raise with the training team
+## Document inconsistency to raise with the training team
 
-These don't affect the app as it stands. They matter if fees or the trust-nominee rule are ever built in.
+This doesn't affect the app as it stands. It matters if the trust-nominee rule is built in.
 
 1. **Trust nominee who dies first.** *Part I*, p. 47 says the money "reverts to the Estate". *Part I*, p. 51 (para 6(2)) says surviving nominees take it all. See #3.
-2. **Corporate executor fee tiers differ between decks.**
-   - *Debt Cancellation Through Insurance* gives "RW": 1.5% / **0.9%** / 0.5% / 0.25%.
-   - *Appendix: Fee Comparison* gives "Company R": 1.5% / **1%** / 0.5% / 0.25%.
-3. **Amanah Raya brackets differ.**
-   - *Debt Cancellation*: first RM25k 5%, next RM225k 4%, next RM250k 3%, next RM500k 2%, then 1%.
-   - *Appendix* "Company G": RM25,001–275,000 4%, 275,001–525,000 3%, 525,001–1,025,000 2%.
-
-   The bands match, but the second document writes them differently. Check which is current.
-4. **Trust-company fee.** *2.3a*, p. 33 worked example: "RM5M × 1% + RM2M × 0.5% = RM60,000". This matches Company AH's tiers in the Appendix (<RM5M 1%, then 0.5%), not Company R's. Fine, but the slide doesn't say which provider it uses.
 
 ---
 
@@ -247,5 +238,3 @@ These don't affect the app as it stands. They matter if fees or the trust-nomine
 | 1d4447e0 | Case Studies KB02–KB06 | 52 | Transfer costs, representation, lost wills |
 | 348812d3 | Legal Guardian & Financial Support via Insurance | 49 | Guardianship |
 | a3ffb8dd | Estate Planning vs Legacy Planning | 20 | Background only |
-| 8bf41363 | Appendix: Estate Administration & Custodian Fee Comparison | 2 | Fee tables (image) |
-| eec8417c | Appendix: Newspaper Cuttings | 12 | Chinese-language press cuttings (images). Skimmed; background only, no rules taken from them. |
