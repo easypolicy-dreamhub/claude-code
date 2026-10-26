@@ -5,7 +5,7 @@ Rebuilt from the deployed single-file app, with the fixes from `../AUDIT-legacy-
 - **Deploy:** upload `dist/index.html` as `/members/legacy-planner/index.html`. It is one self-contained file (React bundled in), same E3 header, theme and Tab-key fix as before.
 - **Saved data:** profiles keep the same browser storage key (`legacy-planner.v1`), so people's existing profiles load. Joint assets saved by the old version now count the deceased's share as part of the estate (the old version gave the whole value to the survivor).
 - **Build:** `npm install`, then `npm run build` (writes `dist/index.html`).
-- **Tests:** `npm test` (engine rules) and `node test/smoke.cjs` (opens the built file in headless Chromium and walks every tab) and `node test/format-scan.cjs` (fails if any tab shows an amount without thousand separators). Both need Playwright.
+- **Tests:** `npm test` (engine rules) and `node test/smoke.cjs` (opens the built file in headless Chromium and walks every tab) , `node test/format-scan.cjs` (fails if any tab shows an amount without thousand separators) and `node test/layout-scan.cjs` (fails if a control sticks out of its card, a button group is stretched, or the page scrolls sideways at 1000, 768 and 390 px). These three need Playwright.
 
 ## Layout
 
