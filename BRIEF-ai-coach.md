@@ -8,9 +8,13 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 **knowledge** (PDF documents), answered by Claude through the API.
 
 ## Where it lives
-- **One new card on the existing members toolkit page.** No separate admin area and no new admin pages.
-- Agents (any logged-in member): open the card and chat with the coach.
-- Super admin (team leader) only: the same card also shows the management controls (instructions editor, PDF upload, replace and delete, usage view).
+- **It replaces the existing HNW Coach card** in the Coaching section of the E3 Advisor Toolkit (dreamhub-e3.com). That card currently opens a Gemini Gem. It should now open this coach instead.
+- **One card, one coach page.** No separate admin area and no new admin pages.
+- The card keeps the toolkit's card style: emoji icon, title, description, grey note line, ↗ arrow. Suggested note line: *"Your chats are private to you."*
+- Tapping the card opens the coach page:
+  - **Agents (any logged-in member):** see only the **Chat** tab.
+  - **Super admin (team leader) only:** also sees two more tabs on the same page, **Settings** (instructions editor and PDF upload, replace and delete) and **Usage**.
+  - The extra tabs are only drawn for the super admin, and every Settings and Usage action is also checked on the server (see below).
 
 ## Login and permissions (reuse existing code)
 - Every endpoint starts with the existing `boot_member_request()`. No new login system.
@@ -51,9 +55,13 @@ It works like a Gemini Gem: **instructions** (how the coach behaves) plus
 - The button is a `wa.me` link to the leader's number, with the agent's name and question already filled in. The agent taps send. Free, no WhatsApp API needed.
 - The leader's WhatsApp number goes in `config.php`.
 
-## Usage view (super admin only)
-- Shows who used the coach and when, the questions asked, and which questions were handed off.
-- Enforced on the server with `require_admin`, like every other admin action.
+## Usage view (super admin only, the Usage tab on the coach page)
+- **Agent list:** each agent's name, last used date, and number of chats. Agents who never used it are shown too, so the leader can see who needs a nudge.
+- **Tap an agent:** see their chats, newest first.
+- **Handoffs:** questions sent to the leader on WhatsApp are flagged, so gaps in the PDFs are easy to spot.
+- **Date filter:** this week, this month, all time.
+- Enforced on the server with `require_admin`, like every other admin action. Agents can never open another agent's chats.
+- **Open question for the team leader:** should the leader see full conversations, or only the agents' questions?
 
 ## Languages
 - The coach replies in **English or Chinese**, matching the language the agent writes in. The PDFs stay as they are.
