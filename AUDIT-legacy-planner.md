@@ -16,6 +16,8 @@ The training documents cover **non-Muslim estates in Malaysia only**. They say n
 
 So the app's faraid engine, its Muslim-specific flags and its Singapore/CPF rules **could not be checked against your documents**. They are neither confirmed nor contradicted here. If you want them audited, upload a source for each (for example a faraid reference from a Syariah adviser, and the CPF Board's nomination rules).
 
+**Status (26 Oct 2026):** findings 1–11 are implemented in the rebuilt app in `legacy-planner/` (see its README). Finding 10 was resolved by removing the unreachable Singapore-jurisdiction branches. Engine tests (`npm test`) cover each finding.
+
 ---
 
 ## Summary
