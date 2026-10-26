@@ -112,7 +112,7 @@ test("#4 insurance: a parent is only a trust nominee when there is no living spo
   const spouse = person("Wife", "spouse");
   const withSpouse = analyse(planWith([mum, spouse], [asset("Life", "insurance", 100000, "nominee", [{ personId: mum.id, pct: 100 }])]));
   assert.equal(withSpouse.current.outsideEstate, 0);
-  assert.ok(flag(withSpouse, /only holds a trust nomination when there is no living spouse or child/));
+  assert.ok(flag(withSpouse, /only holds a trust nomination when there is no spouse or child/));
 });
 
 test("#2 joint: three holders → the deceased's 1/3 share is estate, not the whole account (Mr Lim case)", () => {
@@ -210,6 +210,57 @@ test("sample profiles run without errors and keep their intended story", () => {
   const [ahmad, david, michelle] = samplePlans().map(analyse);
   assert.ok(flag(ahmad, /ignored: an heir cannot take under a wasiat/));
   assert.ok(flag(david, /still names an ex-spouse as a beneficiary/));
-  assert.ok(flag(david, /not a spouse under the Financial Services Act/));
+  assert.ok(flag(david, /the ex-spouse would keep the payout/));
   assert.ok(flag(michelle, /marriage automatically revokes an existing CPF nomination/));
+});
+
+// Estate Planning Scenarios Summary (trainer handout).
+test("scenario 3/4: trust nominee beats the will; a sibling nominee holds for the estate and its creditors", () => {
+  const wife = person("Bernice", "spouse");
+  const brother = person("Daniel", "brother");
+  const s3 = planWith([wife, brother], [asset("Policy", "insurance", 100000, "nominee", [{ personId: wife.id, pct: 100 }])]);
+  s3.checklist.will = { status: "done", notes: "" };
+  s3.will = [{ personId: brother.id, pct: 100 }];
+  assert.equal(total(analyse(s3), wife), 100000);
+
+  const s4 = planWith([wife, brother], [asset("Policy", "insurance", 100000, "nominee", [{ personId: brother.id, pct: 100 }])]);
+  s4.checklist.will = { status: "done", notes: "" };
+  s4.will = [{ personId: wife.id, pct: 100 }];
+  s4.liabilities = 30000;
+  const o4 = analyse(s4);
+  assert.equal(total(o4, brother), 0);
+  assert.equal(total(o4, wife), 70000);
+});
+
+test("scenario 5: trust status depends on marital status on the nomination date", () => {
+  const wife = person("Bernice", "spouse");
+  const mum = person("Mum", "mother");
+  const policy = (name, nominee, date) => asset(name, "insurance", 100000, "nominee", [{ personId: nominee.id, pct: 100 }], { nominatedOn: date });
+  const plan = planWith([wife, mum], [
+    policy("A", mum, "2015-01-01"),
+    policy("B", mum, "2020-01-01"),
+    policy("C", wife, "2016-01-01"),
+    policy("D", wife, "2021-01-01"),
+  ], { marriedOn: "2018-06-01" });
+  const o = analyse(plan);
+  const from = (p, label) => o.current.people.find((x) => x.person.id === p.id).contributions.find((c) => c.label.startsWith(label + " ("))?.amount ?? 0;
+  assert.equal(from(mum, "A"), 100000);
+  assert.equal(from(mum, "B"), 0);
+  assert.equal(from(wife, "C"), 0);
+  assert.equal(from(wife, "D"), 100000);
+  assert.equal(o.current.estatePool, 200000);
+});
+
+test("scenario 6/10: a minor's trust policy is held by the surviving parent; no high flag for that money", () => {
+  const wife = person("Bernice", "spouse");
+  const cindy = person("Cindy", "daughter", { minor: true });
+  const o = analyse(planWith([wife, cindy], [asset("Policy 2", "insurance", 100000, "nominee", [{ personId: cindy.id, pct: 100 }])]));
+  assert.match(flag(o, /statutory trustee/).text, /Bernice as statutory trustee/);
+  assert.ok(!flag(o, /Minors cannot give a valid receipt/));
+});
+
+test("scenario 7b: no surviving parent → Amanah Raya holds the minor's trust policy", () => {
+  const cindy = person("Cindy", "daughter", { minor: true });
+  const o = analyse(planWith([cindy], [asset("Policy", "insurance", 100000, "nominee", [{ personId: cindy.id, pct: 100 }])]));
+  assert.ok(flag(o, /Amanah Raya/));
 });

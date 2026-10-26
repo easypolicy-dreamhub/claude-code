@@ -18,6 +18,14 @@ So the app's faraid engine, its Muslim-specific flags and its Singapore/CPF rule
 
 **Status (26 Oct 2026):** findings 1–11 are implemented in the rebuilt app in `legacy-planner/` (see its README). Finding 10 was resolved by removing the unreachable Singapore-jurisdiction branches. Engine tests (`npm test`) cover each finding.
 
+**Update after the *Estate Planning Scenarios Summary* handout (4 pages, 11 scenarios):**
+- **Trust status is fixed on the date of nomination (scenario 5).** A parent nominated before marriage stays a trust nominee; a parent nominated after marriage, or a fiancé(e) nominated before it, holds the money for the estate. The app now has a "Date the current nomination was made" field on Malaysian policies and applies this rule; without dates it falls back to the family as it stands today.
+- **Ex-spouse nominee: corrected.** The first rebuild treated an ex-spouse as a non-trust nominee. Following the same scenario-5 principle, a spouse nominated during the marriage holds a trust nomination that the divorce does not undo, so the ex-spouse keeps the payout and the will cannot override it (scenario 3). The app and the David Tan sample now show this.
+- **Minor child nominee (scenarios 6, 7, 7b, 10).** The payout is held by the surviving parent as statutory trustee, or by Amanah Raya if no parent survives; a guardian named in the will does not control it. The app now says so and no longer raises the "minor needs a trust" warning for that money.
+- **Trusts and insolvency (scenario 9).** Added a note that transfers into a non-insurance trust within 5 years before death can be clawed back if the person was insolvent at the time.
+- **Confirmed:** scenarios 1–4 and 8 match the app (probate freeze, trust policy outside the will and creditors, nomination overrides will, sibling nominee holds for the estate, living trust overrides will).
+- **Not modelled:** simultaneous death (scenario 11, older person presumed to die first).
+
 ---
 
 ## Summary
@@ -221,7 +229,7 @@ The app has one generic business flag. **Suggested fix:** add a "Business type" 
 
 This doesn't affect the app as it stands. It matters if the trust-nominee rule is built in.
 
-1. **Trust nominee who dies first.** *Part I*, p. 47 says the money "reverts to the Estate". *Part I*, p. 51 (para 6(2)) says surviving nominees take it all. See #3.
+1. ~~**Trust nominee who dies first.**~~ **Resolved.** *Part I*, p. 47 says the money "reverts to the Estate"; p. 51 (para 6(2)) says surviving nominees take it all. The *Estate Planning Scenarios Summary* (scenario 11) confirms p. 47 describes a **sole** nominee who dies first: the nomination is revoked and the money falls into the estate. With several nominees, the survivors share it. This is what the app does.
 
 ---
 
@@ -240,3 +248,4 @@ This doesn't affect the app as it stands. It matters if the trust-nominee rule i
 | 1d4447e0 | Case Studies KB02–KB06 | 52 | Transfer costs, representation, lost wills |
 | 348812d3 | Legal Guardian & Financial Support via Insurance | 49 | Guardianship |
 | a3ffb8dd | Estate Planning vs Legacy Planning | 20 | Background only |
+| 82a88ed4 | Estate Planning & Insurance Policy Scenarios — Summary (added later) | 4 | Nomination timing, minors, ex-spouse, trusts |

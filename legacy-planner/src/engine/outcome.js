@@ -96,7 +96,7 @@ export function computeOutcome(plan, useWill) {
         for (const a of living) {
           const person = livingPerson(a.personId);
           const amount = (value * a.pct) / livingTotal;
-          const verdict = classifyNominee(person, plan.people);
+          const verdict = classifyNominee(person, plan, asset);
           if (verdict.kind === "trust" || asset.assigned) {
             credit(person.id, `${name} (${verdict.kind === "trust" ? "trust nomination" : "assigned to nominee"})`, amount);
             outsideEstate += amount;
@@ -104,7 +104,7 @@ export function computeOutcome(plan, useWill) {
             addToEstate(asset, amount);
             nonTrustNominees.push({ asset, person, amount, reason: verdict.reason });
             notes.push(
-              `"${name}": ${person.name.trim() || "the nominee"} (${verdict.reason}) receives ${money(amount)} as executor for the estate, not personally (FSA 2013 Schedule 10, para 6). It is added to the estate and shared under the will or the Distribution Act.`,
+              `"${name}": ${person.name.trim() || "the nominee"}, who ${verdict.reason}, receives ${money(amount)} as executor for the estate, not personally (FSA 2013 Schedule 10, para 6). It is added to the estate and shared under the will or the Distribution Act.`,
             );
           }
         }

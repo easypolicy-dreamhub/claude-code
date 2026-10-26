@@ -70,11 +70,22 @@ export function buildFlags(plan, current, defaultLaw, willInPlace) {
   }
 
   // --- Minors and dependants -------------------------------------------------
+  const survivingParent = plan.people.find((p) => p.alive && p.relationship === "spouse");
   current.people
     .filter((p) => p.person.minor && p.total > 0)
     .forEach((p) => {
-      if (!done("living_trust") && !done("testamentary_trust")) {
-        add("high", `${p.person.name} is a minor and would receive ${money(p.total)}. Minors cannot give a valid receipt, so a court-supervised guardian or trustee may be needed. Consider a living trust or a testamentary trust (set up in the will) and name a guardian.`);
+      // Trust-nominated insurance for a minor is paid to the surviving parent as statutory trustee,
+      // or to Amanah Raya (the Public Trustee) if no parent survives. The guardian named in the will does not control it.
+      const statutory = p.contributions.filter((c) => c.label.endsWith("(trust nomination)")).reduce((sum, c) => sum + c.amount, 0);
+      if (statutory > 0.005) {
+        add(
+          "info",
+          `${p.person.name}'s ${money(statutory)} from trust-nominated insurance is paid to ${survivingParent ? `${survivingParent.name.trim() || "the surviving parent"} as statutory trustee` : "Amanah Raya (the Public Trustee), since no parent survives"} and held for the child. A guardian named in the will looks after the child day to day but does not control this money${survivingParent ? "" : " and must apply to Amanah Raya for payments"}.`,
+        );
+      }
+      const rest = p.total - statutory;
+      if (rest > 0.5 && !done("living_trust") && !done("testamentary_trust")) {
+        add("high", `${p.person.name} is a minor and would receive ${money(rest)}${statutory > 0.005 ? " outside the insurance" : ""}. Minors cannot give a valid receipt, so a court-supervised guardian or trustee may be needed. Consider a living trust or a testamentary trust (set up in the will) and name a guardian.`);
       }
     });
   plan.people
@@ -113,15 +124,18 @@ export function buildFlags(plan, current, defaultLaw, willInPlace) {
     .forEach((a) => add("medium", `"${a.name}" is routed to the estate. Check whether a nomination is in place; without one it may be delayed or fall under the default law.`));
 
   // Malaysian insurance nominees who are not a spouse, child or parent hold the money for the estate.
-  current.nonTrustNominees
-    .filter((n) => n.person.relationship !== "ex-spouse")
-    .forEach((n) => {
+  current.nonTrustNominees.forEach((n) => {
       add(
         "high",
         `${nameOf(n.person)} is nominated on "${n.asset.name}" but ${n.reason}. Under the Financial Services Act 2013 (Schedule 10) they receive the money as executor for the estate, not personally, and must pass it on under the will or the Distribution Act — creditors can reach it too. To let them keep it, nominate a spouse, child or parent, or assign the policy benefits to them in writing.`,
       );
     });
 
+  plan.assets
+    .filter((a) => a.route === "trust" && a.category !== "insurance" && a.value > 0)
+    .forEach((a) =>
+      add("info", `"${a.name}" is held in a trust. Under the Insolvency Act, money or property moved into a trust within 5 years before death can be clawed back for creditors if they were already insolvent, or avoiding debts, when they moved it. An insurance trust is not affected in the same way.`),
+    );
   if (plan.assets.some((a) => a.route === "trust" && a.value > 0) && !done("living_trust") && !done("business_trust")) {
     add("medium", "Some assets are marked as held in trust, but no living trust or business trust is marked as done in the checklist.");
   }
@@ -229,7 +243,7 @@ export function buildFlags(plan, current, defaultLaw, willInPlace) {
             ? `"${a.name}" is still nominated to an ex-spouse. Divorce does not automatically cancel a life insurance nomination in Singapore, whether trust or revocable — update it with the insurer if this is not intended.`
             : plan.muslim
               ? `"${a.name}" is still nominated to an ex-spouse. Confirm with the insurer or takaful operator whether the nomination has been updated since the divorce.`
-              : `"${a.name}" is still nominated to an ex-spouse. Divorce does not remove the nomination, but a former spouse is not a spouse under the Financial Services Act 2013 (Schedule 10), so they would most likely receive the money as executor for the estate rather than keep it. Confirm with the insurer and update the nomination if this is not intended.`,
+              : `"${a.name}" is still nominated to an ex-spouse. A spouse nominated during the marriage holds a trust nomination, and trust status is fixed on the day of nomination, so the divorce does not undo it: the ex-spouse would keep the payout, and the will cannot override it. Change the nomination with the insurer if this is not intended.`,
         ),
       );
     plan.assets

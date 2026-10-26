@@ -162,12 +162,21 @@ export function AssetsTab({ plan, update }) {
 
             {malaysianPolicy && (
               <>
+                <div className="grid">
+                  <Field label="Date the current nomination was made">
+                    <input type="date" value={asset.nominatedOn ?? ""} onChange={(e) => patch(asset.id, { nominatedOn: e.target.value || undefined })} />
+                  </Field>
+                </div>
+                <p className="hint">
+                  Trust status is fixed on the day of nomination. A parent nominated before the marriage stays a trust nominee; a parent nominated after it, or a fiancé(e) nominated before it, holds the money for the estate.
+                  {!plan.marriedOn && " Add the marriage date in the Profile tab so the app can check this."}
+                </p>
                 {asset.allocations
                   .filter((a) => a.pct > 0)
                   .map((a) => plan.people.find((p) => p.id === a.personId))
                   .filter(Boolean)
                   .map((person) => {
-                    const verdict = classifyNominee(person, plan.people);
+                    const verdict = classifyNominee(person, plan, asset);
                     return (
                       <p className="hint" key={person.id}>
                         <b>{person.name.trim() || "Unnamed"}:</b>{" "}
