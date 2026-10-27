@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Client Details — DreamHub E3</title>
+<link rel="icon" href="/images/favicon.png">
+<style id="e3-theme">
+  :root{
+    --e3-bar-bg:#101826; --e3-bar-fg:#e8edf5; --e3-bar-accent:#d4a73a;
+    --bg:#f4f6f9; --card:#fff; --ink:#17202b; --muted:#5b6672; --line:#e3e8ee;
+    --ok:#1d7a4c; --warn:#b5660a; --bad:#b3261e; --accent:#2a5fb3;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--accent)}
+  nav.e3-bar{background:var(--e3-bar-bg);color:var(--e3-bar-fg);display:flex;align-items:center;gap:14px;
+    padding:10px 16px;position:sticky;top:0;z-index:20}
+  nav.e3-bar a.back{color:var(--e3-bar-fg);text-decoration:none;opacity:.85;font-size:14px}
+  nav.e3-bar a.back:hover{opacity:1}
+  nav.e3-bar .brand{font-weight:700;letter-spacing:.02em}
+  nav.e3-bar .brand b{color:var(--e3-bar-accent)}
+  nav.e3-bar .page-title{margin-left:auto;font-size:14px;opacity:.9}
+  @media print{nav.e3-bar{display:none}}
+
+  main{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:20px;margin:4px 0 2px}
+  p.lead{color:var(--muted);margin:0 0 18px;font-size:14px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.danger{background:#fff;border-color:#f0c4c0;color:var(--bad)}
+  .btn:disabled{opacity:.5;cursor:default}
+  input[type=file]{display:none}
+  .muted{color:var(--muted);font-size:13px}
+  .status-line{font-size:13px;margin-top:8px}
+  .status-line.err{color:var(--bad)}
+  .status-line.ok{color:var(--ok)}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .tile .n{font-size:24px;font-weight:700}
+  .tile .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .tile.bad .n{color:var(--bad)} .tile.warn .n{color:var(--warn)} .tile.ok .n{color:var(--ok)}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .toolbar input[type=search]{flex:1;min-width:160px;padding:9px 12px;border:1px solid var(--line);
+    border-radius:8px;font:inherit}
+  select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:#f9fafb;position:sticky;top:0;font-weight:700;color:var(--muted);font-size:12px;
+    text-transform:uppercase;letter-spacing:.03em}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.inforce{background:#e4f3ea;color:var(--ok)}
+  .pill.lapsed,.pill.terminated{background:#fbe8e6;color:var(--bad)}
+  .pill.other{background:#eef1f5;color:var(--muted)}
+  .amt-overdue{color:var(--bad);font-weight:600}
+
+  .empty{text-align:center;padding:48px 16px;color:var(--muted)}
+  .empty h2{color:var(--ink);font-size:17px;margin-bottom:6px}
+  ol.steps{text-align:left;max-width:460px;margin:16px auto 0;padding-left:20px;font-size:13.5px}
+  ol.steps li{margin-bottom:6px}
+
+  @media (max-width:520px){
+    main{padding:14px 10px 48px}
+    nav.e3-bar .page-title{display:none}
+    th,td{padding:7px 8px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="e3-bar">
+  <a class="back" href="/members/">&larr; Members</a>
+  <span class="brand">DreamHub <b>E3</b></span>
+  <span class="page-title">Client Details</span>
+</nav>
+
+<main>
+  <h1>Client Details</h1>
+  <p class="lead">Your own clients, from your e-Partner Policy Listing. Nobody else sees this page's data — it's filed under your sign-in only.</p>
+
+  <div class="card">
+    <div class="row">
+      <button class="btn primary" id="btnPick">Import update file&hellip;</button>
+      <input type="file" id="filePick" accept="application/json,.json">
+      <button class="btn" id="btnClear" style="display:none">Clear my data</button>
+      <span class="muted" id="lastUpdated"></span>
+    </div>
+    <div class="status-line" id="status"></div>
+    <details style="margin-top:10px">
+      <summary class="muted" style="cursor:pointer">Where does this file come from?</summary>
+      <ol class="steps" style="margin-top:10px">
+        <li>On your computer, sign in to e-Partner and open <b>Online Enquiry &rarr; Policy Enquiry &rarr; View all policies &rarr; Submit</b>.</li>
+        <li>Click your <b>GE Refresh</b> bookmark. It reads every policy and downloads a file named <code>portfolio_update_&lt;date&gt;.json</code>.</li>
+        <li>Come back here, tap <b>Import update file</b> above, and choose that file. It uploads to this page only — nobody else can see it.</li>
+      </ol>
+    </details>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var API = 'api.php';
+  var state = { data: null };
+
+  var els = {
+    pick: document.getElementById('btnPick'),
+    file: document.getElementById('filePick'),
+    clear: document.getElementById('btnClear'),
+    status: document.getElementById('status'),
+    lastUpdated: document.getElementById('lastUpdated'),
+    content: document.getElementById('content'),
+  };
+
+  function setStatus(msg, kind){
+    els.status.textContent = msg || '';
+    els.status.className = 'status-line' + (kind ? ' ' + kind : '');
+  }
+  function fmtDate(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    return d.toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  function parseMoney(s){
+    if (s == null) return 0;
+    var n = parseFloat(String(s).replace(/[^0-9.\-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+  function parseGEDate(s){
+    // expects DD/MM/YYYY as seen on e-Partner printouts
+    if (!s) return null;
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(s));
+    if (!m) return null;
+    var d = new Date(+m[3], +m[2]-1, +m[1]);
+    return isNaN(d) ? null : d;
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  els.pick.addEventListener('click', function(){ els.file.click(); });
+  els.file.addEventListener('change', function(){
+    var f = els.file.files && els.file.files[0];
+    els.file.value = '';
+    if (f) upload(f);
+  });
+  els.clear.addEventListener('click', function(){
+    if (!confirm('Remove your imported client data from this site? Nothing on e-Partner is affected.')) return;
+    fetch(API + '?action=delete', { method:'POST', headers:{'X-CD-Request':'1'} })
+      .then(function(){ state.data = null; render(); setStatus('Cleared.', 'ok'); });
+  });
+
+  function upload(file){
+    setStatus('Uploading ' + file.name + '…');
+    els.pick.disabled = true;
+    var reader = new FileReader();
+    reader.onerror = function(){ setStatus('Could not read that file.', 'err'); els.pick.disabled = false; };
+    reader.onload = function(){
+      var text = reader.result;
+      try { JSON.parse(text); }
+      catch (e) { setStatus('That file does not look like a GE Refresh update file.', 'err'); els.pick.disabled = false; return; }
+      fetch(API + '?action=upload', { method:'POST', headers:{'X-CD-Request':'1','Content-Type':'application/json'}, body: text })
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+        .then(function(res){
+          els.pick.disabled = false;
+          if (!res.ok) { setStatus(res.j && res.j.error || 'Upload failed.', 'err'); return; }
+          setStatus('Imported ' + res.j.policies + ' policies.', 'ok');
+          load();
+        })
+        .catch(function(){ setStatus('Could not reach the server. Try again.', 'err'); els.pick.disabled = false; });
+    };
+    reader.readAsText(file);
+  }
+
+  function load(){
+    fetch(API + '?action=get', { cache:'no-store' })
+      .then(function(r){
+        if (r.status === 401) { setStatus('Please sign in to the members area and reload this page.', 'err'); return null; }
+        return r.json();
+      })
+      .then(function(j){
+        if (!j) return;
+        state.data = j.hasData ? j.data : null;
+        render();
+      })
+      .catch(function(){ setStatus('Could not reach the server.', 'err'); });
+  }
+
+  function render(){
+    var d = state.data;
+    els.clear.style.display = d ? '' : 'none';
+    els.lastUpdated.textContent = d ? ('Last imported ' + fmtDate(d.uploadedAt) + (d.asOf ? ' · as at ' + d.asOf + ' on e-Partner' : '')) : '';
+
+    if (!d) {
+      els.content.innerHTML =
+        '<div class="card"><div class="empty">' +
+        '<h2>No client data imported yet</h2>' +
+        '<p>Use <b>Import update file</b> above with the file your GE Refresh bookmark downloads.</p>' +
+        '</div></div>';
+      return;
+    }
+
+    var list = Array.isArray(d.list) ? d.list : [];
+    var det = d.det && typeof d.det === 'object' ? d.det : {};
+    var rows = list.map(function(r){
+      var policyNo = Array.isArray(r) ? (r[1] || '') : '';
+      var info = det[policyNo] || {};
+      var kv = info.kv || {};
+      return { policyNo: policyNo, kv: kv, insured: info.insured || [] };
+    }).filter(function(x){ return x.policyNo; });
+
+    // ---- stats ----
+    var today = new Date();
+    var in30 = new Date(today.getTime() + 30*24*3600*1000);
+    var total = rows.length, inforce = 0, lapsedOrTerm = 0, overdueCount = 0, overdueTotal = 0, dueSoon = 0;
+    rows.forEach(function(x){
+      var status = (x.kv['Policy Status'] || '').toLowerCase();
+      if (status.indexOf('inforce') >= 0 || status.indexOf('in force') >= 0) inforce++;
+      else if (status.indexOf('lapse') >= 0 || status.indexOf('terminat') >= 0) lapsedOrTerm++;
+      var overdue = parseMoney(x.kv['Overdue Premium']);
+      if (overdue > 0) { overdueCount++; overdueTotal += overdue; }
+      var due = parseGEDate(x.kv['Next Due Date']);
+      if (due && due >= today && due <= in30) dueSoon++;
+    });
+
+    var tiles =
+      '<div class="tiles">' +
+        tile(total, 'Policies imported') +
+        tile(inforce, 'Inforce', 'ok') +
+        tile(lapsedOrTerm, 'Lapsed / terminated', lapsedOrTerm ? 'bad' : '') +
+        tile(overdueCount, 'With overdue premium', overdueCount ? 'warn' : '') +
+        tile('RM ' + overdueTotal.toLocaleString(undefined,{maximumFractionDigits:0}), 'Overdue premium, total', overdueTotal ? 'bad' : '') +
+        tile(dueSoon, 'Premiums due in 30 days') +
+      '</div>';
+
+    var options = ['All statuses', 'Inforce', 'Lapsed / terminated', 'Overdue premium'];
+    var toolbar =
+      '<div class="toolbar">' +
+        '<input type="search" id="q" placeholder="Search policy number or name…">' +
+        '<select id="filt">' + options.map(function(o,i){ return '<option value="'+i+'">'+o+'</option>'; }).join('') + '</select>' +
+      '</div>';
+
+    els.content.innerHTML = tiles +
+      '<div class="card">' + toolbar + '<div class="table-wrap"><table><thead><tr>' +
+      '<th>Policy No</th><th>Life assured</th><th>Status</th><th>Next due</th><th>Overdue</th><th>Potential lapse</th>' +
+      '</tr></thead><tbody id="tbody"></tbody></table></div></div>';
+
+    function statusClass(s){
+      s = (s||'').toLowerCase();
+      if (s.indexOf('inforce')>=0 || s.indexOf('in force')>=0) return 'inforce';
+      if (s.indexOf('lapse')>=0 || s.indexOf('terminat')>=0) return 'lapsed';
+      return 'other';
+    }
+
+    function matches(x, q, filt){
+      if (filt === '1' && statusClass(x.kv['Policy Status']) !== 'inforce') return false;
+      if (filt === '2' && statusClass(x.kv['Policy Status']) === 'inforce') return false;
+      if (filt === '3' && parseMoney(x.kv['Overdue Premium']) <= 0) return false;
+      if (!q) return true;
+      q = q.toLowerCase();
+      if (x.policyNo.toLowerCase().indexOf(q) >= 0) return true;
+      return (x.insured || []).some(function(p){ return (p.name||'').toLowerCase().indexOf(q) >= 0; });
+    }
+
+    function paint(){
+      var q = document.getElementById('q').value.trim();
+      var filt = document.getElementById('filt').value;
+      var shown = rows.filter(function(x){ return matches(x, q, filt); }).slice(0, 500);
+      document.getElementById('tbody').innerHTML = shown.map(function(x){
+        var name = (x.insured || []).map(function(p){ return p.name; }).filter(Boolean).join(', ');
+        var overdue = parseMoney(x.kv['Overdue Premium']);
+        return '<tr>' +
+          '<td>' + esc(x.policyNo) + '</td>' +
+          '<td>' + esc(name) + '</td>' +
+          '<td><span class="pill ' + statusClass(x.kv['Policy Status']) + '">' + esc(x.kv['Policy Status'] || '—') + '</span></td>' +
+          '<td>' + esc(x.kv['Next Due Date'] || '—') + '</td>' +
+          '<td' + (overdue > 0 ? ' class="amt-overdue"' : '') + '>' + (overdue > 0 ? 'RM ' + overdue.toLocaleString() : '—') + '</td>' +
+          '<td>' + esc(x.kv['Potential Lapse Date'] || '—') + '</td>' +
+        '</tr>';
+      }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:24px">No policies match.</td></tr>';
+    }
+    document.getElementById('q').addEventListener('input', paint);
+    document.getElementById('filt').addEventListener('change', paint);
+    paint();
+  }
+
+  function tile(n, label, cls){
+    return '<div class="tile' + (cls ? ' ' + cls : '') + '"><div class="n">' + n + '</div><div class="l">' + esc(label) + '</div></div>';
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
