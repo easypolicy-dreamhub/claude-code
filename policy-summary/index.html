@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>Policy Summary</title>
+<link rel="icon" href="/images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F2EF; --paper:#FFFFFF; --ink:#24333A; --muted:#5C6870; --line:#E2DDD8;
+  --green:#5E6B40; --green-soft:#E7EADD; --gold:#B5853A; --gold-soft:#F5EAD6;
+  --red:#A63B33; --red-soft:#F6E3E0; --taupe:#B9AFA7; --brown:#6E625A; --slate:#4A6B85;
+  --c1:#5E6B40; --c2:#8D9A6E; --c3:#B3BC98; --c4:#D6DBC6;
+  color-scheme:light only; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4{font-family:Poppins,"DM Sans",system-ui,sans-serif;line-height:1.2;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.e3-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;min-height:46px;background:#24333A;color:#FFFFFF;font:500 14px/1.2 "DM Sans",system-ui,sans-serif;position:relative;z-index:100}
+.e3-bar a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#FFFFFF;text-decoration:none}
+.e3-bar a:hover{color:#B9AFA7}
+.e3-bar .e3-brand{font:700 15px/1 Poppins,"DM Sans",system-ui,sans-serif;color:#FFFFFF}
+.e3-bar .e3-brand span{color:#B9AFA7}
+.wrap{max-width:820px;margin:0 auto;padding:20px 16px 90px}
+header.title{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 20px;margin-bottom:12px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+header.title h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+header.title p{font:500 13px/1.4 "DM Sans",sans-serif;color:var(--muted);margin:2px 0 0}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 14px;padding:0;list-style:none}
+.steps button{width:100%;border:0;background:transparent;color:var(--muted);font-size:.82rem;text-align:left;padding:8px 2px 6px;border-top:3px solid var(--line);cursor:pointer}
+.steps button b{display:block;font-family:Poppins,sans-serif;font-size:1.05rem;color:inherit}
+.steps button[aria-current="step"]{color:var(--ink);border-top-color:var(--green)}
+.steps button.done{border-top-color:var(--c3)}
+
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 18px;display:none}
+.panel.active{display:block}
+.panel h2{font-size:1.35rem;font-weight:700}
+.lead{color:var(--muted);margin:4px 0 16px}
+fieldset{border:0;margin:0 0 6px;padding:0;min-width:0}
+legend{font-weight:700;font-size:.95rem;padding:0;margin:14px 0 8px;color:var(--green)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+.grid .full{grid-column:1/-1}
+label{display:block;font-size:.9rem;font-weight:500;margin-bottom:4px}
+label .req{color:var(--red)}
+.hint{display:block;font-size:.78rem;color:var(--muted);font-weight:400;margin-top:3px}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-height:44px}
+input.err,select.err{border-color:var(--red);background:var(--red-soft)}
+.money{position:relative}
+.money input{padding-left:46px}
+.money::before{content:"RM";position:absolute;left:12px;top:calc(50% + 1px);transform:translateY(-50%);font-size:.85rem;color:var(--muted);pointer-events:none}
+.money.nolabel::before{top:50%}
+.radio{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--bg)}
+.radio input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--green)}
+.radio label{margin:0}
+.radio.off{opacity:.6}
+details{margin-top:10px;font-size:.88rem}
+details summary{cursor:pointer;color:var(--green);font-weight:700}
+details blockquote{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--taupe);color:var(--muted)}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn{font-weight:700;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:1px solid var(--green);background:var(--green);color:#fff}
+.btn.ghost{background:transparent;color:var(--green)}
+.btn.danger{border-color:var(--red);color:var(--red);background:transparent}
+.btn.small{padding:6px 12px;min-height:36px;font-size:.85rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{border-radius:10px;padding:10px 12px;margin:12px 0;font-size:.9rem;background:var(--gold-soft)}
+.msg.bad{background:var(--red-soft);color:var(--red)}
+.msg.ok{background:var(--green-soft);color:var(--green)}
+
+/* Upload + policy list */
+.drop{display:block;border:2px dashed var(--taupe);border-radius:14px;padding:22px;text-align:center;background:var(--bg);cursor:pointer}
+.drop.over{border-color:var(--green);background:var(--green-soft)}
+.drop b{display:block;font-family:Poppins,sans-serif}
+.drop span{color:var(--muted);font-size:.88rem}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.plist{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.pitem{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.pitem .t{font-weight:700}
+.pitem .s{font-size:.85rem;color:var(--muted)}
+.pitem .acts{display:flex;gap:6px}
+.chip{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle}
+.chip.ok{background:var(--green-soft);color:var(--green)}
+.chip.chk{background:var(--gold-soft);color:var(--gold)}
+.chip.man{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+
+/* Editor */
+.tabs{display:none;gap:6px;margin:8px 0}
+.tabs button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:8px;font-weight:700;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.edit{display:grid;grid-template-columns:1fr;gap:14px}
+@media (max-width:899px){.tabs{display:flex}.edit.hasText .txtcol{display:none}.edit.hasText.showtext .formcol{display:none}.edit.hasText.showtext .txtcol{display:block}}
+@media (min-width:900px){.wrap.wide{max-width:1100px}.edit.hasText{grid-template-columns:1fr 1fr}}
+.fieldrow{position:relative}
+.cf{position:absolute;right:6px;top:27px;width:28px;height:28px;border-radius:50%;border:0;font-weight:700;cursor:pointer;line-height:28px;padding:0}
+.cf.ok{background:var(--green-soft);color:var(--green)}
+.cf.check{background:var(--gold-soft);color:var(--gold)}
+.cf.missing{background:var(--red-soft);color:var(--red)}
+.fieldrow input,.fieldrow select{padding-right:38px}
+.fieldrow.manual input,.fieldrow.manual select{padding-right:12px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.78rem;color:var(--muted)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.btable{table-layout:fixed}.btable td{padding:6px 3px}.btable .cf{width:28px;height:28px;margin-right:2px}.btable .btn.small{padding:0;width:32px;min-height:32px}
+.btable input,.btable select{min-height:40px;padding:7px 8px}
+.btable .money input{padding-left:38px}
+.btable .money::before{left:8px;font-size:.75rem}
+.bextra{background:var(--bg);border-radius:8px;padding:8px;margin:4px 0 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.bextra{grid-template-columns:1fr}}
+.txt{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:70vh;overflow:auto;user-select:text}
+.usebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.usebar select{flex:1;min-width:140px}
+.remind{font-size:.85rem;background:var(--gold-soft);border-radius:10px;padding:10px 12px;margin:14px 0}
+
+/* Summary */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 16px}
+@media (max-width:560px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--bg);border-radius:12px;padding:12px;text-align:center}
+.tile b{display:block;font-family:Poppins,sans-serif;font-size:1.25rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile small{color:var(--muted);font-size:.78rem}
+.sec{margin-top:22px}
+.sec h3{font-size:1.05rem;margin-bottom:8px}
+.crow{margin-bottom:14px}
+.crow .top{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;margin-bottom:4px}
+.crow .top b{font-variant-numeric:tabular-nums;text-align:right}
+.track{height:22px;background:var(--bg);border-radius:6px;overflow:hidden}
+.track span{display:block;height:100%}
+.track .g{background:var(--c1)} .track .o{background:var(--gold)} .track .r{background:var(--red)} .track .i{background:var(--slate)}
+.crow small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px}
+.notes{margin:0;padding-left:20px}
+.notes li{margin-bottom:4px}
+.tl{margin-top:4px}
+.tlrow{display:grid;grid-template-columns:42% 1fr;gap:8px;align-items:center;font-size:.8rem;margin-bottom:5px}
+.tlrow .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tltrack{position:relative;height:14px;background:var(--bg);border-radius:4px}
+.tltrack i{position:absolute;top:0;height:100%;border-radius:4px;background:var(--c1)}
+.tltrack i.grp{background:var(--taupe)}
+.tltrack u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red);text-decoration:none}
+.tlaxis{display:grid;grid-template-columns:42% 1fr;gap:8px;font-size:.72rem;color:var(--muted)}
+.tlaxis div{display:flex;justify-content:space-between}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.small{font-size:.8rem;color:var(--muted)}
+.printhead{display:none}
+.prt,.prt>tbody,.prt>tbody>tr,.prt>tbody>tr>td,.prt>tfoot,.prt>tfoot>tr,.prt>tfoot>tr>td{display:block;padding:0;border:0}
+.pfoot{display:none}
+.notice{margin-top:22px;font-size:.82rem;color:var(--muted)}
+.notice ul{padding-left:18px;margin:6px 0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#24333A;color:#fff;padding:10px 16px;border-radius:10px;font-size:.9rem;z-index:200;max-width:90vw}
+
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:11.5px}
+  .e3-bar,header.title,.steps,.nav,.actions,.panel:not(#p4),.screen-only,.toast{display:none!important}
+  .wrap{padding:0;max-width:none}
+  .panel{border:0;padding:0}
+  #p4{display:block!important}
+  .printhead{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #24333A;padding-bottom:6px;margin-bottom:10px}
+  .printhead .brand{font:700 16px Poppins,sans-serif}
+  .printhead .brand span{color:var(--brown)}
+  .prt{display:table;width:100%}
+  .prt>tbody{display:table-row-group}
+  .prt>tfoot{display:table-footer-group}
+  .prt>tbody>tr,.prt>tfoot>tr{display:table-row}
+  .prt>tbody>tr>td,.prt>tfoot>tr>td{display:table-cell}
+  .pfoot{display:block;font-size:8px;color:#5C6870;border-top:1px solid #E2DDD8;padding-top:4px;margin-top:6px}
+  .pb{break-before:page}
+  .crow,.tlrow,.tile,.notice{break-inside:avoid}
+  .tile,.track,.track span,.tltrack,.tltrack i,.tltrack u,.chip,.msg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<nav class="e3-bar" aria-label="E3 toolkit"><a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>E3 Toolkit</a><span class="e3-brand">Dream<span>Hub</span> E3</span></nav>
+
+<div class="wrap" id="wrap">
+  <header class="title">
+    <div><h1>Policy Summary</h1><p>Turn a client's policies, from any insurer, into one clear page.</p></div>
+    <button class="btn ghost small" id="newBtn" type="button">New summary</button>
+  </header>
+
+  <ol class="steps" role="list">
+    <li><button type="button" data-go="1" aria-current="step"><b>1</b>Client</button></li>
+    <li><button type="button" data-go="2"><b>2</b>Policies</button></li>
+    <li><button type="button" data-go="3"><b>3</b>Review</button></li>
+    <li><button type="button" data-go="4"><b>4</b>Summary</button></li>
+  </ol>
+
+  <!-- STEP 1 -->
+  <section class="panel active" id="p1">
+    <h2>Client</h2>
+    <p class="lead">Who is this summary for? One person or a whole family.</p>
+    <div class="grid">
+      <div class="full"><label for="cname">Client or household name <span class="req">*</span></label><input type="text" id="cname" placeholder="e.g. Mr &amp; Mrs Lee" autocomplete="off"></div>
+      <div><label for="canb">Age next birthday <span class="req">*</span></label><input type="number" id="canb" inputmode="numeric" min="0" max="99"><span class="hint">Used for the cover timeline and the underwriting link</span></div>
+      <div><label for="cinc">Annual income <span class="req">*</span></label><div class="money"><input type="text" id="cinc" inputmode="numeric" data-money autocomplete="off"></div><span class="hint">Used for the critical illness, accident and hospital income guides</span></div>
+      <div><label for="ctype">Income type <span class="req">*</span></label><select id="ctype"><option value="salaried">Salaried</option><option value="self_employed">Self-employed / commission</option></select></div>
+      <div><label for="cret">Retirement age</label><input type="number" id="cret" inputmode="numeric" min="40" max="80" value="60"><span class="hint">Used to flag premiums that run past retirement</span></div>
+      <div class="full"><label>Prepared by</label><input type="text" id="cprep" placeholder="Advisor name"><span class="hint">Printed on the summary. Will fill in from your login in the next update.</span></div>
+    </div>
+    <fieldset><legend>Save this summary?</legend>
+      <div class="radio"><input type="radio" name="store" id="stNo" checked><label for="stNo"><b>Don't store.</b> Generate and print only. Nothing is kept anywhere once you close this page.</label></div>
+      <div class="radio off"><input type="radio" name="store" id="stYes" disabled><label for="stYes"><b>Store for future reviews.</b> <span class="hint">Coming in the next update (Phase 2): saving, sharing with an upline leader, and deleting.</span></label></div>
+    </fieldset>
+    <details><summary>Client consent wording (read to the client)</summary>
+      <blockquote><b>Client Consent</b><br>I agree to share my insurance policy documents and personal information with my DreamHub E3 advisor for the purpose of preparing a Policy Summary and coverage review.<br>☐ <b>Do not store</b>: Use my information to generate this summary only. Do not keep a copy.<br>☐ <b>Store for future reviews</b>: Keep my information securely for future reviews. I understand I may ask for it to be deleted at any time.<br>☐ <b>Supervisor review</b> (optional): My advisor's supervisor may review this summary to help with my plan.<br>My personal data will be handled in accordance with the Personal Data Protection Act 2010 and will not be shared with third parties without my consent.</blockquote>
+    </details>
+    <div class="msg bad" id="e1" hidden></div>
+    <div class="nav"><span></span><button class="btn" type="button" data-go="2">Next: policies</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" id="p2">
+    <h2>Policies</h2>
+    <p class="lead">Add each policy by uploading its PDF or typing it in. Only confirmed policies go into the summary.</p>
+    <label class="drop" id="drop" for="pdfIn"><b>📄 Upload policy PDFs</b><span>Tap to choose, or drop files here. Several at once is fine. PDFs are read on this device and are never uploaded.</span><input type="file" id="pdfIn" accept="application/pdf,.pdf" multiple></label>
+    <div style="margin-top:10px"><button class="btn ghost" type="button" id="addManual">✍️ Add a policy manually</button></div>
+    <div class="msg" id="upmsg" hidden></div>
+    <ul class="plist" id="plist"></ul>
+    <p class="small" id="pempty">No policies yet.</p>
+    <div class="nav"><button class="btn ghost" type="button" data-go="1">Back</button><button class="btn" type="button" id="toSummary">See summary</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" id="p3">
+    <div id="editor"></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="panel" id="p4">
+    <div class="msg bad" id="e4" hidden></div>
+    <div id="sumOut"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const RM=n=>'RM '+Math.round(n||0).toLocaleString('en-MY');
+const num=x=>{const v=parseFloat(String(x==null?'':x).replace(/,/g,''));return isFinite(v)?v:0;};
+const fmtMoney=s=>{const d=String(s).replace(/[^\d]/g,'').replace(/^0+(?=\d)/,'');return d?Number(d).toLocaleString('en-MY'):'';};
+const stripNric=s=>String(s).replace(/\b\d{6}[- ]?\d{2}[- ]?\d{4}\b/g,'').replace(/\s{2,}/g,' ').trim();
+const maskPol=s=>{s=String(s||'').replace(/\s/g,'');return s?(s.length>4?'••••'+s.slice(-4):s):'';};
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500);}
+
+/* ---------- reference data ---------- */
+const INSURERS=['Great Eastern','AIA','Allianz','AmMetLife','Chubb','Etiqa','FWD','Generali','Hong Leong Assurance','Manulife','Principal','Prudential','Sun Life','Takaful Malaysia','Tokio Marine','Zurich','Other'];
+const INSURER_RX={
+  'Great Eastern':/great\s+eastern|\bGELM\b|greateasternlife/i,
+  'AIA':/\bAIA\b/,
+  'Allianz':/allianz/i,
+  'AmMetLife':/am\s*metlife|ammetlife/i,
+  'Chubb':/chubb/i,
+  'Etiqa':/etiqa/i,
+  'FWD':/\bFWD\b/,
+  'Generali':/generali/i,
+  'Hong Leong Assurance':/hong\s+leong\s+assurance|\bHLA\b/i,
+  'Manulife':/manulife/i,
+  'Principal':/principal\s+(?:malaysia|life)|\bprincipal\b/i,
+  'Prudential':/prudential|\bBSN\s+Prulife\b/i,
+  'Sun Life':/sun\s*life/i,
+  'Takaful Malaysia':/takaful\s+malaysia|syarikat\s+takaful/i,
+  'Tokio Marine':/tokio\s+marine/i,
+  'Zurich':/zurich/i
+};
+const PTYPES={life:'Life / protection',investment_linked:'Investment-linked',medical:'Medical',personal_accident:'Personal accident',group:'Group (employer)',mrta:'MRTA / MLTA',takaful:'Takaful',other:'Other'};
+const FREQ={monthly:['Monthly',12],quarterly:['Quarterly',4],half_yearly:['Half-yearly',2],annual:['Annual',1],single:['Single premium',0]};
+const STATUS={in_force:'In force',lapsed:'Lapsed',paid_up:'Paid-up',surrendered:'Surrendered'};
+const CATS={death_tpd:'Death / TPD',ci_early:'Critical illness (early stage)',ci_advanced:'Critical illness (advanced stage)',medical:'Medical (annual limit)',hospital_income:'Hospital income (per day)',personal_accident:'Personal accident',other:'Other'};
+const CATSHORT={death_tpd:'Death/TPD',ci_early:'CI early',ci_advanced:'CI',medical:'Medical',hospital_income:'Hospital income',personal_accident:'Accident',other:'Other'};
+
+/* Gap rules. In Phase 2 these become editable by the super admin. */
+const RULES={medAnnual:1000000,medLifetimeUnlimited:true,medRB:250,medToAge:80,tpdToAge:65,ciMult:5,paMult:5,hiDivisor:365,coverEndWarnAge:65};
+
+/* ---------- state ---------- */
+const S={client:{name:'',anb:0,income:0,incomeType:'salaried',retire:60,prep:''},policies:[],cur:null,seq:0,step:1,textTab:false};
+function blankPolicy(src){
+  return {id:++S.seq,src:src,insurer:'',plan:'',polNo:'',type:'life',lifeAssured:'',owner:'',start:'',coverEnds:'',premium:0,freq:'annual',paidUntil:'',status:'in_force',group:false,nominee:'',cashValue:0,cashAsAt:'',maturityDate:'',maturityBenefit:0,matGuar:0,matNon:0,notes:'',benefits:[],confirmed:false,scanned:false,fileName:'',text:'',conf:{}};
+}
+function blankBenefit(cat){return {cat:cat||'death_tpd',amount:0,endsAge:'',unlimited:false,lifetime:0,rb:0,deductible:'',chk:false};}
+const getP=id=>S.policies.find(p=>p.id===id);
+
+/* ---------- step navigation ---------- */
+function showStep(n){
+  S.step=n;
+  for(let i=1;i<=4;i++)$('#p'+i).classList.toggle('active',i===n);
+  $$('.steps button').forEach(b=>{const k=+b.dataset.go;b.removeAttribute('aria-current');if(k===n)b.setAttribute('aria-current','step');b.classList.toggle('done',k<n);});
+  $('#wrap').classList.toggle('wide',n===3&&!!(S.cur&&getP(S.cur)&&getP(S.cur).text));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function readClient(){
+  const c=S.client;
+  c.name=$('#cname').value.trim();c.anb=num($('#canb').value);c.income=num($('#cinc').value);
+  c.incomeType=$('#ctype').value;c.retire=num($('#cret').value)||60;c.prep=$('#cprep').value.trim();
+}
+function validClient(){
+  readClient();const c=S.client,bad=[];
+  ['cname','canb','cinc'].forEach(id=>$('#'+id).classList.remove('err'));
+  if(!c.name){bad.push('client name');$('#cname').classList.add('err');}
+  if(!c.anb||c.anb<1||c.anb>99){bad.push('age next birthday');$('#canb').classList.add('err');}
+  if(!c.income){bad.push('annual income');$('#cinc').classList.add('err');}
+  const e=$('#e1');
+  if(bad.length){e.textContent='Please fill in: '+bad.join(', ')+'.';e.hidden=false;return false;}
+  e.hidden=true;return true;
+}
+function go(n){
+  if(n>=2&&!validClient()){showStep(1);return;}
+  if(n===3){
+    let p=getP(S.cur);
+    if(!p)p=S.policies.find(x=>!x.confirmed)||S.policies[0];
+    if(!p){toast('Add a policy first.');showStep(2);renderList();return;}
+    S.cur=p.id;renderEditor();
+  }
+  if(n===2)renderList();
+  if(n===4){if(!renderSummary())return;}
+  showStep(n);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');
+  if(b){go(+b.dataset.go);}
+});
+
+/* ---------- money formatting on type ---------- */
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.matches('[data-money]')){
+    const pos=el.selectionStart,before=el.value.slice(0,pos).replace(/[^\d]/g,'').length;
+    el.value=fmtMoney(el.value);
+    let i=0,c=0;while(i<el.value.length&&c<before){if(/\d/.test(el.value[i]))c++;i++;}
+    try{el.setSelectionRange(i,i);}catch(_){}
+  }
+});
+
+/* ---------- PDF reading (PDF.js loaded only when needed) ---------- */
+const PDFJS_VER='3.11.174';
+const PDFJS_BASE='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VER+'/';
+let pdfjsReady=null;
+function loadPdfjs(){
+  if(pdfjsReady)return pdfjsReady;
+  pdfjsReady=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=PDFJS_BASE+'pdf.min.js';
+    s.onload=async()=>{
+      try{
+        // Load the worker through a blob so it works across origins
+        const txt=await (await fetch(PDFJS_BASE+'pdf.worker.min.js')).text();
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([txt],{type:'text/javascript'}));
+        resolve(window.pdfjsLib);
+      }catch(err){reject(err);}
+    };
+    s.onerror=()=>reject(new Error('PDF reader could not be loaded'));
+    document.head.appendChild(s);
+  }).catch(err=>{pdfjsReady=null;throw err;});
+  return pdfjsReady;
+}
+async function pdfToLines(file){
+  const lib=await loadPdfjs();
+  const buf=await file.arrayBuffer();
+  const doc=await lib.getDocument({data:buf}).promise;
+  const out=[];let chars=0;
+  for(let n=1;n<=doc.numPages;n++){
+    const page=await doc.getPage(n);
+    const tc=await page.getTextContent();
+    const rows=[];
+    tc.items.forEach(it=>{
+      if(!it.str||!it.str.trim()&&!it.str)return;
+      const x=it.transform[4],y=it.transform[5];
+      let row=rows.find(r=>Math.abs(r.y-y)<3);
+      if(!row){row={y:y,items:[]};rows.push(row);}
+      row.items.push({x:x,w:it.width||0,s:it.str});
+    });
+    rows.sort((a,b)=>b.y-a.y);
+    out.push('--- Page '+n+' ---');
+    rows.forEach(r=>{
+      r.items.sort((a,b)=>a.x-b.x);
+      let line='',end=null;
+      r.items.forEach(it=>{
+        if(end!==null){const gap=it.x-end;line+=gap>8?'  ':(gap>1?' ':'');}
+        line+=it.s;end=it.x+it.w;
+      });
+      line=line.replace(/\s+$/,'');
+      if(line.trim()){chars+=line.replace(/\s/g,'').length;out.push(line);}
+    });
+  }
+  return {lines:out,chars:chars,pages:doc.numPages};
+}
+
+/* ---------- rule-based extraction ---------- */
+const MONTHS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function isoDate(y,m,d){y=+y;m=+m;d=+d;if(m<1||m>12||d<1||d>31||y<1950||y>2100)return '';return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function parseDate(s){
+  s=String(s||'');
+  let m=s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return isoDate(y,m[2],m[1]);}
+  m=s.match(/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})[,\s]+(\d{4})/);
+  if(m){const mo=MONTHS[m[2].slice(0,3).toLowerCase()];if(mo)return isoDate(m[3],mo,m[1]);}
+  return '';
+}
+function amounts(line){
+  const out=[];let m;
+  const rx=/(?:RM|MYR)\s*([\d,]+(?:\.\d+)?)|\b(\d{1,3}(?:,\d{3})+(?:\.\d+)?)\b/gi;
+  while((m=rx.exec(line))){const v=parseFloat((m[1]||m[2]).replace(/,/g,''));if(isFinite(v)&&v>0)out.push(v);}
+  return out;
+}
+function endAge(line){
+  let m=line.match(/(?:up\s*to|until|till|to|expiry|expires?)\s*(?:age\s*)?(\d{2,3})\b/i)||line.match(/\bage\s*(\d{2,3})\b/i);
+  if(m){const a=+m[1];if(a>=40&&a<=110)return a;}
+  return '';
+}
+function cutField(s){return stripNric(String(s||'').split(/\s{2,}/)[0]).replace(/^[:\-\s]+/,'').trim();}
+function extractPolicy(lines){
+  const p=blankPolicy('pdf');
+  const full=lines.join('\n');
+  const conf=p.conf;
+  const set=(f,v,c)=>{if(v===''||v==null)return;p[f]=v;conf[f]=c;};
+
+  for(const name of Object.keys(INSURER_RX)){if(INSURER_RX[name].test(full)){set('insurer',name,'ok');break;}}
+  let m=full.match(/policy\s*(?:no\.?|number|#)\s*[:.]?\s*([A-Z0-9][A-Z0-9\-\/]{5,})/i);
+  if(m)set('polNo',m[1],'ok');
+  m=full.match(/(?:plan|product)(?:\s*name)?\s*[:\-]\s*(.+)/i);
+  if(m)set('plan',cutField(m[1]),'check');
+  m=full.match(/life\s*assured(?:\s*name)?\s*[:\-]?\s*(.+)/i);
+  if(m){const v=cutField(m[1]);if(v&&!/^\d+$/.test(v))set('lifeAssured',v,'check');}
+  m=full.match(/(?:policy\s*owner|policyholder|policy\s*holder)\s*[:\-]?\s*(.+)/i);
+  if(m){const v=cutField(m[1]);if(v)set('owner',v,'check');}
+  m=full.match(/(?:nominee|beneficiary)(?:\s*name)?\s*[:\-]\s*(.+)/i);
+  if(m){const v=cutField(m[1]);if(v)set('nominee',v,'check');}
+  m=full.match(/(?:commencement|effective|issue|inception|risk\s*commencement)\s*date\s*[:\-]?\s*([^\n]+)/i);
+  if(m){const d=parseDate(m[1]);if(d)set('start',d,'check');}
+  m=full.match(/(?:maturity\s*date|policy\s*expiry\s*date|expiry\s*date)\s*[:\-]?\s*([^\n]+)/i);
+  if(m){const d=parseDate(m[1]);if(d)set('maturityDate',d,'check');}
+
+  // premium and frequency
+  const pl=lines.findIndex(l=>/premium/i.test(l)&&amounts(l).length&&!/sum assured|benefit/i.test(l));
+  if(pl>=0){
+    set('premium',amounts(lines[pl])[0],'check');
+    const ctx=lines.slice(Math.max(0,pl-1),pl+2).join(' ');
+    const f=/monthly/i.test(ctx)?'monthly':/quarterly/i.test(ctx)?'quarterly':/half[\s-]*year|semi[\s-]*annual/i.test(ctx)?'half_yearly':/single/i.test(ctx)?'single':/annual|yearly/i.test(ctx)?'annual':'';
+    if(f)set('freq',f,'check');
+  }
+  if(/\blapsed\b/i.test(full))set('status','lapsed','check');
+  else if(/paid[\s-]*up/i.test(full))set('status','paid_up','check');
+  else if(/in[\s-]*force/i.test(full))set('status','in_force','check');
+
+  // values
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i],a=amounts(l).length?amounts(l):amounts(lines[i+1]||'');
+    if(!a.length)continue;
+    if(/maturity\s*(?:benefit|value|amount|sum)/i.test(l)&&!p.maturityBenefit)set('maturityBenefit',a[a.length-1],'check');
+    if(/(?:cash|surrender|fund)\s*value/i.test(l)&&!p.cashValue)set('cashValue',a[0],'check');
+    if(/guaranteed\s*(?:maturity|cash)/i.test(l)&&!/non[\s-]*guaranteed/i.test(l)&&!p.matGuar)set('matGuar',a[0],'check');
+    if(/non[\s-]*guaranteed/i.test(l)&&!p.matNon)set('matNon',a[0],'check');
+  }
+
+  // benefits: keyword near an RM amount
+  const RULESX=[
+    ['ci_early',/early[\s-]*(?:stage\s*)?(?:critical|CI|crisis|illness)|early\s*cover/i],
+    ['medical',/annual\s*limit|medical\s*(?:card|plan)|hospital\s*(?:&|and)\s*surgical/i],
+    ['hospital_income',/hospital\s*(?:income|cash)|daily\s*hospital/i],
+    ['personal_accident',/personal\s*accident|accidental\s*death/i],
+    ['death_tpd',/\bdeath\b|\btpd\b|total\s*(?:and|&)\s*permanent|life\s*cover/i],
+    ['ci_advanced',/critical\s*illness|\bCI\b|major\s*(?:illness|disease)/i]
+  ];
+  const found={};
+  lines.forEach((l,i)=>{
+    if(/^--- Page/.test(l))return;
+    if(/premium/i.test(l)&&!/sum assured|benefit|cover/i.test(l))return;
+    for(const [cat,rx] of RULESX){
+      if(found[cat]||!rx.test(l))continue;
+      const a=amounts(l).length?amounts(l):amounts(lines[i+1]||'');
+      if(!a.length)continue;
+      const age=endAge(l)||endAge(lines[i+1]||'');
+      const b=blankBenefit(cat);b.amount=a[0];b.endsAge=age;b.chk=true;
+      found[cat]=b;
+      break;
+    }
+  });
+  if(!found.death_tpd){
+    const i=lines.findIndex(l=>/sum\s*assured|basic\s*sum/i.test(l)&&amounts(l).length);
+    if(i>=0){const b=blankBenefit('death_tpd');b.amount=amounts(lines[i])[0];b.endsAge=endAge(lines[i]);b.chk=true;found.death_tpd=b;}
+  }
+  // medical extras
+  const med=found.medical;
+  if(med||/room\s*(?:&|and)\s*board/i.test(full)){
+    const mb=med||(()=>{const b=blankBenefit('medical');b.chk=true;return b;})();
+    const ri=lines.findIndex(l=>/room\s*(?:&|and)\s*board/i.test(l)&&amounts(l).some(v=>v<=5000));
+    if(ri>=0)mb.rb=amounts(lines[ri]).find(v=>v<=5000)||0;
+    if(/lifetime[^\n]{0,40}unlimited|unlimited[^\n]{0,40}lifetime/i.test(full))mb.unlimited=true;
+    const di=lines.findIndex(l=>/deductible|co[\s-]*(?:payment|insurance)/i.test(l));
+    if(di>=0)mb.deductible=cutField(lines[di]).slice(0,80);
+    if(!mb.amount){const ai=lines.findIndex(l=>/annual\s*limit/i.test(l)&&amounts(l).length);if(ai>=0)mb.amount=amounts(lines[ai])[0];}
+    if(mb.amount||mb.rb)found.medical=mb;
+  }
+  p.benefits=Object.keys(found).map(k=>found[k]);
+
+  // policy type guess
+  if(/takaful/i.test(full))p.type='takaful';
+  else if(/investment[\s-]*linked|\bILP\b|unit\s*trust\s*fund/i.test(full))p.type='investment_linked';
+  else if(found.medical&&!found.death_tpd&&!found.ci_advanced)p.type='medical';
+  else if(found.personal_accident&&!found.death_tpd&&!found.ci_advanced)p.type='personal_accident';
+  else if(/\bMRTA\b|\bMLTA\b|mortgage\s*reducing/i.test(full))p.type='mrta';
+  else if(/group\s*(?:term|life|hospital|insurance)/i.test(full)){p.type='group';p.group=true;}
+  conf.type='check';
+  const ends=p.benefits.map(b=>+b.endsAge).filter(Boolean);
+  if(ends.length)set('coverEnds',Math.max(...ends),'check');
+  ['insurer','plan','polNo','lifeAssured','start','premium','coverEnds','nominee'].forEach(f=>{if(!conf[f])conf[f]='missing';});
+  return p;
+}
+
+/* ---------- upload handling ---------- */
+async function handleFiles(files){
+  const msg=$('#upmsg');msg.hidden=false;
+  const list=Array.from(files).filter(f=>/pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!list.length){msg.textContent='Please choose PDF files.';return;}
+  for(let i=0;i<list.length;i++){
+    const f=list[i];
+    msg.textContent='Reading '+(i+1)+' of '+list.length+': '+f.name+' …';
+    if(f.size>15*1024*1024){toast(f.name+' is over 15 MB, skipped.');continue;}
+    try{
+      const r=await pdfToLines(f);
+      let p;
+      if(r.chars<60*r.pages&&r.chars<200){
+        p=blankPolicy('pdf');p.scanned=true;p.fileName=f.name;
+      }else{
+        p=extractPolicy(r.lines);p.fileName=f.name;p.text=r.lines.join('\n');
+      }
+      S.policies.push(p);
+    }catch(err){
+      const p=blankPolicy('manual');p.fileName=f.name;S.policies.push(p);
+      toast('Could not read '+f.name+'. Please enter it manually.');
+    }
+  }
+  msg.hidden=true;renderList();
+  const first=S.policies.find(x=>!x.confirmed&&!x.scanned);
+  if(first&&list.length===1){S.cur=first.id;go(3);}
+}
+$('#pdfIn').addEventListener('change',e=>{handleFiles(e.target.files);e.target.value='';});
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+$('#addManual').addEventListener('click',()=>{const p=blankPolicy('manual');p.benefits.push(blankBenefit());S.policies.push(p);S.cur=p.id;go(3);});
+$('#toSummary').addEventListener('click',()=>go(4));
+
+/* ---------- policy list ---------- */
+function nChecks(p){
+  let n=Object.keys(p.conf).filter(k=>p.conf[k]==='check').length;
+  n+=p.benefits.filter(b=>b.chk).length;return n;
+}
+function renderList(){
+  const ul=$('#plist');
+  $('#pempty').hidden=S.policies.length>0;
+  ul.innerHTML=S.policies.map(p=>{
+    let chip,sub='';
+    if(p.confirmed){chip='<span class="chip ok">✅ Confirmed</span>';}
+    else if(p.scanned){chip='<span class="chip chk">✍️ Scanned PDF</span>';sub='No text found in this PDF. Please enter it manually.';}
+    else if(p.src==='pdf'){const n=nChecks(p);chip='<span class="chip chk">⚠️ '+n+' to check</span>';sub='Auto-filled from '+esc(p.fileName)+'. Check every field.';}
+    else{chip='<span class="chip man">✍️ Manual</span>';sub=p.fileName?esc(p.fileName)+': enter the details.':'Not yet confirmed.';}
+    const title=(p.insurer||'Policy')+(p.plan?' · '+p.plan:'');
+    return '<li class="pitem"><div><div class="t">'+esc(title)+chip+'</div><div class="s">'+esc(p.lifeAssured?('Life assured: '+p.lifeAssured+'. '):'')+esc(sub)+'</div></div><div class="acts"><button class="btn small" type="button" data-edit="'+p.id+'">'+(p.confirmed?'Edit':'Check')+'</button><button class="btn small danger" type="button" data-del="'+p.id+'">Remove</button></div></li>';
+  }).join('');
+}
+$('#plist').addEventListener('click',e=>{
+  const ed=e.target.closest('[data-edit]'),dl=e.target.closest('[data-del]');
+  if(ed){S.cur=+ed.dataset.edit;go(3);}
+  if(dl){const p=getP(+dl.dataset.del);if(p&&confirm('Remove this policy from the summary?')){S.policies=S.policies.filter(x=>x!==p);if(S.cur===p.id)S.cur=null;renderList();}}
+});
+
+/* ---------- policy editor (step 3) ---------- */
+const PF=[
+  ['insurer','Insurer','select',true],['plan','Plan name','text',true],
+  ['type','Policy type','select',true],['polNo','Policy number','text',false,'Only the last 4 characters are printed on the summary'],
+  ['lifeAssured','Life assured','text',true],['owner','Policy owner','text',false],
+  ['start','Start date','date',true],['coverEnds','Policy cover ends at age','number',true],
+  ['premium','Premium','money',true],['freq','Premium frequency','select',true],
+  ['paidUntil','Premium paid until age','number',false],['status','Policy status','select',true],
+  ['nominee','Nominee / beneficiary','text',false,'Name and relationship only, e.g. Mary Lee (spouse). No ID numbers.']
+];
+const SV=[
+  ['cashValue','Current cash or fund value','money'],['cashAsAt','Value as at','date'],
+  ['maturityDate','Maturity date or age','text'],['maturityBenefit','Maturity benefit (as stated in the policy)','money'],
+  ['matGuar','of which guaranteed','money'],['matNon','of which non-guaranteed','money']
+];
+function fieldHTML(p,f,label,type,req,hint){
+  const manual=p.src!=='pdf';
+  const c=p.conf[f];
+  const empty=(p[f]===''||p[f]==null||p[f]===0);
+  const ind=(!manual&&c&&!(empty&&!req))?'<button type="button" class="cf '+(c||'ok')+'" data-cf="'+f+'" title="'+(c==='check'?'Tap when you have checked this':c==='missing'?'Not found: please fill in':'Checked')+'">'+(c==='check'?'?':c==='missing'?'✗':'✓')+'</button>':'';
+  const v=p[f];
+  let inp;
+  if(type==='select'){
+    const opts=f==='insurer'?INSURERS.map(x=>[x,x]):f==='type'?Object.entries(PTYPES):f==='freq'?Object.entries(FREQ).map(([k,a])=>[k,a[0]]):Object.entries(STATUS);
+    inp='<select data-f="'+f+'"><option value="">Select…</option>'+opts.map(o=>'<option value="'+esc(o[0])+'"'+(v===o[0]?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</select>';
+  }else if(type==='money'){
+    inp='<div class="money nolabel"><input type="text" inputmode="numeric" data-money data-f="'+f+'" value="'+(v?Number(v).toLocaleString('en-MY'):'')+'"></div>';
+  }else if(type==='number'){
+    inp='<input type="number" inputmode="numeric" data-f="'+f+'" value="'+esc(v)+'" min="0" max="120">';
+  }else if(type==='date'){
+    inp='<input type="date" data-f="'+f+'" value="'+esc(v)+'">';
+  }else{
+    inp='<input type="text" data-f="'+f+'" value="'+esc(v)+'" autocomplete="off">';
+  }
+  return '<div class="fieldrow'+(manual?' manual':'')+'"><label>'+esc(label)+(req?' <span class="req">*</span>':'')+'</label>'+inp+ind+(hint?'<span class="hint">'+esc(hint)+'</span>':'')+'</div>';
+}
+function benefitRows(p){
+  return p.benefits.map((b,i)=>{
+    const med=b.cat==='medical';
+    return '<tr data-bi="'+i+'"><td><select data-b="cat">'+Object.entries(CATS).map(([k,l])=>'<option value="'+k+'"'+(b.cat===k?' selected':'')+'>'+esc(CATSHORT[k])+'</option>').join('')+'</select></td>'+
+      '<td><div class="money nolabel"><input type="text" inputmode="numeric" data-money data-b="amount" value="'+(b.amount?Number(b.amount).toLocaleString('en-MY'):'')+'" aria-label="Amount"></div></td>'+
+      '<td><input type="number" inputmode="numeric" data-b="endsAge" value="'+esc(b.endsAge)+'" min="0" max="120" aria-label="Ends at age" placeholder="age"></td>'+
+      '<td style="white-space:nowrap;text-align:right">'+(b.chk?'<button type="button" class="cf check" style="position:static" data-bchk="'+i+'" title="Tap when checked">?</button> ':'')+'<button type="button" class="btn small danger" data-bdel="'+i+'" aria-label="Remove benefit">×</button></td></tr>'+
+      (med?'<tr><td colspan="4"><div class="bextra"><div><label>Room &amp; board per day</label><div class="money nolabel"><input type="text" inputmode="numeric" data-money data-b="rb" value="'+(b.rb?Number(b.rb).toLocaleString('en-MY'):'')+'"></div></div>'+
+        '<div><label>Lifetime limit</label><div class="money nolabel"><input type="text" inputmode="numeric" data-money data-b="lifetime" value="'+(b.lifetime?Number(b.lifetime).toLocaleString('en-MY'):'')+'"'+(b.unlimited?' disabled':'')+'></div><label style="margin-top:6px"><input type="checkbox" data-b="unlimited"'+(b.unlimited?' checked':'')+'> Lifetime unlimited</label></div>'+
+        '<div class="full" style="grid-column:1/-1"><label>Deductible / co-payment <span class="hint" style="display:inline">(information only)</span></label><input type="text" data-b="deductible" value="'+esc(b.deductible)+'"></div></div></td></tr>':'');
+  }).join('');
+}
+function renderEditor(){
+  const p=getP(S.cur);if(!p){return;}
+  const hasText=!!p.text;
+  const idx=S.policies.indexOf(p)+1;
+  const useOpts='<option value="">Use selected text for…</option>'+
+    [['plan','Plan name'],['polNo','Policy number'],['lifeAssured','Life assured'],['owner','Policy owner'],['nominee','Nominee'],['start','Start date'],['premium','Premium'],['cashValue','Current cash value'],['maturityBenefit','Maturity benefit']].map(o=>'<option value="'+o[0]+'">'+o[1]+'</option>').join('')+
+    p.benefits.map((b,i)=>'<option value="b'+i+'">Benefit '+(i+1)+' amount ('+esc(CATSHORT[b.cat])+')</option>').join('');
+  $('#editor').innerHTML=
+    '<h2>Check policy '+idx+' of '+S.policies.length+(p.fileName?' <span class="small">'+esc(p.fileName)+'</span>':'')+'</h2>'+
+    (p.src==='pdf'?'<p class="lead">✓ looks right · ? please check (tap to mark checked) · ✗ not found, please fill in.</p>':'<p class="lead">Type in the details from the policy document.</p>')+
+    (hasText?'<div class="tabs"><button type="button" data-tab="form" aria-pressed="'+!S.textTab+'">Form</button><button type="button" data-tab="text" aria-pressed="'+S.textTab+'">PDF text</button></div>':'')+
+    '<div class="edit'+(hasText?' hasText':'')+(S.textTab?' showtext':'')+'"><div class="formcol">'+
+      '<div class="grid">'+PF.map(a=>'<div'+(a[0]==='plan'||a[0]==='nominee'?' class="full"':'')+'>'+fieldHTML(p,a[0],a[1],a[2],a[3],a[4])+'</div>').join('')+
+      '<div class="full"><div class="radio" style="margin:0"><input type="checkbox" id="pgroup" data-f="group"'+(p.group?' checked':'')+'><label for="pgroup">Employer group cover <span class="hint">Ends if the client leaves the job</span></label></div></div></div>'+
+      '<fieldset><legend>Benefits</legend><div class="tbl" style="overflow-x:auto"><table class="btable"><colgroup><col style="width:31%"><col style="width:33%"><col style="width:16%"><col style="width:20%"></colgroup><tr><th>Category</th><th>Amount</th><th>Ends at age</th><th></th></tr><tbody id="btbody">'+benefitRows(p)+'</tbody></table></div><button class="btn ghost small" type="button" id="addBen" style="margin-top:8px">+ Add benefit</button></fieldset>'+
+      '<fieldset><legend>Savings and maturity <span class="small" style="font-weight:400">(optional, as stated in the policy)</span></legend><div class="grid">'+SV.map(a=>'<div>'+fieldHTML(p,a[0],a[1],a[2],false,'')+'</div>').join('')+'</div></fieldset>'+
+      '<div class="fieldrow manual"><label>Notes</label><textarea data-f="notes" rows="2">'+esc(p.notes)+'</textarea></div>'+
+    '</div>'+
+    (hasText?'<div class="txtcol"><div class="usebar"><select id="useSel">'+useOpts+'</select><button class="btn small" type="button" id="useBtn">Use</button></div><div class="small" style="margin-bottom:6px">Select text below, choose a field, then tap Use.</div><div class="txt" id="txtbox">'+esc(p.text)+'</div></div>':'')+
+    '</div>'+
+    '<div class="remind"><b>Advisor reminder:</b> Auto-filled details are extracted automatically and may be incorrect. Check every field against the original policy document before generating the summary. This tool is for coverage review only. Any replacement recommendation must follow the company\'s replacement procedures and disclosure requirements.</div>'+
+    '<div class="msg bad" id="e3" hidden></div>'+
+    '<div class="nav"><button class="btn ghost" type="button" data-go="2">Back to policies</button><button class="btn" type="button" id="confirmBtn">Confirm policy ✅</button></div>';
+}
+const editor=$('#editor');
+function curP(){return getP(S.cur);}
+function setIndicator(f,p){
+  let b=editor.querySelector('[data-cf="'+f+'"]');
+  if(!b){
+    const row=editor.querySelector('[data-f="'+f+'"]');
+    if(!row||!row.closest('.fieldrow')||row.closest('.fieldrow').classList.contains('manual'))return;
+    b=document.createElement('button');b.type='button';b.dataset.cf=f;row.closest('.fieldrow').appendChild(b);
+  }
+  const filled=!(p[f]===''||p[f]==null||p[f]===0);
+  const req=PF.some(a=>a[0]===f&&a[3]);
+  if(!filled&&!req){delete p.conf[f];b.remove();return;}
+  p.conf[f]=filled?'ok':'missing';
+  b.className='cf '+p.conf[f];b.textContent=filled?'✓':'✗';
+}
+function onField(el){
+  const p=curP();if(!p)return;
+  if(el.dataset.f){
+    const f=el.dataset.f;
+    if(el.type==='checkbox')p[f]=el.checked;
+    else if(el.matches('[data-money]'))p[f]=num(el.value);
+    else if(el.type==='number'||f==='coverEnds'||f==='paidUntil')p[f]=el.value===''?'':num(el.value);
+    else p[f]=el.value;
+    if(f==='type'){if(p.type==='group'){p.group=true;const g=$('#pgroup');if(g)g.checked=true;}}
+    el.classList.remove('err');
+    if(p.src==='pdf')setIndicator(f,p);
+  }else if(el.dataset.b){
+    const tr=el.closest('tr[data-bi]')||el.closest('tr').previousElementSibling;
+    const b=p.benefits[+tr.dataset.bi];if(!b)return;
+    const k=el.dataset.b;
+    if(el.type==='checkbox')b[k]=el.checked;
+    else if(el.matches('[data-money]'))b[k]=num(el.value);
+    else if(k==='endsAge')b[k]=el.value===''?'':num(el.value);
+    else b[k]=el.value;
+    if(k==='cat'||k==='unlimited'){refreshBenefits(p);}
+  }
+}
+function refreshBenefits(p){$('#btbody').innerHTML=benefitRows(p);}
+editor.addEventListener('input',e=>{if(e.target.matches('[data-money],input,textarea'))onField(e.target);});
+editor.addEventListener('change',e=>{if(e.target.matches('select,input[type=checkbox]'))onField(e.target);});
+editor.addEventListener('click',e=>{
+  const p=curP();if(!p)return;
+  const cf=e.target.closest('[data-cf]');
+  if(cf){const f=cf.dataset.cf;if(p.conf[f]==='check'){p.conf[f]='ok';cf.className='cf ok';cf.textContent='✓';}return;}
+  const bc=e.target.closest('[data-bchk]');
+  if(bc){p.benefits[+bc.dataset.bchk].chk=false;refreshBenefits(p);return;}
+  const bd=e.target.closest('[data-bdel]');
+  if(bd){p.benefits.splice(+bd.dataset.bdel,1);refreshBenefits(p);return;}
+  if(e.target.id==='addBen'){p.benefits.push(blankBenefit());refreshBenefits(p);return;}
+  const tb=e.target.closest('[data-tab]');
+  if(tb){S.textTab=tb.dataset.tab==='text';renderEditor();return;}
+  if(e.target.id==='useBtn'){applySelection(p);return;}
+  if(e.target.id==='confirmBtn'){confirmPolicy(p);return;}
+});
+function applySelection(p){
+  const sel=(window.getSelection()?window.getSelection().toString():'').trim();
+  const target=$('#useSel').value;
+  if(!target){toast('Choose a field first.');return;}
+  if(!sel){toast('Select some text in the PDF text first.');return;}
+  const clean=stripNric(sel.replace(/\s+/g,' '));
+  if(target[0]==='b'&&/^b\d+$/.test(target)){const b=p.benefits[+target.slice(1)];const a=amounts(clean);b.amount=a[0]||num(clean);b.chk=false;}
+  else if(['premium','cashValue','maturityBenefit'].includes(target)){const a=amounts(clean);p[target]=a.length?a[0]:num(clean);p.conf[target]='ok';}
+  else if(target==='start'){const d=parseDate(clean);if(!d){toast('Could not read that as a date.');return;}p.start=d;p.conf.start='ok';}
+  else{p[target]=clean;p.conf[target]='ok';}
+  renderEditor();toast('Filled in.');
+}
+function confirmPolicy(p){
+  const miss=[];
+  editor.querySelectorAll('.err').forEach(x=>x.classList.remove('err'));
+  PF.forEach(a=>{if(a[3]){const v=p[a[0]];if(v===''||v==null||v===0)miss.push(a);}});
+  const badB=p.benefits.filter(b=>!b.amount||b.endsAge===''||b.endsAge==null);
+  const hasMat=p.maturityBenefit>0||p.cashValue>0;
+  const e=$('#e3');
+  const msgs=[];
+  if(miss.length){msgs.push('Please fill in: '+miss.map(a=>a[1].toLowerCase()).join(', ')+'.');miss.forEach(a=>{const el=editor.querySelector('[data-f="'+a[0]+'"]');if(el)el.classList.add('err');});}
+  if(!p.benefits.length&&!hasMat)msgs.push('Add at least one benefit, or a cash value / maturity benefit.');
+  if(badB.length)msgs.push('Every benefit needs an amount and the age it ends.');
+  if(msgs.length){e.innerHTML=msgs.map(esc).join('<br>');e.hidden=false;e.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  e.hidden=true;
+  const n=nChecks(p);
+  if(n&&!confirm(n+' auto-filled item'+(n>1?'s are':' is')+' still marked "?". Confirm this policy anyway?'))return;
+  p.confirmed=true;S.textTab=false;
+  const nxt=S.policies.find(x=>!x.confirmed&&!x.scanned);
+  toast('Policy confirmed.');
+  if(nxt){S.cur=nxt.id;renderEditor();window.scrollTo({top:0});}
+  else{S.cur=null;renderList();showStep(2);}
+}
+
+/* ---------- analysis ---------- */
+function annualPrem(p){const f=FREQ[p.freq];return f?p.premium*f[1]:0;}
+function analyse(){
+  const c=S.client,R=RULES;
+  const all=S.policies.filter(p=>p.confirmed);
+  const live=all.filter(p=>p.status==='in_force');
+  const T={dPers:0,dGrp:0,dMrta:0,ci:0,ciEarly:0,hasEarly:false,medAnnual:0,medUnl:false,medRB:0,medAge:0,hi:0,pa:0,prem:0,single:0,tpdMinAge:null};
+  const notes=[];
+  const nm=p=>(p.insurer||'Policy')+(p.plan?' '+p.plan:'');
+  live.forEach(p=>{
+    T.prem+=annualPrem(p);if(p.freq==='single')T.single+=p.premium;
+    p.benefits.forEach(b=>{
+      const a=num(b.amount),age=num(b.endsAge);
+      if(b.cat==='death_tpd'){
+        if(p.type==='group'||p.group)T.dGrp+=a;else if(p.type==='mrta')T.dMrta+=a;else T.dPers+=a;
+        if(age&&age>c.anb&&age<R.tpdToAge)notes.push({lvl:'o',t:nm(p)+': Death/TPD cover ends at age '+age+' (guide: to age '+R.tpdToAge+' or later).'});
+      }
+      if(b.cat==='ci_advanced'||b.cat==='ci_early'){T.ci+=a;if(b.cat==='ci_early'){T.ciEarly+=a;T.hasEarly=true;}
+        if(age&&age>c.anb&&age<R.coverEndWarnAge)notes.push({lvl:'i',t:nm(p)+': critical illness cover ends at age '+age+'.'});}
+      if(b.cat==='medical'){
+        if(a>T.medAnnual){T.medAnnual=a;T.medAge=age;}
+        if(b.unlimited)T.medUnl=true;
+        if(num(b.rb)>T.medRB)T.medRB=num(b.rb);
+      }
+      if(b.cat==='hospital_income')T.hi+=a;
+      if(b.cat==='personal_accident')T.pa+=a;
+      if(age&&age>c.anb&&age<R.coverEndWarnAge&&b.cat!=='death_tpd'&&b.cat!=='ci_advanced'&&b.cat!=='ci_early')notes.push({lvl:'i',t:nm(p)+': '+CATSHORT[b.cat]+' cover ends at age '+age+'.'});
+    });
+    if(!p.nominee&&['life','investment_linked','takaful','mrta'].includes(p.type))notes.push({lvl:'o',t:nm(p)+': no nominee or beneficiary recorded.'});
+    if(p.paidUntil&&num(p.paidUntil)>c.retire)notes.push({lvl:'i',t:nm(p)+': premiums continue to age '+p.paidUntil+', past the retirement age of '+c.retire+'.'});
+  });
+  all.forEach(p=>{if(p.status==='lapsed')notes.push({lvl:'r',t:nm(p)+' is lapsed and is not counted in the totals.'});else if(p.status==='paid_up')notes.push({lvl:'i',t:nm(p)+' is paid-up. Check the reduced cover with the insurer.'});else if(p.status==='surrendered')notes.push({lvl:'i',t:nm(p)+' was surrendered and is not counted.'});});
+  if(T.dGrp>0)notes.push({lvl:'o',t:RM(T.dGrp)+' of Death/TPD cover is employer group cover. It ends if the client leaves the job.'});
+
+  const ciG=R.ciMult*c.income,paG=R.paMult*c.income,hiG=Math.round(c.income/R.hiDivisor);
+  const rows=[];
+  // medical
+  {
+    let st,d=[];
+    const okA=T.medAnnual>=R.medAnnual,okL=T.medUnl;
+    if(!T.medAnnual)st='r';else if(okA&&(okL||!R.medLifetimeUnlimited))st='g';else st='o';
+    if(T.medAnnual&&!okA)d.push('annual limit below '+RM(R.medAnnual));
+    if(T.medAnnual&&R.medLifetimeUnlimited&&!okL)d.push('lifetime limit is not unlimited');
+    if(T.medAnnual&&T.medRB&&T.medRB<R.medRB){d.push('room & board '+RM(T.medRB)+'/day is below '+RM(R.medRB));if(st==='g')st='o';}
+    if(T.medAnnual&&!T.medRB)d.push('room & board not recorded');
+    if(T.medAnnual&&T.medAge&&T.medAge<R.medToAge){d.push('cover ends at age '+T.medAge+' (guide: '+R.medToAge+'+)');if(st==='g')st='o';}
+    rows.push({k:'medical',label:'Medical card',have:T.medAnnual,guide:R.medAnnual,st:st,txt:T.medAnnual?RM(T.medAnnual)+' annual'+(T.medUnl?', lifetime unlimited':'')+' / guide '+RM(R.medAnnual)+(R.medLifetimeUnlimited?', unlimited lifetime':''):'None recorded / guide '+RM(R.medAnnual),detail:d.join('; ')});
+  }
+  // death / tpd (needs-based, so informational)
+  {
+    const tot=T.dPers+T.dGrp+T.dMrta;
+    rows.push({k:'death',label:'Death / TPD',have:tot,guide:0,st:tot?'i':'r',txt:tot?RM(tot):'None recorded',detail:tot?'Personal '+RM(T.dPers)+', group '+RM(T.dGrp)+', MRTA/MLTA '+RM(T.dMrta)+'. The right amount comes from the needs analysis: use the button below.':'Run the needs analysis to see how much is needed.'});
+  }
+  // CI
+  {
+    let st=!T.ci?'r':T.ci>=ciG?'g':'o';const d=[];
+    if(T.ci&&T.ci<ciG)d.push('short by '+RM(ciG-T.ci));
+    if(T.ci&&!T.hasEarly){d.push('advanced-stage cover only, no early-stage cover recorded');if(st==='g')st='o';}
+    rows.push({k:'ci',label:'Critical illness',have:T.ci,guide:ciG,st:st,txt:(T.ci?RM(T.ci):'None')+' / guide '+RM(ciG)+' ('+R.ciMult+'× income)',detail:d.join('; ')});
+  }
+  // hospital income
+  {
+    const self=c.incomeType==='self_employed';
+    const st=!T.hi?(self?'r':'o'):T.hi>=hiG?'g':'o';
+    const d=[];
+    if(!T.hi&&self)d.push('self-employed or commission earners have no paid sick leave: a priority gap');
+    else if(!T.hi)d.push('check what sick leave the employer provides');
+    else if(T.hi<hiG)d.push('below one day of income');
+    rows.push({k:'hi',label:'Hospital income',have:T.hi,guide:hiG,st:st,txt:(T.hi?RM(T.hi):'None')+'/day / guide '+RM(hiG)+'/day',detail:d.join('; ')});
+  }
+  // personal accident
+  {
+    const st=!T.pa?'r':T.pa>=paG?'g':'o';
+    rows.push({k:'pa',label:'Personal accident',have:T.pa,guide:paG,st:st,txt:(T.pa?RM(T.pa):'None')+' / guide '+RM(paG)+' ('+R.paMult+'× income)',detail:T.pa&&T.pa<paG?'short by '+RM(paG-T.pa):''});
+  }
+  const gaps=rows.filter(r=>r.st==='r'||r.st==='o').length;
+  return {T:T,rows:rows,notes:notes,all:all,live:live,gaps:gaps,ciG:ciG};
+}
+
+/* ---------- summary rendering ---------- */
+const DOT={g:'🟢',o:'🟠',r:'🔴',i:'⚪'};
+function barPct(r){
+  if(r.k==='death')return r.have?100:0;
+  return r.guide?Math.min(100,r.have/r.guide*100):0;
+}
+function renderSummary(){
+  const e=$('#e4');
+  const A=analyse();
+  if(!A.all.length){e.textContent='Confirm at least one policy to see the summary.';e.hidden=false;$('#sumOut').innerHTML='';return false;}
+  e.hidden=true;
+  const c=S.client,T=A.T;
+  const today=new Date().toLocaleDateString('en-MY',{day:'numeric',month:'long',year:'numeric'});
+  const totalCover=T.dPers+T.dGrp+T.dMrta;
+  const tiles='<div class="tiles"><div class="tile"><b>'+RM(totalCover)+'</b><small>Death/TPD cover</small></div><div class="tile"><b>'+RM(T.prem)+'</b><small>Premium per year'+(T.single?' (excl. single premiums)':'')+'</small></div><div class="tile"><b>'+A.live.length+'</b><small>Policies counted'+(A.all.length>A.live.length?' of '+A.all.length:'')+'</small></div><div class="tile"><b>'+A.gaps+'</b><small>Categories below guide</small></div></div>';
+  const cov=A.rows.map(r=>'<div class="crow"><div class="top"><span>'+DOT[r.st]+' '+esc(r.label)+'</span><b>'+esc(r.txt)+'</b></div><div class="track"><span class="'+r.st+'" style="width:'+barPct(r)+'%"></span></div>'+(r.detail?'<small>'+esc(r.detail)+'</small>':'')+'</div>').join('');
+
+  // premium by policy
+  const prem=A.live.filter(p=>annualPrem(p)>0).map(p=>({n:(p.insurer||'Policy')+' '+(p.plan||''),v:annualPrem(p)}));
+  const pmax=Math.max(1,...prem.map(x=>x.v));
+  const premHTML=prem.length?prem.map(x=>'<div class="crow"><div class="top"><span>'+esc(x.n)+'</span><b>'+RM(x.v)+'/yr</b></div><div class="track"><span class="i" style="width:'+(x.v/pmax*100)+'%"></span></div></div>').join(''):'<p class="small">No regular premiums recorded.</p>';
+
+  // policy table
+  const ptab='<div style="overflow-x:auto"><table><tr><th>Policy</th><th>Life assured</th><th>Status</th><th class="n">Premium</th><th>Benefits</th></tr>'+A.all.map(p=>{
+    const bens=p.benefits.map(b=>esc(CATSHORT[b.cat])+' '+RM(b.amount)+(b.endsAge?' to '+b.endsAge:'')).join('<br>');
+    return '<tr><td><b>'+esc(p.insurer)+'</b><br>'+esc(p.plan)+(p.polNo?'<br><span class="small">'+esc(maskPol(p.polNo))+'</span>':'')+(p.group?'<br><span class="small">Employer group</span>':'')+'</td><td>'+esc(p.lifeAssured)+'</td><td>'+esc(STATUS[p.status]||'')+'</td><td class="n">'+RM(p.premium)+'<br><span class="small">'+esc(FREQ[p.freq]?FREQ[p.freq][0]:'')+'</span></td><td>'+(bens||'<span class="small">None</span>')+'</td></tr>';
+  }).join('')+'</table></div>';
+
+  // timeline
+  const tl={};
+  A.live.forEach(p=>p.benefits.forEach(b=>{
+    const age=num(b.endsAge);if(!age)return;
+    const key=p.id+'|'+b.cat;
+    if(!tl[key]||age>tl[key].age)tl[key]={label:(p.insurer||'Policy')+' · '+CATSHORT[b.cat],age:age,grp:!!(p.group||p.type==='group')};
+  }));
+  const tr=Object.values(tl).sort((a,b)=>a.age-b.age);
+  const MAXA=100,pct=a=>Math.max(0,Math.min(100,a/MAXA*100));
+  const tlHTML=tr.length?'<div class="tl">'+tr.map(x=>{
+    const left=pct(c.anb),w=Math.max(1.5,pct(x.age)-left);
+    return '<div class="tlrow"><div class="lab" title="'+esc(x.label)+'">'+esc(x.label)+' <b>'+x.age+'</b></div><div class="tltrack"><i class="'+(x.grp?'grp':'')+'" style="left:'+left+'%;width:'+w+'%"></i><u style="left:'+pct(c.retire)+'%" title="Retirement age"></u></div></div>';
+  }).join('')+'<div class="tlaxis"><div></div><div><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div></div><p class="small">Bars run from the client\'s age ('+c.anb+') to the age each cover ends. The red line is the retirement age ('+c.retire+'). Grey bars are employer group cover.</p></div>':'<p class="small">No cover end ages recorded.</p>';
+
+  // savings
+  const sv=A.all.filter(p=>p.cashValue>0||p.maturityBenefit>0||p.matGuar>0||p.matNon>0);
+  let svHTML='<p class="small">No savings or maturity values recorded.</p>';
+  if(sv.length){
+    svHTML='<div style="overflow-x:auto"><table><tr><th>Policy</th><th class="n">Current value</th><th>Maturity</th><th class="n">Maturity benefit</th></tr>'+sv.map(p=>{
+      let mb='';
+      if(p.matGuar>0||p.matNon>0){mb=(p.matGuar>0?RM(p.matGuar)+' guaranteed':'')+(p.matGuar>0&&p.matNon>0?'<br>':'')+(p.matNon>0?RM(p.matNon)+' <span class="small">not guaranteed</span>':'');}
+      else if(p.maturityBenefit>0){mb=RM(p.maturityBenefit)+(p.type==='investment_linked'?' <span class="small">not guaranteed</span>':'');}
+      const mdate=/^\d{4}-\d{2}-\d{2}$/.test(p.maturityDate)?new Date(p.maturityDate+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'short',year:'numeric'}):p.maturityDate;
+      return '<tr><td>'+esc(p.insurer)+' '+esc(p.plan)+'</td><td class="n">'+(p.cashValue>0?RM(p.cashValue)+(p.cashAsAt?'<br><span class="small">as at '+esc(p.cashAsAt)+'</span>':''):'-')+'</td><td>'+esc(mdate||'-')+'</td><td class="n">'+(mb||'-')+'</td></tr>';
+    }).join('')+'</table></div><p class="small">Values are as stated in the policy documents provided.</p>';
+  }
+
+  // notes
+  const order={r:0,o:1,i:2};
+  const sortedNotes=A.notes.slice().sort((a,b)=>order[a.lvl]-order[b.lvl]);
+  const noteHTML=sortedNotes.length?'<ul class="notes">'+sortedNotes.map(n=>'<li>'+(n.lvl==='r'?'🔴 ':n.lvl==='o'?'🟠 ':'ℹ️ ')+esc(n.t)+'</li>').join('')+'</ul>':'<p class="small">Nothing to flag.</p>';
+
+  const foot='This summary is prepared for reference only, based on information provided by the client. It is not a policy contract. In the event of any difference, the terms and conditions of the respective policy contracts shall prevail. Please refer to your insurer for the official policy details.';
+  const importantNotice='<div class="notice"><b>Important Notice</b><p>This Policy Summary has been prepared by a DreamHub E3 advisor, an authorised agent of Great Eastern Life Assurance (Malaysia) Berhad, for the purpose of reviewing the client\'s existing insurance coverage.</p><ul>'+
+    '<li>The information in this summary is based on documents and details provided by the client, and has not been verified with the respective insurers. It may contain errors or omissions.</li>'+
+    '<li>The terms, conditions, benefits and exclusions of each policy are governed solely by the respective policy contracts issued by the insurers. This summary does not change, replace or interpret those contracts.</li>'+
+    '<li>Coverage gaps and recommended amounts shown are estimates based on general planning guidelines and the information provided. They are not a guarantee of future needs, and do not constitute a recommendation to purchase, cancel or replace any policy.</li>'+
+    '<li>Replacing an existing policy may be disadvantageous to you. You may incur losses, lose benefits, or face new waiting periods and exclusions. Please consult your advisor and your existing insurer before making any decision.</li>'+
+    '<li>Investment-linked values, if shown, are not guaranteed and may vary with fund performance.</li></ul><p>Your personal data is handled in accordance with the Personal Data Protection Act 2010.</p></div>';
+
+  $('#sumOut').innerHTML=
+    '<table class="prt"><tbody><tr><td>'+
+    '<div class="printhead"><div class="brand">Dream<span>Hub</span> E3</div><div style="text-align:right"><b>Policy Summary</b><br>'+esc(c.name)+'<br><span class="small">'+(c.prep?'Prepared by '+esc(c.prep)+', ':'')+today+'</span></div></div>'+
+    '<h2 class="screen-only">Summary for '+esc(c.name)+'</h2><p class="small screen-only">'+(c.prep?'Prepared by '+esc(c.prep)+', ':'')+today+'. Age '+c.anb+', income '+RM(c.income)+' ('+(c.incomeType==='self_employed'?'self-employed / commission':'salaried')+').</p>'+
+    tiles+
+    '<div class="sec"><h3>Coverage against the planning guide</h3>'+cov+'<p class="small">🟢 meets the guide · 🟠 below the guide · 🔴 none · ⚪ needs the needs analysis. Guides are internal planning figures, not recommendations.</p></div>'+
+    '<div class="sec"><h3>Premium by policy (per year)</h3>'+premHTML+'</div>'+
+    '<div class="pb"></div>'+
+    '<div class="sec"><h3>Policy list</h3>'+ptab+'</div>'+
+    '<div class="sec"><h3>When each cover ends</h3>'+tlHTML+'</div>'+
+    '<div class="sec"><h3>Savings and maturity</h3>'+svHTML+'</div>'+
+    '<div class="sec"><h3>Things to note</h3>'+noteHTML+'</div>'+
+    importantNotice+
+    '<div class="actions screen-only">'+
+      '<button class="btn" type="button" id="printBtn">🖨️ Print / Save as PDF</button>'+
+      '<button class="btn ghost" type="button" id="needsBtn">🛡️ Run protection needs analysis ›</button>'+
+      '<button class="btn ghost" type="button" id="uwBtn">🧮 Check underwriting limit ›</button>'+
+      '<button class="btn ghost" type="button" data-go="2">Edit policies</button>'+
+    '</div>'+
+    '</td></tr></tbody><tfoot><tr><td><div class="pfoot">'+esc(foot)+'</div></td></tr></tfoot></table>';
+  return true;
+}
+
+/* ---------- hand-off to the other calculators (numbers only, never names) ---------- */
+function openTool(path,params){
+  const q=new URLSearchParams({from:'summary'});
+  Object.keys(params).forEach(k=>{if(params[k])q.set(k,String(Math.round(params[k])));});
+  window.open(path+'?'+q.toString(),'_blank','noopener');
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='printBtn'){
+    const old=document.title;document.title='Policy Summary - '+S.client.name;
+    window.print();setTimeout(()=>{document.title=old;},500);
+  }
+  if(e.target.id==='needsBtn'){
+    const T=analyse().T;
+    openTool('/members/protection-needs/',{anb:S.client.anb,income:S.client.income,life:T.dPers,group:T.dGrp,mrta:T.dMrta,ci:T.ci});
+  }
+  if(e.target.id==='uwBtn'){
+    const T=analyse().T;
+    openTool('/members/sum-assured/',{anb:S.client.anb,inc:S.client.income,exL:T.dPers+T.dGrp+T.dMrta,exD:T.ci});
+  }
+});
+
+/* ---------- new summary + leave warning ---------- */
+$('#newBtn').addEventListener('click',()=>{
+  if(S.policies.length&&!confirm('Start a new summary? The current one will be cleared from this page.'))return;
+  S.policies=[];S.cur=null;S.seq=0;S.textTab=false;
+  ['cname','canb','cinc','cprep'].forEach(id=>$('#'+id).value='');
+  $('#cret').value=60;$('#ctype').value='salaried';
+  $('#sumOut').innerHTML='';showStep(1);
+});
+window.addEventListener('beforeunload',e=>{
+  if(S.policies.length||$('#cname').value.trim()){e.preventDefault();e.returnValue='';}
+});
+renderList();
+</script>
+<script id="e3-tabfix">
+/* E3: Tab / Shift+Tab move between visible text boxes, even where the browser's own Tab handling does not. */
+(function(){
+  var SEL = 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=file]):not([type=range]):not([type=color]):not([type=image]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]):not([readonly])';
+  function usable(el){
+    if (el.tabIndex < 0) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return false;
+    var cs = getComputedStyle(el);
+    return cs.visibility !== 'hidden' && cs.display !== 'none' && parseFloat(cs.opacity) > 0;
+  }
+  document.addEventListener('keydown', function(e){
+    if ((e.key !== 'Tab' && e.keyCode !== 9) || e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+    var t = e.target;
+    if (!t || !t.matches || !t.matches(SEL)) return;
+    var list = Array.prototype.filter.call(document.querySelectorAll(SEL), usable);
+    var i = list.indexOf(t);
+    if (i < 0) return;
+    var next = list[i + (e.shiftKey ? -1 : 1)];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+    if (next.tagName !== 'SELECT' && typeof next.select === 'function') { try { next.select(); } catch (err) {} }
+  }, true);
+})();
+</script>
+</body>
+</html>
