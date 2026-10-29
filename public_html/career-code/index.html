@@ -63,6 +63,8 @@ input[type=text],input[type=tel],input[type=email],select{width:100%;min-height:
 @media (max-width:600px){.hero{grid-template-columns:1fr}.hero-hex{width:160px;height:160px;margin:0 auto;order:-1}}
 .typestrip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
 .typestrip div{border-left:4px solid;padding:4px 10px;font-size:.85rem}
+.typestrip b{display:block}
+@media (max-width:600px){.actions:not(.split) .btn{flex:1 1 100%;padding:10px 16px;text-align:center;line-height:1.3}.typestrip{grid-template-columns:repeat(2,1fr)}}
 .progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 18px}
 .progress span{display:block;height:100%;background:var(--brand);transition:width .3s}
 .group{margin-top:22px}.group h3{font-size:.9rem;color:var(--muted);font-weight:500;margin-bottom:8px;font-family:"DM Sans",sans-serif}
