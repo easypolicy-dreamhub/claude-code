@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scientific Calculator</title>
+<style>
+:root{--bg:#14161a;--panel:#1d2026;--key:#2a2e36;--key2:#363b46;--acc:#f5a524;--fn:#2f3b52;--tx:#eef0f4;--mut:#8b93a3}
+@media (prefers-color-scheme:light){:root{--bg:#e8eaee;--panel:#fff;--key:#e6e9ef;--key2:#d5d9e2;--fn:#dbe4f5;--tx:#171a20;--mut:#667}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--tx);font:16px system-ui,sans-serif;padding:16px}
+.calc{width:100%;max-width:420px;background:var(--panel);border-radius:20px;padding:16px;box-shadow:0 10px 40px #0005}
+.top{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:6px}
+.top button{all:unset;cursor:pointer;padding:2px 8px;border-radius:6px;background:var(--key);color:var(--tx)}
+.screen{background:var(--bg);border-radius:12px;padding:10px 14px;margin-bottom:12px;text-align:right}
+#expr{width:100%;background:none;border:0;outline:0;color:var(--tx);font:22px ui-monospace,monospace;text-align:right}
+#res{font:600 34px ui-monospace,monospace;min-height:42px;overflow-x:auto;white-space:nowrap}
+#res.err{color:#ff6b6b;font-size:20px}
+#hist{font-size:12px;color:var(--mut);max-height:54px;overflow:auto;margin-bottom:8px;text-align:right}
+#hist div{cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.grid button{border:0;border-radius:10px;padding:13px 0;font-size:16px;color:var(--tx);background:var(--key);cursor:pointer}
+.grid button:active{filter:brightness(1.3)}
+.grid .f{background:var(--fn);font-size:14px}
+.grid .m{background:var(--key2)}
+.grid .op{background:var(--key2);color:var(--acc);font-weight:700}
+.grid .eq{background:var(--acc);color:#111;font-weight:700}
+.grid .clr{background:#c0392b;color:#fff}
+.mem{color:var(--acc);font-size:12px;min-width:16px}
+</style>
+</head>
+<body>
+<div class="calc">
+  <div class="top"><span class="mem" id="mem"></span><button id="ang" title="Toggle degrees/radians">DEG</button></div>
+  <div class="screen">
+    <div id="hist"></div>
+    <input id="expr" autocomplete="off" spellcheck="false" inputmode="none" aria-label="Expression">
+    <div id="res">0</div>
+  </div>
+  <div class="grid" id="keys"></div>
+</div>
+<script src="calc-engine.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const expr=$('expr'),res=$('res');
+let angle='deg',ans=0,mem=0,justEval=false;
+// [label, insert text | action, class]
+const K=[
+ ['2nd','inv','f'],['sin','sin(','f'],['cos','cos(','f'],['tan','tan(','f'],['AC','ac','clr'],
+ ['ln','ln(','f'],['log','log(','f'],['√','sqrt(','f'],['x²','^2','f'],['⌫','bs','op'],
+ ['π','pi','f'],['e','e','f'],['xʸ','^','f'],['n!','!','f'],['Ans','ans','f'],
+ ['(','(','m'],[')',')','m'],['1/x','1/(','f'],['%','%','m'],['÷','/','op'],
+ ['7','7'],['8','8'],['9','9'],['×','*','op'],['MC','mc','f'],
+ ['4','4'],['5','5'],['6','6'],['−','-','op'],['MR','mr','f'],
+ ['1','1'],['2','2'],['3','3'],['+','+','op'],['M+','m+','f'],
+ ['0','0'],['.','.'],['EXP','e','m'],['=','eq','eq'],['M−','m-','f'],
+];
+const INV={sin:['asin','asin('],cos:['acos','acos('],tan:['atan','atan('],ln:['eˣ','exp('],log:['10ˣ','10^('],'√':['x³','^3'],'x²':['∛','cbrt(']};
+let inv=false;
+const keys=$('keys');
+K.forEach(([l,v,c])=>{const b=document.createElement('button');b.textContent=l;b.className=c||'';b.dataset.v=v;b.dataset.l=l;b.onclick=()=>press(b);keys.appendChild(b);});
+function refreshLabels(){keys.querySelectorAll('button').forEach(b=>{const i=INV[b.dataset.l];b.textContent=inv&&i?i[0]:b.dataset.l;});}
+function insert(t){
+  if(justEval){ if(/^[+\-*/^%!]/.test(t)) expr.value='ans'; else expr.value=''; justEval=false; }
+  const s=expr.selectionStart??expr.value.length,e=expr.selectionEnd??s;
+  expr.value=expr.value.slice(0,s)+t+expr.value.slice(e);
+  const pos=s+t.length;expr.setSelectionRange(pos,pos);live();
+}
+function calc(show){
+  try{
+    const v=CalcEngine.evaluate(expr.value,{angle,ans});
+    res.className='';res.textContent=CalcEngine.format(v);return v;
+  }catch(err){ if(show){res.className='err';res.textContent=err.message;} else {res.className='';} return undefined;}
+}
+function live(){ if(!expr.value.trim()){res.className='';res.textContent='0';return;} const v=calc(false); if(v===undefined) res.textContent=''; }
+function press(b){
+  let v=b.dataset.v;const l=b.dataset.l;
+  if(v==='inv'){inv=!inv;b.style.outline=inv?'2px solid var(--acc)':'';refreshLabels();return;}
+  if(inv&&INV[l]){v=INV[l][1];inv=false;keys.querySelector('[data-v=inv]').style.outline='';refreshLabels();}
+  switch(v){
+   case 'ac': expr.value='';res.className='';res.textContent='0';justEval=false;break;
+   case 'bs': if(justEval){expr.value='';justEval=false;} else {const s=expr.selectionStart,e=expr.selectionEnd;
+      if(s!==e)expr.setRangeText('',s,e,'end'); else if(s>0)expr.setRangeText('',s-1,s,'end');} live();break;
+   case 'eq': equals();break;
+   case 'mc': mem=0;memShow();break;
+   case 'mr': insert(CalcEngine.format(mem));break;
+   case 'm+': case 'm-': {const x=calc(true);if(x!==undefined&&isFinite(x)){mem+=v==='m+'?x:-x;memShow();}break;}
+   default: insert(v==='e'&&l==='EXP'?'e':v);
+  }
+  expr.focus({preventScroll:true});
+}
+function equals(){
+  if(!expr.value.trim())return;
+  const v=calc(true);
+  if(v===undefined)return;
+  const line=expr.value+' = '+CalcEngine.format(v);
+  const d=document.createElement('div');d.textContent=line;d.onclick=()=>{expr.value=line.split(' = ')[0];justEval=false;live();};
+  $('hist').appendChild(d);$('hist').scrollTop=1e6;
+  if(Number.isFinite(v))ans=v;
+  expr.value=CalcEngine.format(v)==='Error'?'':expr.value;justEval=true;
+}
+function memShow(){$('mem').textContent=mem?'M':'';}
+$('ang').onclick=()=>{angle=angle==='deg'?'rad':'deg';$('ang').textContent=angle.toUpperCase();live();};
+expr.addEventListener('input',()=>{justEval=false;live();});
+expr.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();equals();}
+  else if(e.key==='Escape'){press({dataset:{v:'ac',l:'AC'}});}
+  else if(justEval&&e.key.length===1&&!e.ctrlKey&&!e.metaKey){e.preventDefault();insert(e.key);}
+});
+expr.inputMode='text';expr.focus();
+</script>
+</body>
+</html>
