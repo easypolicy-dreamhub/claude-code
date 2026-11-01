@@ -85,7 +85,9 @@ $('#tree').addEventListener('click', function (e) {
 });
 
 /* ---------- dialog helpers ---------- */
-function openDlg(html) { body.innerHTML = html + '<div class="row" style="justify-content:flex-end"><button class="btn plain" data-close>Close</button></div>'; if (!dlg.open) dlg.showModal(); }
+function openDlg(html) { body.innerHTML = html + '<div class="row" style="justify-content:flex-end"><button class="btn plain" data-close>Close</button></div>'; var first = body.querySelector('input,select,textarea,button');
+  if (first && first.tagName === 'SELECT') { var t = body.firstElementChild; if (t) { t.setAttribute('tabindex', '-1'); t.setAttribute('autofocus', ''); } }   // stops iPad opening the Rank list on its own
+  if (!dlg.open) dlg.showModal(); }
 dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.hasAttribute('data-close')) dlg.close(); });
 function fail(e) { toast(e.message, true); }
 function destOptions(target, selected, allowTop) {
