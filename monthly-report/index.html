@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/images/favicon.png">
+<title>Monthly Report Messages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Poppins:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F4F2EF;--surface:#ffffff;--ink:#24333A;--muted:#5C6870;--line:#E2DDD8;--chip:#EFEAE5;
+  --accent:#24333A;--accent-ink:#ffffff;--warn:#b45309;--warn-bg:#FEF3E2;--good:#15803d;--good-bg:#E8F5EC;--wa:#1f8f4e;
+  color-scheme:light only;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "DM Sans","Noto Sans TC",system-ui,sans-serif;-webkit-text-size-adjust:100%;padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #B9AFA7;outline-offset:2px}
+h1,h2,h3{font-family:Poppins,"Noto Sans TC","DM Sans",sans-serif;letter-spacing:-.01em}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar h1{font-size:19px;line-height:1.2;margin:0;flex:1}
+.topbar h1 small{display:block;font:500 13px "DM Sans","Noto Sans TC",sans-serif;color:var(--muted);letter-spacing:0;margin-top:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.out-col{position:sticky;top:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.card h2 .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;flex:none}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn.small{padding:5px 10px;min-height:32px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;border:2px dashed #CFC7C0;border-radius:12px;padding:22px 14px;background:#FBFAF8;cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--chip)}
+.drop strong{font-size:15px}
+.drop span{font-size:13px;color:var(--muted)}
+.drop input{display:none}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff;min-height:42px;width:100%}
+.field textarea{resize:vertical;line-height:1.45;min-height:90px}
+.field .hint{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.auto-wrap{position:relative}
+.auto-wrap .reset{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:12px;display:none}
+.auto-wrap.overridden .reset{display:block}
+.auto-wrap.overridden input{background:#FFFBEA}
+.status{font-size:13px;border-radius:9px;padding:9px 12px;margin-top:12px}
+.status.ok{background:var(--good-bg);color:var(--good)}
+.status.warn{background:var(--warn-bg);color:var(--warn)}
+.status ul{margin:6px 0 0;padding-left:18px}
+.tbl-wrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{background:#FBFAF8;color:var(--muted);font-weight:600}
+tr.me td{font-weight:700}
+tr.tot td{font-weight:700;background:#FBFAF8;border-bottom:0}
+td.zero{color:#A9A39E}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px}
+.fact{background:var(--chip);border-radius:8px;padding:5px 10px;font-size:13px}
+.fact b{font-variant-numeric:tabular-nums}
+details.settings summary{cursor:pointer;font:600 16px Poppins,"Noto Sans TC",sans-serif;list-style:none;display:flex;align-items:center;gap:10px}
+details.settings summary::-webkit-details-marker{display:none}
+details.settings summary::after{content:"";margin-left:auto;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s}
+details.settings[open] summary::after{transform:rotate(-135deg)}
+details.settings .body{margin-top:14px}
+.ontrack{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.ontrack .field input{text-align:center;padding:8px 4px}
+.tabs{display:flex;gap:4px;background:var(--chip);border-radius:11px;padding:4px;margin-bottom:12px}
+.tabs button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 10px;font-weight:600;min-height:40px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px #0001}
+.msg{white-space:pre-wrap;word-break:break-word;background:#E7F5E0;border-radius:12px;padding:14px 16px;font:14px/1.5 "DM Sans","Noto Sans TC",system-ui,sans-serif;max-height:62vh;overflow:auto;margin:0;border:1px solid #D2E8C7}
+.msg .ph{color:#9A938D}
+.out-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.out-actions .btn{flex:1;min-width:140px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:all .2s;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:30px 10px}
+.saved-note{font-size:12px;color:var(--muted);margin-top:10px}
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  .out-col{position:static}
+}
+@media (max-width:520px){
+  .wrap{padding:16px 16px 32px;gap:16px}
+  .col{gap:16px}
+  .card{padding:16px 14px}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ontrack{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .topbar{padding:12px 16px}
+}
+</style>
+<style id="e3-theme">
+.e3-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;min-height:46px;background:#24333A;color:#FFFFFF;font:500 14px/1.2 "DM Sans",system-ui,sans-serif;position:relative;z-index:100}
+.e3-bar a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#FFFFFF;text-decoration:none}
+.e3-bar a:hover{color:#B9AFA7}
+.e3-bar .e3-brand{font:700 15px/1 Poppins,"DM Sans",system-ui,sans-serif;color:#FFFFFF}
+.e3-bar .e3-brand span{color:#B9AFA7}
+@media print{.e3-bar{display:none !important}}
+</style>
+</head>
+<body>
+<nav class="e3-bar" aria-label="E3 toolkit"><a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>E3 Toolkit</a><span class="e3-brand">Dream<span>Hub</span> E3</span></nav>
+<header class="topbar">
+  <h1>Monthly Report Messages<small>每月業務報告 · mentor and team WhatsApp messages from the production file</small></h1>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <section class="card" aria-labelledby="h-file">
+      <h2 id="h-file"><span class="n">1</span>Production file</h2>
+      <p class="sub">The Excel your admin sends each month. It is read on this device only and never uploaded.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".xlsx,.xls">
+        <strong>Choose or drop the Excel file</strong>
+        <span id="fileName">e.g. Goh_Cheng_Fee_ProductionAgent2026.xlsx</span>
+      </label>
+      <div class="row" style="margin-top:14px">
+        <div class="field" style="flex:1;min-width:160px">
+          <label for="month">Report month</label>
+          <select id="month" disabled><option>Upload the file first</option></select>
+        </div>
+      </div>
+      <div id="fileStatus"></div>
+      <div id="teamTable"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-details">
+      <h2 id="h-details"><span class="n">2</span>This month’s details</h2>
+      <p class="sub">Not in the Excel. Each month starts with last month’s answers so you only change what moved.</p>
+      <div class="stack">
+        <div class="grid3">
+          <div class="field"><label for="f-mp">Manpower</label><input id="f-mp" data-k="manpower" placeholder="1+5+1"></div>
+          <div class="field"><label for="f-ft">FT</label><input id="f-ft" data-k="ft" inputmode="numeric"></div>
+          <div class="field"><label for="f-pt">PT</label><input id="f-pt" data-k="pt" inputmode="numeric"></div>
+        </div>
+        <div class="grid4">
+          <div class="field"><label for="f-active">Active agents</label>
+            <div class="auto-wrap" id="w-active"><input id="f-active" data-k="active" inputmode="numeric"><button class="reset" type="button" data-reset="active" title="Use the figure from the file">↺</button></div>
+          </div>
+          <div class="field"><label for="f-dl1">DL1</label><input id="f-dl1" data-k="dl1" inputmode="numeric"></div>
+          <div class="field"><label for="f-dl2">DL2</label><input id="f-dl2" data-k="dl2" inputmode="numeric"></div>
+          <div class="field"><label for="f-dl4">DL4</label><input id="f-dl4" data-k="dl4" inputmode="numeric"></div>
+        </div>
+        <p class="hint" id="activeHint" style="margin:-4px 0 0;font-size:12px;color:var(--muted)">Active agents = people with at least one case (NOC) this month. Type to change it.</p>
+        <div class="field"><label for="f-review" id="l-review">自我点评</label><textarea id="f-review" data-k="review" rows="8" placeholder="完成了19R，總跟進名單12位。&#10;- [ ] Name (note)"></textarea></div>
+        <div class="field"><label for="f-plan" id="l-plan">计划与策略</label><textarea id="f-plan" data-k="plan" rows="5" placeholder="- 確保完成 50% Active Ratio"></textarea></div>
+        <div class="field"><label for="f-comment">Comment for the team message</label>
+          <div><button class="btn small" type="button" id="btnDraft">Write a draft from this month’s figures</button></div>
+          <div class="facts" id="facts"></div>
+          <textarea id="f-comment" data-k="comment" rows="5"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <details class="settings" id="settingsBox">
+        <summary>Settings</summary>
+        <div class="body stack">
+          <p class="sub" style="margin:0">Saved on this device. Change them once a year or when goals change.</p>
+          <div class="field"><label for="s-mentorHead">Mentor message first line</label><input id="s-mentorHead" data-s="mentorHead"><span class="hint">{year} and {month} are filled in for you.</span></div>
+          <div class="field"><label for="s-teamHead">Team message first line</label><input id="s-teamHead" data-s="teamHead"></div>
+          <div class="field"><label for="s-acc">Your agent account no.</label><input id="s-acc" data-s="acc" inputmode="numeric"><span class="hint">Picks your row for personal sales (PS). Left empty, the first row is used.</span></div>
+          <h3 style="font-size:14px;margin:6px 0 0">2026 goals</h3>
+          <div class="grid2">
+            <div class="field"><label for="s-psQ">PS QFYLP</label><input id="s-psQ" data-s="psQ" data-num inputmode="numeric"></div>
+            <div class="field"><label for="s-psA">PS ANP</label><input id="s-psA" data-s="psA" data-num inputmode="numeric"></div>
+            <div class="field"><label for="s-dgP">DG PFYLP</label><input id="s-dgP" data-s="dgP" data-num inputmode="numeric"></div>
+            <div class="field"><label for="s-dgA">DG ANP</label><input id="s-dgA" data-s="dgA" data-num inputmode="numeric"></div>
+          </div>
+          <h3 style="font-size:14px;margin:6px 0 0">On Track % for each month</h3>
+          <div class="ontrack" id="ontrack"></div>
+          <span class="hint" id="ontrackSum" style="font-size:12px;color:var(--muted)"></span>
+          <div class="field"><label for="s-goalExtra">Other 2026 goal lines</label><textarea id="s-goalExtra" data-s="goalExtra" rows="3"></textarea><span class="hint">The PS and DG goal lines are written from the goals above. Add WU, NR and anything else here.</span></div>
+          <div class="field"><label for="s-closing">Closing lines (mentor message)</label><textarea id="s-closing" data-s="closing" rows="5"></textarea></div>
+          <div class="row"><button class="btn small" type="button" id="btnResetSettings">Restore default settings</button></div>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <div class="col out-col">
+    <section class="card" aria-labelledby="h-out">
+      <h2 id="h-out"><span class="n">3</span>Messages</h2>
+      <p class="sub">Check, then copy or send straight to WhatsApp.</p>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-mentor" aria-selected="true" aria-controls="out" data-tab="mentor">To mentor</button>
+        <button role="tab" id="tab-team" aria-selected="false" aria-controls="out" data-tab="team">To team</button>
+      </div>
+      <pre class="msg" id="out" role="tabpanel"></pre>
+      <div class="out-actions">
+        <button class="btn primary" type="button" id="btnCopy" disabled>Copy message</button>
+        <a class="btn wa" id="btnWa" href="#" target="_blank" rel="noopener" aria-disabled="true">Send via WhatsApp</a>
+      </div>
+      <p class="saved-note" id="savedNote"></p>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const STORE_KEY = 'monthlyReport.v1';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DEFAULT_SETTINGS = {
+  mentorHead: '吳昌輝 UM3 以學習的心情匯報{year}年{month}月份標準業務報告：',
+  teamHead: 'DreamHub E3 {year}年{month}月份標準業務報告：',
+  acc: '5978796',
+  psQ: 400000, psA: 500000, dgP: 800000, dgA: 900000,
+  onTrack: [5,6,7,7,7,8,9,9,10,10,11,11],
+  goalExtra: '🎯WU: QFYLP 800K / ANP 900K\n🎯NR: 5 Direct + 8 Indirect',
+  closing: '形成直属1⃣➕6⃣ 的三部曲\n1）接受三访 轻松1⃣5⃣0⃣\n2）执行6R 形成 1⃣➕6⃣\n3）納入系统 复制1⃣0⃣0⃣'
+};
+const DEFAULT_DETAILS = {
+  manpower: '1+5+1', ft: '4', pt: '3', dl1: '4', dl2: '1', dl4: '2', active: '',
+  review: '', plan: '',
+  comment: ''
+};
+
+/* ---------- storage (never throws) ---------- */
+function load(){
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch(e) {}
+  s = s && typeof s === 'object' ? s : {};
+  s.settings = Object.assign({}, DEFAULT_SETTINGS, s.settings || {});
+  if (!Array.isArray(s.settings.onTrack) || s.settings.onTrack.length !== 12) s.settings.onTrack = DEFAULT_SETTINGS.onTrack.slice();
+  s.details = s.details || {};   // keyed "2026-10"
+  s.data = s.data || null;       // parsed workbook (numbers only)
+  s.month = s.month || null;
+  return s;
+}
+let saveOk = true;
+function save(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); saveOk = true; } catch(e) { saveOk = false; }
+}
+let S = load();
+
+/* ---------- number helpers ---------- */
+const r2 = v => Math.round((Number(v) || 0) * 100 + Number.EPSILON * 100) / 100;
+function money(v){ return r2(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function pct(done, goal){
+  if (!goal) return '0.00%';
+  const p = Number((done / goal * 100).toPrecision(12));
+  return (Math.round(p * 100) / 100).toFixed(2) + '%';
+}
+function kLabel(v){
+  v = Number(v) || 0;
+  if (v >= 1000 && v % 1000 === 0) return (v / 1000).toLocaleString('en-US') + 'K';
+  return v.toLocaleString('en-US');
+}
+function toNum(x){
+  if (typeof x === 'number') return isFinite(x) ? x : 0;
+  if (x == null) return 0;
+  const n = parseFloat(String(x).replace(/[, ]/g, ''));
+  return isFinite(n) ? n : 0;
+}
+function cumOnTrack(mIdx){ return S.settings.onTrack.slice(0, mIdx + 1).reduce((a, b) => a + toNum(b), 0); }
+
+/* ---------- Excel reading ---------- */
+const METRICS = [['fyc', /FY_?Comm/i], ['qfylp', /\bQFYLP/i], ['pfylp', /\bPFYLP/i], ['mfylp', /\bMFYLP/i], ['anp', /\bANP\b/i], ['noc', /\bNOC\b/i]];
+function monthOfSheet(name){
+  const m = String(name).trim().match(/^([A-Za-z]{3})/);
+  if (!m) return -1;
+  return MONTHS.findIndex(x => x.toLowerCase() === m[1].toLowerCase());
+}
+function parseSheet(rows, sheetName){
+  let year = null, mIdx = monthOfSheet(sheetName);
+  for (const r of rows.slice(0, 5)) for (const c of r) {
+    const t = String(c == null ? '' : c);
+    const m = t.match(/Production\s+For\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/i);
+    if (m) { year = +m[2]; const mi = MONTHS.findIndex(x => x.toLowerCase() === m[1].toLowerCase()); if (mi >= 0) mIdx = mi; }
+  }
+  const hIdx = rows.findIndex(r => r.some(c => /^\s*name\s*$/i.test(String(c == null ? '' : c))));
+  if (hIdx < 0 || mIdx < 0) return null;
+  const head = rows[hIdx].map(c => String(c == null ? '' : c).trim());
+  const nameCol = head.findIndex(h => /^name$/i.test(h));
+  const accCol = head.findIndex(h => /acc/i.test(h));
+  const cols = {};
+  head.forEach((h, i) => {
+    for (const [k, re] of METRICS) if (re.test(h)) {
+      const ytd = /[A-Za-z]{3}\s*-\s*[A-Za-z]{3}/.test(h);
+      cols[k + (ytd ? 'Y' : 'M')] = i;
+    }
+  });
+  const need = ['qfylpM','qfylpY','pfylpM','pfylpY','anpM','anpY','nocM','nocY'];
+  const missing = need.filter(k => cols[k] == null);
+  if (missing.length) return {error: 'Missing columns: ' + missing.join(', '), mIdx, year};
+  const people = []; let fileTotal = null;
+  for (let i = hIdx + 1; i < rows.length; i++) {
+    const r = rows[i]; const name = String(r[nameCol] == null ? '' : r[nameCol]).trim();
+    const pick = () => { const o = {}; for (const k in cols) o[k] = toNum(r[cols[k]]); return o; };
+    if (/^total$/i.test(name)) { fileTotal = pick(); break; }
+    if (!name) continue;
+    people.push(Object.assign({name, acc: accCol >= 0 ? String(r[accCol] == null ? '' : r[accCol]).trim() : ''}, pick()));
+  }
+  return {mIdx, year, people, fileTotal};
+}
+function parseWorkbook(wb){
+  const months = {};
+  for (const name of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header: 1, raw: true, defval: null});
+    const p = parseSheet(rows, name);
+    if (p && !p.error && p.people.length) months[p.mIdx] = p;
+  }
+  return months;
+}
+
+/* ---------- calculations ---------- */
+function monthKey(m){ return m.year + '-' + String(m.mIdx + 1).padStart(2, '0'); }
+function summarize(m){
+  const tot = {};
+  const keys = Object.keys(m.people[0]).filter(k => typeof m.people[0][k] === 'number');
+  for (const k of keys) tot[k] = r2(m.people.reduce((a, p) => a + p[k], 0));
+  const acc = String(S.settings.acc || '').trim();
+  const me = (acc && m.people.find(p => p.acc === acc)) || m.people[0];
+  const active = m.people.filter(p => p.nocM > 0).length;
+  const mismatches = [];
+  if (m.fileTotal) for (const k of keys) if (m.fileTotal[k] != null && Math.abs(m.fileTotal[k] - tot[k]) > 0.005) mismatches.push(k);
+  return {tot, me, meFound: !acc || me.acc === acc, active, headcount: m.people.length, mismatches};
+}
+const LABEL = {fycM:'FY_Comm', qfylpM:'QFYLP_C', pfylpM:'PFYLP', mfylpM:'MFYLP_C', anpM:'ANP', nocM:'NOC', fycY:'FY_Comm (YTD)', qfylpY:'QFYLP_C (YTD)', pfylpY:'PFYLP (YTD)', mfylpY:'MFYLP_C (YTD)', anpY:'ANP (YTD)', nocY:'NOC (YTD)'};
+
+/* ---------- current state ---------- */
+function curMonth(){ return S.data && S.month != null ? S.data[S.month] : null; }
+function curDetails(){
+  const m = curMonth(); if (!m) return null;
+  const key = monthKey(m);
+  if (!S.details[key]) {
+    // start from the most recent earlier month, else defaults
+    const prev = Object.keys(S.details).filter(k => k < key).sort().pop();
+    S.details[key] = Object.assign({}, DEFAULT_DETAILS, prev ? S.details[prev] : {}, {active: ''});
+    save();
+  }
+  return S.details[key];
+}
+
+/* ---------- message building ---------- */
+function block(title, goal, done, ytd, mIdx){
+  const mp = toNum(S.settings.onTrack[mIdx]); const cp = cumOnTrack(mIdx);
+  const mg = goal * mp / 100, cg = goal * cp / 100;
+  return `[${title}]\nMonthly Goal: ${kLabel(goal)} x ${mp}% = ${money(mg)}\n🎯Done: ${money(done)} (${pct(done, mg)})\nACC Goal: ${kLabel(goal)} x ${cp}% = ${money(cg)}\n🎯ACC: ${money(ytd)} (${pct(ytd, cg)})`;
+}
+function head(tpl, m){ return String(tpl).replace(/\{year\}/g, m.year).replace(/\{month\}/g, m.mIdx + 1); }
+function ontrackLines(){
+  const q = ['1st','2nd','3rd','4th']; const t = S.settings.onTrack.map(toNum);
+  return q.map((n, i) => { const a = t.slice(i*3, i*3+3); return `${n} Quarter ${a.join(', ')} = ${a.reduce((x, y) => x + y, 0)}%`; }).join('\n');
+}
+function activeCount(sum, d){ return String(d.active).trim() !== '' ? String(d.active).trim() : String(sum.active); }
+function buildMentor(m, sum, d){
+  const s = S.settings, mi = m.mIdx, next = (mi + 1) % 12 + 1;
+  const parts = [
+    head(s.mentorHead, m),
+    'SG指標\nOn Track 指標\n' + ontrackLines(),
+    block('PS QFYLP', s.psQ, sum.me.qfylpM, sum.me.qfylpY, mi),
+    block('PS ANP', s.psA, sum.me.anpM, sum.me.anpY, mi),
+    block('DG PFYLP', s.dgP, sum.tot.pfylpM, sum.tot.pfylpY, mi),
+    block('DG ANP', s.dgA, sum.tot.anpM, sum.tot.anpY, mi),
+    `Manpower: ${d.manpower}\nFT: ${d.ft}\nPT: ${d.pt}`,
+    `Active agent: ${activeCount(sum, d)}/${sum.headcount}\nDL1: ${d.dl1}\nDL2: ${d.dl2}\nDL4: ${d.dl4}`,
+    `Unit NOC\nMonth: ${sum.tot.nocM}\nTotal: ${sum.tot.nocY}`,
+    `${mi + 1}月份自我点评: ${String(d.review).trim()}`,
+    `${next}月份计划与策略:\n${String(d.plan).trim()}`,
+    `🏆${m.year} Goal:\n🎯PS: QFYLP ${kLabel(s.psQ)} / ANP ${kLabel(s.psA)}\n🎯DG: PFYLP ${kLabel(s.dgP)} / ANP ${kLabel(s.dgA)}` + (String(s.goalExtra).trim() ? '\n' + String(s.goalExtra).trim() : ''),
+  ];
+  if (String(s.closing).trim()) parts.push(String(s.closing).trim());
+  return parts.join('\n\n');
+}
+function buildTeam(m, sum, d){
+  const s = S.settings, mi = m.mIdx;
+  const parts = [
+    head(s.teamHead, m),
+    block('DG PFYLP', s.dgP, sum.tot.pfylpM, sum.tot.pfylpY, mi),
+    block('DG ANP', s.dgA, sum.tot.anpM, sum.tot.anpY, mi),
+  ];
+  if (String(d.comment).trim()) parts.push(String(d.comment).trim());
+  return parts.join('\n\n');
+}
+
+function draftComment(m, sum, d){
+  const mi = m.mIdx, nextM = (mi + 1) % 12, q = Math.floor(nextM / 3) + 1;
+  const act = +activeCount(sum, d) || 0;
+  const ratio = sum.headcount ? act / sum.headcount * 100 : 0;
+  const acs = sum.tot.nocM ? sum.tot.anpM / sum.tot.nocM : 0;
+  const issues = [];
+  if (ratio < 50) issues.push('Active Ratio 少於 50%');
+  if (acs < 3000) issues.push('Average Case Size 低於 3千');
+  const first = issues.length ? `${mi + 1}月業績目前還沒有很大的突破，除了 ${issues.join('，')}。` : `${mi + 1}月業績有不錯的進展，Active Ratio 與 Average Case Size 都達標。`;
+  return `${first} Q${q} 只要專注於團隊發展，啟動 Active Ratio 與提高 Average Case Size, 必定可以大幅度提升團隊業績與氣勢，我們大家一起加油！`;
+}
+
+/* ---------- rendering ---------- */
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tab = 'mentor';
+let lastText = '';
+
+function renderMonthSelect(){
+  const sel = $('month');
+  if (!S.data || !Object.keys(S.data).length) { sel.disabled = true; sel.innerHTML = '<option>Upload the file first</option>'; return; }
+  const idx = Object.keys(S.data).map(Number).sort((a, b) => a - b);
+  if (S.month == null || !S.data[S.month]) S.month = idx[idx.length - 1];
+  sel.disabled = false;
+  sel.innerHTML = idx.map(i => `<option value="${i}"${i === +S.month ? ' selected' : ''}>${MONTHS[i]} ${S.data[i].year} (${i + 1}月)</option>`).join('');
+}
+function renderFile(){
+  const m = curMonth();
+  if (!m) { $('fileStatus').innerHTML = ''; $('teamTable').innerHTML = ''; return; }
+  const sum = summarize(m);
+  let html = '';
+  const warn = [];
+  if (sum.mismatches.length) {
+    const lines = sum.mismatches.map(k => `${LABEL[k] || k}: file says ${money(m.fileTotal[k])}, the people add up to ${money(sum.tot[k])}`);
+    warn.push(`The Total row in the ${MONTHS[m.mIdx]} tab doesn’t match the people above it. The messages use the people’s figures.<ul>${lines.map(l => '<li>' + esc(l) + '</li>').join('')}</ul>`);
+  }
+  if (!sum.meFound) warn.push(`Account no. ${esc(S.settings.acc)} isn’t in this tab, so the first row (${esc(sum.me.name)}) is used for PS. Check Settings.`);
+  if (warn.length) html += `<div class="status warn">${warn.join('<br>')}</div>`;
+  else html += `<div class="status ok">Read ${sum.headcount} people from the ${MONTHS[m.mIdx]} ${m.year} tab. Totals check out.</div>`;
+  $('fileStatus').innerHTML = html;
+  const cell = v => `<td${v ? '' : ' class="zero"'}>${money(v)}</td>`;
+  const row = (p, cls) => `<tr class="${cls || ''}"><td>${esc(p.name)}</td>${cell(p.qfylpM)}${cell(p.pfylpM)}${cell(p.anpM)}<td${p.nocM ? '' : ' class="zero"'}>${p.nocM}</td>${cell(p.qfylpY)}${cell(p.anpY)}<td>${p.nocY}</td></tr>`;
+  $('teamTable').innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>${MONTHS[m.mIdx]}</th><th>QFYLP</th><th>PFYLP</th><th>ANP</th><th>NOC</th><th>YTD QFYLP</th><th>YTD ANP</th><th>YTD NOC</th></tr></thead><tbody>${m.people.map(p => row(p, p === sum.me ? 'me' : '')).join('')}${row(Object.assign({name: 'Team (DG)'}, sum.tot), 'tot')}</tbody></table></div>`;
+}
+function renderDetails(){
+  const m = curMonth(); const d = curDetails();
+  $('btnDraft').disabled = !d;
+  document.querySelectorAll('[data-k]').forEach(el => { el.disabled = !d; el.value = d ? (d[el.dataset.k] ?? '') : ''; });
+  if (!m) { $('facts').innerHTML = ''; return; }
+  const sum = summarize(m);
+  $('f-active').placeholder = String(sum.active);
+  if (String(d.active).trim() === '') $('f-active').value = sum.active;
+  $('w-active').classList.toggle('overridden', String(d.active).trim() !== '' && String(d.active).trim() !== String(sum.active));
+  const mi = m.mIdx, next = (mi + 1) % 12 + 1;
+  $('l-review').textContent = `${mi + 1}月份自我点评`;
+  $('l-plan').textContent = `${next}月份计划与策略`;
+  const act = +activeCount(sum, d) || 0;
+  const ratio = sum.headcount ? act / sum.headcount * 100 : 0;
+  const acs = sum.tot.nocM ? sum.tot.anpM / sum.tot.nocM : 0;
+  const prev = S.data[mi - 1];
+  let prevTxt = '';
+  if (prev) { const ps = summarize(prev); prevTxt = `<span class="fact">DG ANP vs ${MONTHS[mi - 1]}: <b>${money(ps.tot.anpM)} → ${money(sum.tot.anpM)}</b></span>`; }
+  $('facts').innerHTML = `<span class="fact">Active Ratio: <b>${act}/${sum.headcount} (${ratio.toFixed(1)}%)</b></span><span class="fact">Average Case Size: <b>${money(acs)}</b></span>` + prevTxt;
+}
+function renderSettings(){
+  document.querySelectorAll('[data-s]').forEach(el => {
+    const v = S.settings[el.dataset.s];
+    el.value = el.hasAttribute('data-num') ? (Number(v) || 0).toLocaleString('en-US') : (v ?? '');
+  });
+  $('ontrack').innerHTML = MONTHS.map((n, i) => `<div class="field"><label for="ot-${i}">${n}</label><input id="ot-${i}" data-ot="${i}" inputmode="decimal" value="${esc(S.settings.onTrack[i])}"></div>`).join('');
+  renderOnTrackSum();
+}
+function renderOnTrackSum(){
+  const total = S.settings.onTrack.reduce((a, b) => a + toNum(b), 0);
+  $('ontrackSum').textContent = `Adds up to ${total}%` + (total === 100 ? '.' : ' (usually 100%).');
+}
+function renderOut(){
+  const m = curMonth(); const out = $('out');
+  const copy = $('btnCopy'), wa = $('btnWa');
+  if (!m) {
+    out.innerHTML = '<span class="ph">Upload the production file to see the messages here.</span>';
+    copy.disabled = true; wa.setAttribute('aria-disabled', 'true'); wa.removeAttribute('href'); lastText = ''; return;
+  }
+  const sum = summarize(m), d = curDetails();
+  lastText = tab === 'mentor' ? buildMentor(m, sum, d) : buildTeam(m, sum, d);
+  out.textContent = lastText;
+  copy.disabled = false;
+  wa.removeAttribute('aria-disabled');
+  wa.href = 'https://wa.me/?text=' + encodeURIComponent(lastText);
+  $('savedNote').textContent = saveOk ? 'Your details and settings are saved on this device.' : 'This browser won’t save. Copy the message before leaving the page.';
+}
+function renderAll(){ renderMonthSelect(); renderFile(); renderDetails(); renderOut(); }
+
+/* ---------- events ---------- */
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1800); }
+
+async function readFile(f){
+  if (!f) return;
+  $('fileName').textContent = f.name;
+  if (typeof XLSX === 'undefined') { $('fileStatus').innerHTML = '<div class="status warn">The Excel reader didn’t load. Check the internet connection and reload the page.</div>'; return; }
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), {type: 'array'});
+    const months = parseWorkbook(wb);
+    if (!Object.keys(months).length) { $('fileStatus').innerHTML = '<div class="status warn">No month tabs found. The file needs tabs like “Oct (26)” with a Name column and QFYLP, PFYLP, ANP and NOC columns.</div>'; return; }
+    S.data = months; S.month = null; save(); renderAll();
+    toast('File read');
+  } catch (e) {
+    $('fileStatus').innerHTML = `<div class="status warn">Couldn’t read this file: ${esc(e.message || e)}</div>`;
+  }
+}
+$('file').addEventListener('change', e => readFile(e.target.files[0]));
+const drop = $('drop');
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
+$('month').addEventListener('change', e => { S.month = +e.target.value; save(); renderFile(); renderDetails(); renderOut(); });
+
+document.querySelectorAll('[data-k]').forEach(el => el.addEventListener('input', () => {
+  const d = curDetails(); if (!d) return;
+  d[el.dataset.k] = el.value; save();
+  if (el.dataset.k === 'active') { const sum = summarize(curMonth()); $('w-active').classList.toggle('overridden', el.value.trim() !== '' && el.value.trim() !== String(sum.active)); renderDetails(); }
+  renderOut();
+}));
+document.querySelector('[data-reset="active"]').addEventListener('click', () => { const d = curDetails(); if (!d) return; d.active = ''; save(); renderDetails(); renderOut(); });
+
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.s) {
+    S.settings[el.dataset.s] = el.hasAttribute('data-num') ? toNum(el.value) : el.value;
+    save(); renderFile(); renderDetails(); renderOut();
+  } else if (el.dataset.ot != null) {
+    S.settings.onTrack[+el.dataset.ot] = toNum(el.value); save(); renderOnTrackSum(); renderOut();
+  }
+});
+document.addEventListener('change', e => { if (e.target.hasAttribute && e.target.hasAttribute('data-num')) e.target.value = toNum(e.target.value).toLocaleString('en-US'); });
+$('btnResetSettings').addEventListener('click', () => {
+  if (!confirm('Restore the default settings? Your monthly details are kept.')) return;
+  S.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); save(); renderSettings(); renderAll();
+});
+
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  renderOut();
+}));
+$('btnCopy').addEventListener('click', async () => {
+  if (!lastText) return;
+  try { await navigator.clipboard.writeText(lastText); toast('Copied. Paste it in WhatsApp.'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = lastText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Copied. Paste it in WhatsApp.'); } catch (e2) { toast('Couldn’t copy. Select the text and copy it.'); }
+    ta.remove();
+  }
+});
+$('btnDraft').addEventListener('click', () => {
+  const m = curMonth(), d = curDetails(); if (!m) return;
+  if (String(d.comment).trim() && !confirm('Replace the current comment with a new draft?')) return;
+  d.comment = draftComment(m, summarize(m), d); save(); renderDetails(); renderOut();
+});
+$('btnWa').addEventListener('click', e => { if ($('btnWa').getAttribute('aria-disabled') === 'true') e.preventDefault(); });
+
+renderSettings();
+renderAll();
+</script>
+</body>
+</html>
