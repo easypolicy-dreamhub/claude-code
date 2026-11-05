@@ -28,7 +28,7 @@ The class names above are a guess. This repo does not contain the members page, 
 1. Choose the Excel. The newest month tab is picked automatically.
 2. Check the figures table and the green or amber status line.
 3. Update manpower, FT/PT, DL1/2/4, self-review and next-month plan. Each month starts from last month's answers.
-4. Team tab: press "Write a draft from this month's figures" for the comment, then edit.
+4. Team tab: press "Write a draft message" for the comment, then edit.
 5. Pick **Text** or **Graphic poster** (and a style). The preview shows exactly what will go out.
 6. Text: Copy message, or Send via WhatsApp. Graphic: Share to WhatsApp, Download PNG, or Copy image.
 
