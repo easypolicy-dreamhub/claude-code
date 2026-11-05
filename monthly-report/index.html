@@ -90,6 +90,19 @@ details.settings .body{margin-top:14px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{color:var(--muted);font-size:14px;text-align:center;padding:30px 10px}
 .saved-note{font-size:12px;color:var(--muted);margin-top:10px}
+[hidden]{display:none !important}
+.fmt-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.fmt-row .tabs{flex:1;min-width:200px;margin-bottom:0}
+.fmt-row .field{min-width:130px}
+.fmt-row .field select{min-height:40px;padding:6px 10px}
+.gfx{display:flex;justify-content:center;background:var(--chip);border-radius:12px;padding:10px}
+.gfx img{display:block;width:auto;max-width:100%;max-height:62vh;height:auto;border-radius:8px;box-shadow:0 2px 10px #0003}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0}
+ul.ana{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.ana li{font-size:13px;padding:6px 10px;border-radius:8px;background:var(--chip)}
+ul.ana li.good{background:var(--good-bg);color:var(--good)}
+ul.ana li.warn{background:var(--warn-bg);color:var(--warn)}
+@media (min-width:901px){.out-col .card{max-height:calc(100vh - 32px);overflow:auto}}
 @media (max-width:900px){
   .wrap{grid-template-columns:minmax(0,1fr)}
   .out-col{position:static}
@@ -160,9 +173,10 @@ details.settings .body{margin-top:14px}
         <div class="field"><label for="f-review" id="l-review">自我点评</label><textarea id="f-review" data-k="review" rows="8" placeholder="完成了19R，總跟進名單12位。&#10;- [ ] Name (note)"></textarea></div>
         <div class="field"><label for="f-plan" id="l-plan">计划与策略</label><textarea id="f-plan" data-k="plan" rows="5" placeholder="- 確保完成 50% Active Ratio"></textarea></div>
         <div class="field"><label for="f-comment">Comment for the team message</label>
-          <div><button class="btn small" type="button" id="btnDraft">Write a draft from this month’s figures</button></div>
-          <div class="facts" id="facts"></div>
+          <ul class="ana" id="facts"></ul>
+          <div><button class="btn small" type="button" id="btnDraft">Write a draft message</button></div>
           <textarea id="f-comment" data-k="comment" rows="5"></textarea>
+          <span class="hint">The draft is written from this month’s figures: Active Ratio, Average Case Size and the change in DG ANP against last month. Press the button again for another version.</span>
         </div>
       </div>
     </section>
@@ -195,17 +209,33 @@ details.settings .body{margin-top:14px}
 
   <div class="col out-col">
     <section class="card" aria-labelledby="h-out">
-      <h2 id="h-out"><span class="n">3</span>Messages</h2>
-      <p class="sub">Check, then copy or send straight to WhatsApp.</p>
+      <h2 id="h-out"><span class="n">3</span>Preview and send</h2>
+      <p class="sub">This is exactly what goes out. Nothing is sent until you tap send inside WhatsApp.</p>
       <div class="tabs" role="tablist">
-        <button role="tab" id="tab-mentor" aria-selected="true" aria-controls="out" data-tab="mentor">To mentor</button>
-        <button role="tab" id="tab-team" aria-selected="false" aria-controls="out" data-tab="team">To team</button>
+        <button role="tab" id="tab-mentor" aria-selected="true" data-tab="mentor">To mentor</button>
+        <button role="tab" id="tab-team" aria-selected="false" data-tab="team">To team</button>
       </div>
-      <pre class="msg" id="out" role="tabpanel"></pre>
-      <div class="out-actions">
+      <div class="fmt-row">
+        <div class="tabs" role="group" aria-label="Output format">
+          <button type="button" id="fmt-text" aria-selected="true" data-fmt="text">Text</button>
+          <button type="button" id="fmt-graphic" aria-selected="false" data-fmt="graphic">Graphic poster</button>
+        </div>
+        <div class="field" id="styleRow" hidden><label for="style">Style</label>
+          <select id="style"><option value="dark">E3 Dark</option><option value="gold">Gold</option><option value="light">Clean Light</option></select>
+        </div>
+      </div>
+      <pre class="msg" id="out"></pre>
+      <div class="gfx" id="gfx" hidden><img id="gfxImg" alt="Poster preview"></div>
+      <div class="out-actions" id="actText">
         <button class="btn primary" type="button" id="btnCopy" disabled>Copy message</button>
         <a class="btn wa" id="btnWa" href="#" target="_blank" rel="noopener" aria-disabled="true">Send via WhatsApp</a>
       </div>
+      <div class="out-actions" id="actGfx" hidden>
+        <button class="btn wa" type="button" id="btnShare" disabled>Share to WhatsApp</button>
+        <button class="btn primary" type="button" id="btnDownload" disabled>Download PNG</button>
+        <button class="btn" type="button" id="btnCopyImg" disabled>Copy image</button>
+      </div>
+      <p class="note" id="gfxNote" hidden>WhatsApp links can only carry text. On a phone, Share opens WhatsApp with the picture attached. On a computer, download or copy the image, then attach or paste it in WhatsApp.</p>
       <p class="saved-note" id="savedNote"></p>
     </section>
   </div>
@@ -241,6 +271,7 @@ function load(){
   s.details = s.details || {};   // keyed "2026-10"
   s.data = s.data || null;       // parsed workbook (numbers only)
   s.month = s.month || null;
+  s.ui = Object.assign({format: 'text', style: 'dark'}, s.ui || {});
   return s;
 }
 let saveOk = true;
@@ -390,16 +421,59 @@ function buildTeam(m, sum, d){
   return parts.join('\n\n');
 }
 
-function draftComment(m, sum, d){
-  const mi = m.mIdx, nextM = (mi + 1) % 12, q = Math.floor(nextM / 3) + 1;
+/* ---------- analysis and draft message ---------- */
+function analyze(m, sum, d){
+  const mi = m.mIdx, st = S.settings;
   const act = +activeCount(sum, d) || 0;
   const ratio = sum.headcount ? act / sum.headcount * 100 : 0;
-  const acs = sum.tot.nocM ? sum.tot.anpM / sum.tot.nocM : 0;
-  const issues = [];
-  if (ratio < 50) issues.push('Active Ratio 少於 50%');
-  if (acs < 3000) issues.push('Average Case Size 低於 3千');
-  const first = issues.length ? `${mi + 1}月業績目前還沒有很大的突破，除了 ${issues.join('，')}。` : `${mi + 1}月業績有不錯的進展，Active Ratio 與 Average Case Size 都達標。`;
-  return `${first} Q${q} 只要專注於團隊發展，啟動 Active Ratio 與提高 Average Case Size, 必定可以大幅度提升團隊業績與氣勢，我們大家一起加油！`;
+  const hasCases = sum.tot.nocM > 0;
+  const acs = hasCases ? sum.tot.anpM / sum.tot.nocM : 0;
+  const mp = toNum(st.onTrack[mi]), cp = cumOnTrack(mi);
+  const A = {act, ratio, acs, acsBad: hasCases && acs < 3000, issues: [], strengths: [], lines: []};
+  A.lines.push({k: ratio >= 50 ? 'good' : 'warn', t: `Active Ratio ${act}/${sum.headcount} (${ratio.toFixed(1)}%) · ${ratio >= 50 ? 'meets' : 'below'} the 50% target`});
+  if (ratio < 50) A.issues.push('Active Ratio 少於 50%');
+  if (hasCases) {
+    A.lines.push({k: acs >= 3000 ? 'good' : 'warn', t: `Average Case Size ${money(acs)} · ${acs >= 3000 ? 'above' : 'below'} 3,000`});
+    if (A.acsBad) A.issues.push('Average Case Size 低於 3千');
+  }
+  const prev = S.data[mi - 1], ps = prev ? summarize(prev) : null;
+  if (ps && ps.tot.anpM > 0) {
+    const ch = Math.round((sum.tot.anpM - ps.tot.anpM) / ps.tot.anpM * 100);
+    const t = `DG ANP ${ch >= 0 ? '+' : ''}${ch}% vs ${MONTHS[mi - 1]} (${money(ps.tot.anpM)} → ${money(sum.tot.anpM)})`;
+    if (ch >= 10) { A.strengths.push(`DG ANP 比上月增加 ${ch}%`); A.lines.push({k: 'good', t}); }
+    else if (ch <= -20) { A.issues.push(`DG ANP 比上月下降 ${-ch}%`); A.lines.push({k: 'warn', t}); }
+    else A.lines.push({k: 'info', t});
+  }
+  const g = (label, goal, done, ytd) => A.lines.push({k: 'info', t: `${label}: ${pct(done, goal * mp / 100)} of this month’s goal · ACC ${pct(ytd, goal * cp / 100)} of ACC goal`});
+  g('DG PFYLP', st.dgP, sum.tot.pfylpM, sum.tot.pfylpY);
+  g('DG ANP', st.dgA, sum.tot.anpM, sum.tot.anpY);
+  const none = m.people.filter(p => p.nocM === 0).map(p => p.name);
+  if (none.length) A.lines.push({k: 'info', t: `No new cases this month (${none.length}/${m.people.length}): ${none.join(', ')}`});
+  const top = m.people.slice().sort((a, b) => b.anpM - a.anpM)[0];
+  if (top && top.anpM > 0) A.lines.push({k: 'info', t: `Top ANP this month: ${top.name} (${money(top.anpM)})`});
+  return A;
+}
+let draftVar = -1, lastDraft = '';
+function draftComment(m, sum, d, v){
+  const A = analyze(m, sum, d), mi = m.mIdx, nm = (mi + 1) % 12;
+  const when = mi % 3 === 2 ? `Q${Math.floor(nm / 3) + 1}` : `接下來的 ${nm + 1} 月`;
+  const acts = [];
+  if (A.ratio < 50) acts.push('啟動 Active Ratio');
+  if (A.acsBad) acts.push('提高 Average Case Size');
+  const what = acts.length ? acts.join(' 與') : '保持目前的節奏，持續擴大團隊';
+  const parts = [];
+  if (A.strengths.length) parts.push(`${mi + 1}月團隊 ${A.strengths.join('，')}，感謝大家的努力。`);
+  if (A.issues.length) {
+    const lead = A.strengths.length ? '不過業績還有進步空間，' : `${mi + 1}月業績目前還沒有很大的突破，`;
+    parts.push(lead + (A.issues.length >= 2 ? `除了 ${A.issues[0]} 以外，${A.issues.slice(1).join('，')}。` : `主要需要改善的是 ${A.issues[0]}。`));
+  } else parts.push(`${mi + 1}月業績表現穩定，Active Ratio 與 Average Case Size 都達標。`);
+  const close = [
+    `${when} 只要專注於團隊發展，${what}, 必定可以大幅度提升團隊業績與氣勢，我們大家一起加油！`,
+    `${when} 讓我們一起專注於${what}，一步一步把業績拉起來，相信團隊一定可以做到！💪`,
+    `每個月都是新的開始，${when} 我們從${what} 做起，團隊的氣勢就會起來，加油！🔥`
+  ];
+  parts.push(close[v % close.length]);
+  return parts.join(' ');
 }
 
 /* ---------- rendering ---------- */
@@ -446,13 +520,8 @@ function renderDetails(){
   const mi = m.mIdx, next = (mi + 1) % 12 + 1;
   $('l-review').textContent = `${mi + 1}月份自我点评`;
   $('l-plan').textContent = `${next}月份计划与策略`;
-  const act = +activeCount(sum, d) || 0;
-  const ratio = sum.headcount ? act / sum.headcount * 100 : 0;
-  const acs = sum.tot.nocM ? sum.tot.anpM / sum.tot.nocM : 0;
-  const prev = S.data[mi - 1];
-  let prevTxt = '';
-  if (prev) { const ps = summarize(prev); prevTxt = `<span class="fact">DG ANP vs ${MONTHS[mi - 1]}: <b>${money(ps.tot.anpM)} → ${money(sum.tot.anpM)}</b></span>`; }
-  $('facts').innerHTML = `<span class="fact">Active Ratio: <b>${act}/${sum.headcount} (${ratio.toFixed(1)}%)</b></span><span class="fact">Average Case Size: <b>${money(acs)}</b></span>` + prevTxt;
+  const A = analyze(m, sum, d);
+  $('facts').innerHTML = A.lines.map(l => `<li class="${l.k}">${esc(l.t)}</li>`).join('');
 }
 function renderSettings(){
   document.querySelectorAll('[data-s]').forEach(el => {
@@ -466,21 +535,140 @@ function renderOnTrackSum(){
   const total = S.settings.onTrack.reduce((a, b) => a + toNum(b), 0);
   $('ontrackSum').textContent = `Adds up to ${total}%` + (total === 100 ? '.' : ' (usually 100%).');
 }
+function setGfxButtons(on){ ['btnShare', 'btnDownload', 'btnCopyImg'].forEach(id => { $(id).disabled = !on; }); }
 function renderOut(){
-  const m = curMonth(); const out = $('out');
+  const m = curMonth(), out = $('out'), gfxOn = S.ui.format === 'graphic';
+  document.querySelectorAll('[data-fmt]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.fmt === S.ui.format)));
+  $('style').value = S.ui.style;
+  $('styleRow').hidden = !gfxOn; $('gfxNote').hidden = !gfxOn;
+  $('actText').hidden = gfxOn; $('actGfx').hidden = !gfxOn;
   const copy = $('btnCopy'), wa = $('btnWa');
   if (!m) {
+    out.hidden = false; $('gfx').hidden = true;
     out.innerHTML = '<span class="ph">Upload the production file to see the messages here.</span>';
-    copy.disabled = true; wa.setAttribute('aria-disabled', 'true'); wa.removeAttribute('href'); lastText = ''; return;
+    copy.disabled = true; wa.setAttribute('aria-disabled', 'true'); wa.removeAttribute('href'); setGfxButtons(false); lastText = ''; return;
   }
   const sum = summarize(m), d = curDetails();
   lastText = tab === 'mentor' ? buildMentor(m, sum, d) : buildTeam(m, sum, d);
   out.textContent = lastText;
+  out.hidden = gfxOn; $('gfx').hidden = !gfxOn;
   copy.disabled = false;
   wa.removeAttribute('aria-disabled');
   wa.href = 'https://wa.me/?text=' + encodeURIComponent(lastText);
+  if (gfxOn) renderGfx(m, sum, d);
   $('savedNote').textContent = saveOk ? 'Your details and settings are saved on this device.' : 'This browser won’t save. Copy the message before leaving the page.';
 }
+/* ---------- graphic poster (canvas, 1080 x 1350) ---------- */
+const PW = 1080, PH = 1350, FF = '"Noto Sans TC","DM Sans",system-ui,sans-serif';
+const THEMES = {
+  dark:  {bg1:'#1B272D', bg2:'#2C4049', card:'rgba(255,255,255,0.08)', line:'rgba(255,255,255,0.14)', ink:'#FFFFFF', muted:'#B9C2C7', accent:'#E8B04B', track:'rgba(255,255,255,0.16)', good:'#58D39B', warn:'#F5A94A', deco:'rgba(232,176,75,0.10)'},
+  gold:  {bg1:'#FFF7E2', bg2:'#F3D98B', card:'rgba(255,255,255,0.78)', line:'rgba(120,85,10,0.18)', ink:'#3A2A08', muted:'#7A6330', accent:'#B7791F', track:'rgba(120,85,10,0.15)', good:'#1B7F4B', warn:'#B45309', deco:'rgba(183,121,31,0.12)'},
+  light: {bg1:'#F7F5F2', bg2:'#E9E4DE', card:'#FFFFFF', line:'#DDD6CF', ink:'#24333A', muted:'#5C6870', accent:'#24333A', track:'#E5E0DA', good:'#15803D', warn:'#B45309', deco:'rgba(36,51,58,0.06)'}
+};
+function setFont(c, size, weight){ c.font = `${weight || 400} ${size}px ${FF}`; }
+function rrect(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function ptext(c, t, x, y, size, weight, color, align, maxW){
+  let sz = size; setFont(c, sz, weight);
+  if (maxW) while (c.measureText(t).width > maxW && sz > 12) { sz--; setFont(c, sz, weight); }
+  c.fillStyle = color; c.textAlign = align || 'left'; c.textBaseline = 'alphabetic'; c.fillText(t, x, y);
+}
+function wrapLines(c, t, maxW){
+  const out = [];
+  for (const para of String(t).split('\n')) {
+    let line = '';
+    for (const tok of para.match(/[\x21-\x7E]+|\s|[^\x21-\x7E\s]/gu) || ['']) {
+      if (c.measureText(line + tok).width > maxW && line.trim()) { out.push(line.trimEnd()); line = /\s/.test(tok) ? '' : tok; }
+      else line += tok;
+    }
+    out.push(line.trimEnd());
+  }
+  return out;
+}
+function ellipsize(c, t, maxW){ if (c.measureText(t).width <= maxW) return t; while (t.length > 1 && c.measureText(t + '…').width > maxW) t = t.slice(0, -1); return t + '…'; }
+function pbar(c, P, x, y, w, h, ratio){
+  rrect(c, x, y, w, h, h / 2); c.fillStyle = P.track; c.fill();
+  const f = Math.max(0, Math.min(1, ratio));
+  if (f > 0) { rrect(c, x, y, Math.max(h, w * f), h, h / 2); c.fillStyle = P.accent; c.fill(); }
+}
+function pcard(c, P, x, y, w, h){ rrect(c, x, y, w, h, 24); c.fillStyle = P.card; c.fill(); c.lineWidth = 2; c.strokeStyle = P.line; c.stroke(); }
+function posterBase(c, P, title, sub){
+  const g = c.createLinearGradient(0, 0, 0, PH); g.addColorStop(0, P.bg1); g.addColorStop(1, P.bg2);
+  c.fillStyle = g; c.fillRect(0, 0, PW, PH);
+  c.fillStyle = P.deco; c.beginPath(); c.arc(PW - 40, 60, 260, 0, 7); c.fill(); c.beginPath(); c.arc(60, PH - 40, 220, 0, 7); c.fill();
+  try { c.letterSpacing = '4px'; } catch (e) {}
+  ptext(c, 'DREAMHUB E3', 48, 78, 24, 700, P.accent, 'left');
+  try { c.letterSpacing = '0px'; } catch (e) {}
+  ptext(c, title, 48, 150, 56, 700, P.ink, 'left', 984);
+  ptext(c, sub, 48, 200, 28, 400, P.muted, 'left', 984);
+}
+function metricCard(c, P, x, y, w, h, title, goal, month, ytd, mi){
+  const mp = toNum(S.settings.onTrack[mi]), cp = cumOnTrack(mi);
+  const mg = goal * mp / 100, cg = goal * cp / 100, iw = w - 56;
+  pcard(c, P, x, y, w, h);
+  ptext(c, title, x + 28, y + 48, 30, 700, P.accent, 'left', iw - 220);
+  ptext(c, `${kLabel(goal)} goal`, x + w - 28, y + 48, 22, 500, P.muted, 'right');
+  ptext(c, pct(ytd, cg), x + 28, y + 120, 64, 700, P.ink, 'left', iw - 150);
+  ptext(c, `ACC to ${MONTHS[mi]}`, x + w - 28, y + 120, 24, 500, P.muted, 'right');
+  pbar(c, P, x + 28, y + 140, iw, 14, cg ? ytd / cg : 0);
+  ptext(c, `${money(ytd)} / ${money(cg)}`, x + 28, y + 190, 24, 400, P.muted, 'left', iw);
+  ptext(c, 'This month', x + 28, y + 238, 24, 500, P.muted, 'left');
+  ptext(c, pct(month, mg), x + w - 28, y + 238, 30, 700, P.ink, 'right');
+  pbar(c, P, x + 28, y + 252, iw, 12, mg ? month / mg : 0);
+  ptext(c, `${money(month)} / ${money(mg)}`, x + 28, y + 298, 24, 400, P.muted, 'left', iw);
+}
+function pchip(c, P, x, y, w, h, label, value, color){
+  pcard(c, P, x, y, w, h);
+  ptext(c, label, x + 22, y + 36, 22, 500, P.muted, 'left', w - 44);
+  ptext(c, value, x + 22, y + 84, 38, 700, color || P.ink, 'left', w - 44);
+}
+function planBullets(t){ return String(t).split('\n').map(x => x.replace(/^\s*(?:[-•*]|\[\s?[xX ]?\s?\])\s*/, '').trim()).filter(Boolean); }
+function paintPoster(c, kind, m, sum, d, P){
+  const st = S.settings, mi = m.mIdx, A = analyze(m, sum, d);
+  if (kind === 'mentor') {
+    posterBase(c, P, `${m.year}年${mi + 1}月 標準業務報告`, `${sum.me.name} · Monthly Business Report`);
+    const defs = [['PS QFYLP', st.psQ, sum.me.qfylpM, sum.me.qfylpY], ['PS ANP', st.psA, sum.me.anpM, sum.me.anpY], ['DG PFYLP', st.dgP, sum.tot.pfylpM, sum.tot.pfylpY], ['DG ANP', st.dgA, sum.tot.anpM, sum.tot.anpY]];
+    defs.forEach((x, i) => metricCard(c, P, i % 2 ? 564 : 48, i < 2 ? 240 : 580, 468, 320, x[0], x[1], x[2], x[3], mi));
+    pchip(c, P, 48, 924, 314, 104, 'Active agents', `${activeCount(sum, d)}/${sum.headcount}`);
+    pchip(c, P, 383, 924, 314, 104, 'Unit NOC', `${sum.tot.nocM} · total ${sum.tot.nocY}`);
+    pchip(c, P, 718, 924, 314, 104, 'Manpower', String(d.manpower));
+    const bullets = planBullets(d.plan).slice(0, 4);
+    const showPlan = bullets.length > 0;
+    const items = showPlan ? bullets : A.lines.filter(l => !/^(No new cases|Top ANP)/.test(l.t)).slice(0, 4).map(l => l.t);
+    pcard(c, P, 48, 1052, 984, 244);
+    ptext(c, showPlan ? `${(mi + 1) % 12 + 1}月计划与策略` : 'Key points', 76, 1100, 28, 700, P.accent, 'left', 900);
+    setFont(c, 27, 400);
+    items.forEach((b, i) => ptext(c, '•  ' + ellipsize(c, b, 880), 76, 1148 + i * 42, 27, 400, P.ink, 'left'));
+  } else {
+    posterBase(c, P, `${m.year}年${mi + 1}月 團隊業績報告`, 'DG · Team Report');
+    metricCard(c, P, 48, 240, 984, 320, 'DG PFYLP', st.dgP, sum.tot.pfylpM, sum.tot.pfylpY, mi);
+    metricCard(c, P, 48, 580, 984, 320, 'DG ANP', st.dgA, sum.tot.anpM, sum.tot.anpY, mi);
+    pchip(c, P, 48, 924, 314, 104, 'Active Ratio (target 50%)', `${A.act}/${sum.headcount} · ${A.ratio.toFixed(1)}%`, A.ratio >= 50 ? P.good : P.warn);
+    pchip(c, P, 383, 924, 314, 104, 'Avg Case Size (target 3,000)', sum.tot.nocM ? money(A.acs) : '—', sum.tot.nocM ? (A.acs >= 3000 ? P.good : P.warn) : P.ink);
+    pchip(c, P, 718, 924, 314, 104, 'Team NOC', `${sum.tot.nocM} · total ${sum.tot.nocY}`);
+    const msg = String(d.comment).trim();
+    if (msg) {
+      pcard(c, P, 48, 1052, 984, 244);
+      rrect(c, 48, 1052, 10, 244, 5); c.fillStyle = P.accent; c.fill();
+      let size = 32, lines;
+      for (; size >= 20; size--) { setFont(c, size, 400); lines = wrapLines(c, msg, 904); if (lines.length * size * 1.5 <= 244 - 40) break; }
+      const maxLines = Math.floor((244 - 40) / (size * 1.5));
+      if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = ellipsize(c, lines[maxLines - 1] + '…', 904); }
+      lines.forEach((ln, i) => ptext(c, ln, 84, 1052 + 20 + size * 1.5 * (i + 1) - size * 0.3, size, 400, P.ink, 'left'));
+    }
+  }
+  ptext(c, `DreamHub E3 · ${MONTHS[mi]} ${m.year}`, PW / 2, 1330, 20, 400, P.muted, 'center');
+}
+let lastCanvas = null, gfxTok = 0;
+async function renderGfx(m, sum, d){
+  const tok = ++gfxTok; setGfxButtons(false);
+  const P = THEMES[S.ui.style] || THEMES.dark;
+  try { await Promise.race([Promise.all([document.fonts.load('700 30px "Noto Sans TC"', lastText), document.fonts.load('400 30px "Noto Sans TC"', lastText)]), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
+  if (tok !== gfxTok) return;
+  const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH;
+  paintPoster(cv.getContext('2d'), tab, m, sum, d, P);
+  lastCanvas = cv; $('gfxImg').src = cv.toDataURL('image/png'); setGfxButtons(true);
+}
+
 function renderAll(){ renderMonthSelect(); renderFile(); renderDetails(); renderOut(); }
 
 /* ---------- events ---------- */
@@ -547,8 +735,36 @@ $('btnCopy').addEventListener('click', async () => {
 });
 $('btnDraft').addEventListener('click', () => {
   const m = curMonth(), d = curDetails(); if (!m) return;
-  if (String(d.comment).trim() && !confirm('Replace the current comment with a new draft?')) return;
-  d.comment = draftComment(m, summarize(m), d); save(); renderDetails(); renderOut();
+  const cur = String(d.comment).trim();
+  if (cur && cur !== lastDraft) { if (!confirm('Replace the current comment with a new draft?')) return; draftVar = -1; }
+  draftVar++;
+  lastDraft = draftComment(m, summarize(m), d, draftVar);
+  d.comment = lastDraft; save(); renderDetails(); renderOut();
+});
+document.querySelectorAll('[data-fmt]').forEach(b => b.addEventListener('click', () => { S.ui.format = b.dataset.fmt; save(); renderOut(); }));
+$('style').addEventListener('change', e => { S.ui.style = e.target.value; save(); renderOut(); });
+const posterName = () => { const m = curMonth(); return `E3-${tab}-${m.year}-${String(m.mIdx + 1).padStart(2, '0')}.png`; };
+const posterBlob = () => new Promise(r => lastCanvas.toBlob(r, 'image/png'));
+$('btnDownload').addEventListener('click', async () => {
+  if (!lastCanvas) return;
+  const b = await posterBlob(), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = posterName(); document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Saved. Attach it in WhatsApp.');
+});
+$('btnCopyImg').addEventListener('click', async () => {
+  if (!lastCanvas) return;
+  try { await navigator.clipboard.write([new ClipboardItem({'image/png': await posterBlob()})]); toast('Image copied. Paste it in WhatsApp.'); }
+  catch (e) { toast('This browser can’t copy images. Use Download PNG.'); }
+});
+$('btnShare').addEventListener('click', async () => {
+  if (!lastCanvas) return;
+  const m = curMonth(), d = curDetails();
+  const file = new File([await posterBlob()], posterName(), {type: 'image/png'});
+  const caption = tab === 'team' ? String(d.comment).trim() : head(S.settings.mentorHead, m);
+  if (navigator.canShare && navigator.canShare({files: [file]})) {
+    try { await navigator.share({files: [file], text: caption}); }
+    catch (e) { if (e.name !== 'AbortError') toast('Couldn’t open sharing. Use Download PNG.'); }
+  } else $('btnDownload').click();
 });
 $('btnWa').addEventListener('click', e => { if ($('btnWa').getAttribute('aria-disabled') === 'true') e.preventDefault(); });
 

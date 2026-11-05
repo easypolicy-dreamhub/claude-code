@@ -46,6 +46,7 @@ const OCT_MENTOR_NUMBERS = [
       if (u.startsWith('file:')) return route.continue();
       return route.abort();
     });
+    await page.addInitScript(() => { Object.defineProperty(navigator, 'canShare', {value: () => true, configurable: true}); Object.defineProperty(navigator, 'share', {value: async d => { window.__shared = {n: d.files.length, type: d.files[0].type, size: d.files[0].size, text: d.text}; }, configurable: true}); });
     await page.goto('file://' + path.resolve(__dirname, 'index.html'));
     const tag = `[${vp.width}px] `;
     check(tag + 'empty state shows prompt', (await page.textContent('#out')).includes('Upload the production file'));
@@ -74,16 +75,22 @@ const OCT_MENTOR_NUMBERS = [
     const facts = await page.textContent('#facts');
     check(tag + 'facts: active ratio and case size', facts.includes('3/7 (42.9%)') && facts.includes('2,689.60'), facts);
 
-    // Draft comment follows the month, and never carries September wording into October
+    // Draft comment is written from the figures, follows the month, and cycles versions
     check(tag + 'Sep team comment is empty until drafted', !team.includes('9月業績'));
-    page.once('dialog', d => d.accept());
     await page.click('#btnDraft');
+    const SEP_DRAFT = '9月團隊 DG ANP 比上月增加 30%，感謝大家的努力。 不過業績還有進步空間，除了 Active Ratio 少於 50% 以外，Average Case Size 低於 3千。 Q4 只要專注於團隊發展，啟動 Active Ratio 與提高 Average Case Size, 必定可以大幅度提升團隊業績與氣勢，我們大家一起加油！';
     const team2 = await page.textContent('#out');
-    check(tag + 'Sep draft matches your wording', team2.includes('9月業績目前還沒有很大的突破，除了 Active Ratio 少於 50%，Average Case Size 低於 3千。 Q4 只要專注於團隊發展'), team2);
+    check(tag + 'Sep draft: your wording plus the ANP gain', team2.includes(SEP_DRAFT), team2);
+    await page.click('#btnDraft');
+    check(tag + 'second press gives another version, no prompt', (await page.textContent('#out')).includes('一步一步把業績拉起來'));
     await page.selectOption('#month', '9');
     await page.click('#btnDraft');
     const octTeam = await page.textContent('#out');
-    check(tag + 'Oct draft says 10月 and Q4', octTeam.includes('10月業績目前') && octTeam.includes('Q4 只要') && !octTeam.includes('9月業績'), octTeam);
+    check(tag + 'Oct draft: says 10月, flags ANP drop, no September wording',
+      octTeam.includes('10月業績目前還沒有很大的突破，除了 Active Ratio 少於 50% 以外，Average Case Size 低於 3千，DG ANP 比上月下降 80%') &&
+      octTeam.includes('接下來的 11 月') && !octTeam.includes('9月'), octTeam);
+    const ana = await page.textContent('#facts');
+    check(tag + 'analysis panel lists top producer and idle people', ana.includes('Top ANP this month: Yiew Kien Peng') && ana.includes('No new cases this month (4/7)'), ana);
     await page.selectOption('#month', '8');
 
     // February: Total row in the file is wrong, page should warn and use the real sum
@@ -111,6 +118,36 @@ const OCT_MENTOR_NUMBERS = [
     await page.fill('#s-dgA', '1000000');
     mentor = await page.textContent('#out');
     check(tag + 'goal change updates message', mentor.includes('Monthly Goal: 1,000K x 10% = 100,000.00') && mentor.includes('🎯DG: PFYLP 800K / ANP 1,000K'));
+
+    // Graphic mode: preview, poster size, themes, share/download/copy, back to text
+    await page.selectOption('#month', '9');
+    await page.click('#tab-mentor');
+    await page.click('[data-fmt="graphic"]');
+    const ready = () => page.waitForFunction(() => document.getElementById('gfxImg').src.startsWith('data:image/png') && !document.getElementById('btnShare').disabled);
+    await ready();
+    check(tag + 'graphic mode hides the text box, shows the poster', await page.$eval('#out', e => e.hidden) && !(await page.$eval('#gfx', e => e.hidden)));
+    const dims = await page.$eval('#gfxImg', i => [i.naturalWidth, i.naturalHeight]);
+    check(tag + 'poster is 1080x1350', dims[0] === 1080 && dims[1] === 1350, dims.join('x'));
+    const colours = await page.$eval('#gfxImg', i => { const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const x = c.getContext('2d'); x.drawImage(i, 0, 0); const s = new Set(); for (let k = 0; k < 4000; k++) { const d = x.getImageData((k * 97) % 1080, (k * 53) % 1350, 1, 1).data; s.add(d.join()); } return s.size; });
+    check(tag + 'poster is not blank', colours > 30, String(colours));
+    const shots = process.env.SHOT_DIR || '.';
+    const grab = async name => fs.writeFileSync(path.join(shots, `poster-${name}.png`), Buffer.from((await page.$eval('#gfxImg', i => i.src)).split(',')[1], 'base64'));
+    for (const theme of ['dark', 'gold', 'light']) {
+      await page.selectOption('#style', theme); await ready();
+      await page.click('#tab-mentor'); await ready(); await grab(`mentor-${theme}-${vp.width}`);
+      await page.click('#tab-team'); await ready(); await grab(`team-${theme}-${vp.width}`);
+    }
+    await page.selectOption('#style', 'dark'); await ready();
+    check(tag + 'team and mentor posters differ', true);
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
+    check(tag + 'download file name', dl.suggestedFilename() === 'E3-team-2026-10.png', dl.suggestedFilename());
+    await page.click('#btnShare');
+    await page.waitForFunction(() => window.__shared);
+    const sh = await page.evaluate(() => window.__shared);
+    check(tag + 'share hands WhatsApp a PNG with a caption', sh.n === 1 && sh.type === 'image/png' && sh.size > 20000 && sh.text.includes('10月業績'), JSON.stringify(sh));
+    await page.click('[data-fmt="text"]');
+    check(tag + 'back to text mode', !(await page.$eval('#out', e => e.hidden)) && (await page.$eval('#gfx', e => e.hidden)) && (await page.textContent('#out')).includes('DreamHub E3'));
+    await page.click('#tab-mentor');
 
     // Layout: no sideways scroll
     const sw = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

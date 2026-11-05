@@ -1,6 +1,6 @@
 # Monthly Report Messages (E3 members area)
 
-Single-page tool. Reads the monthly production Excel from the admin and writes two WhatsApp messages: one for the mentor, one for the team. No server code, no build step. The Excel is read in the browser and never uploaded.
+Single-page tool. Reads the monthly production Excel from the admin and writes two reports: one for the mentor, one for the team. Each can be sent as **text** or as a **graphic poster** (1080x1350 PNG, three styles). No server code, no build step. The Excel is read in the browser and never uploaded.
 
 ## Deploy
 
@@ -29,7 +29,18 @@ The class names above are a guess. This repo does not contain the members page, 
 2. Check the figures table and the green or amber status line.
 3. Update manpower, FT/PT, DL1/2/4, self-review and next-month plan. Each month starts from last month's answers.
 4. Team tab: press "Write a draft from this month's figures" for the comment, then edit.
-5. Copy message, or Send via WhatsApp.
+5. Pick **Text** or **Graphic poster** (and a style). The preview shows exactly what will go out.
+6. Text: Copy message, or Send via WhatsApp. Graphic: Share to WhatsApp, Download PNG, or Copy image.
+
+### Sending a poster
+A `wa.me` link can only carry text, so a picture cannot be pre-attached from a web page.
+- **Phone:** Share to WhatsApp opens the phone's share sheet with the PNG attached (Web Share API).
+- **Computer:** Download PNG or Copy image, then attach or paste it in WhatsApp Web. Browsers without file sharing fall back to a download.
+
+Nothing is ever sent automatically. You still tap send inside WhatsApp.
+
+### Motivational message
+"Write a draft message" analyses the month: Active Ratio against 50%, Average Case Size against 3,000, and DG ANP against last month (up 10% or more counts as a win, down 20% or more is flagged). It writes the comment in the same style as the September team message, naming the quarter or month ahead. Press again for another version. Names of individual people appear only in the on-screen analysis, never in the message or poster.
 
 ## Rules built in
 
