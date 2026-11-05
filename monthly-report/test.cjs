@@ -113,6 +113,42 @@ const OCT_MENTOR_NUMBERS = [
     await page.click('[data-reset="active"]');
     check(tag + 'reset active returns to file figure', (await page.textContent('#out')).includes('Active agent: 3/7'));
 
+    // Prospects: add, set temperature, hottest first, blank rows skipped
+    await page.fill('#f-review', '完成了20R\n- 10月份啟動新夥伴中。');
+    await page.fill('#f-plan', '- 確保完成 50% Active Ratio');
+    for (const [n, note, tmp] of [['Hui Lin', 'Direct Approach, 50/50', 'warm'], ['Li Quan', '', 'cold'], ['', '', 'warm'], ['Joe Cheong', 'Follow Up', 'hot']]) {
+      await page.click('#btnAddPro');
+      const k = (await page.$$('#prosList .pro')).length;
+      await page.fill(`#prosList .pro:nth-child(${k}) .pn`, n);
+      await page.fill(`#prosList .pro:nth-child(${k}) .pnote`, note);
+      await page.selectOption(`#prosList .pro:nth-child(${k}) .pt`, tmp);
+    }
+    const PROS_BLOCK = '10月份自我点评: 完成了20R\n- [ ] Joe Cheong (Follow Up) 🔥\n- [ ] Hui Lin (Direct Approach, 50/50) 🟠\n- [ ] Li Quan ❄️\n\n- 10月份啟動新夥伴中。';
+    mentor = await page.textContent('#out');
+    check(tag + 'prospects: hottest first, blank row skipped, activity split around the list', mentor.includes(PROS_BLOCK), mentor);
+    const psum = await page.textContent('#prosSum');
+    check(tag + 'prospect summary counts', psum.includes('3 prospects') && psum.includes('總跟進名單3位') && psum.includes('🔥 1 hot'), psum);
+    await page.reload();
+    await page.waitForFunction(() => !document.getElementById('month').disabled);
+    check(tag + 'prospects survive reload', (await page.textContent('#out')).includes(PROS_BLOCK));
+    await page.click('#prosList .pro:nth-child(3) .x');
+    check(tag + 'remove a prospect row', (await page.$$('#prosList .pro')).length === 3);
+    const carry = await page.evaluate(() => {
+      S.data[10] = JSON.parse(JSON.stringify(S.data[9])); S.data[10].mIdx = 10; S.month = 10; renderAll();
+      const d = curDetails(); const r = {n: d.prospects.length, review: d.review, comment: d.comment, plan: d.plan};
+      d.prospects[0].temp = 'cold'; r.oct = S.details['2026-10'].prospects[0].temp;
+      delete S.data[10]; delete S.details['2026-11']; S.month = 9; save(); renderAll(); return r;
+    });
+    check(tag + 'next month keeps prospects and plan, starts activity and comment blank, Oct untouched',
+      carry.n === 3 && carry.review === '' && carry.comment === '' && carry.plan === '- 確保完成 50% Active Ratio' && carry.oct === 'warm', JSON.stringify(carry));
+    const mig = await page.evaluate(() => {
+      const d = S.details['2026-09']; d.prospects = undefined; delete d.prosV;
+      d.review = '完成了19R。\n- [ ] Hui Lin (Direct Approach, 50/50)\n- [ ] Joe Cheong (Follow Up in Sep) **\n\n- 重新整理名單';
+      migrateDetails(d); return {n: d.prospects.length, joe: d.prospects[1], rest: d.review};
+    });
+    check(tag + 'old pasted self-review is split into prospects and activity',
+      mig.n === 2 && mig.joe.name === 'Joe Cheong' && mig.joe.note === 'Follow Up in Sep' && mig.joe.temp === 'hot' && mig.rest === '完成了19R。\n\n- 重新整理名單', JSON.stringify(mig));
+
     // Settings change flows into the message
     await page.click('#settingsBox summary');
     await page.fill('#s-dgA', '1000000');

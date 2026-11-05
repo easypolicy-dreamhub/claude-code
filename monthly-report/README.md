@@ -27,7 +27,7 @@ The class names above are a guess. This repo does not contain the members page, 
 
 1. Choose the Excel. The newest month tab is picked automatically.
 2. Check the figures table and the green or amber status line.
-3. Update manpower, FT/PT, DL1/2/4, self-review and next-month plan. Each month starts from last month's answers.
+3. Update manpower, FT/PT, DL1/2/4, the prospects list, the month's activity and next month's plan. Each month starts with last month's manpower, DL numbers, prospects and plan. The activity text and team comment always start blank, because they belong to one month only.
 4. Team tab: press "Write a draft message" for the comment, then edit.
 5. Pick **Text** or **Graphic poster** (and a style). The preview shows exactly what will go out.
 6. Text: Copy message, or Send via WhatsApp. Graphic: Share to WhatsApp, Download PNG, or Copy image.
@@ -38,6 +38,11 @@ A `wa.me` link can only carry text, so a picture cannot be pre-attached from a w
 - **Computer:** Download PNG or Copy image, then attach or paste it in WhatsApp Web. Browsers without file sharing fall back to a download.
 
 Nothing is ever sent automatically. You still tap send inside WhatsApp.
+
+### Self-review (自我点评) is two boxes
+- **Recruitment prospects:** one row per person with name, note and temperature (🔥 Hot, 🟠 Warm, ❄️ Cold). Written as `- [ ] Name (note) 🔥`, hottest first. Names go in the text message only. The poster shows only the counts.
+- **Activity:** free text. Its first line goes next to the 自我点评 title; any other lines go after the prospect list. This reproduces the old layout.
+- Old-format text pasted into the activity box (`- [ ] Name (note) **`) is split into prospects once, with `**` read as Hot.
 
 ### Motivational message
 "Write a draft message" analyses the month: Active Ratio against 50%, Average Case Size against 3,000, and DG ANP against last month (up 10% or more counts as a win, down 20% or more is flagged). It writes the comment in the same style as the September team message, naming the quarter or month ahead. Press again for another version. Names of individual people appear only in the on-screen analysis, never in the message or poster.

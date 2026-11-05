@@ -103,6 +103,15 @@ ul.ana li{font-size:13px;padding:6px 10px;border-radius:8px;background:var(--chi
 ul.ana li.good{background:var(--good-bg);color:var(--good)}
 ul.ana li.warn{background:var(--warn-bg);color:var(--warn)}
 @media (min-width:901px){.out-col .card{max-height:calc(100vh - 32px);overflow:auto}}
+.pros{display:flex;flex-direction:column;gap:8px}
+.pro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) 104px 38px;gap:8px;align-items:center}
+.pro input,.pro select{border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px;width:100%;background:#fff}
+.pro .x{border:1px solid var(--line);background:#fff;border-radius:9px;min-height:42px;width:38px;color:var(--muted)}
+.pro select.t-hot{background:#FDE8E4;color:#B3261E;font-weight:600}
+.pro select.t-warm{background:#FEF3E2;color:#B45309;font-weight:600}
+.pro select.t-cold{background:#E6F0FB;color:#1D5FA8;font-weight:600}
+.empty-pros{margin:0;font-size:13px;color:var(--muted)}
+@media (max-width:520px){.pro{grid-template-columns:minmax(0,1fr) 104px 38px}.pro .pn{grid-column:1/-1}}
 @media (max-width:900px){
   .wrap{grid-template-columns:minmax(0,1fr)}
   .out-col{position:static}
@@ -170,7 +179,12 @@ ul.ana li.warn{background:var(--warn-bg);color:var(--warn)}
           <div class="field"><label for="f-dl4">DL4</label><input id="f-dl4" data-k="dl4" inputmode="numeric"></div>
         </div>
         <p class="hint" id="activeHint" style="margin:-4px 0 0;font-size:12px;color:var(--muted)">Active agents = people with at least one case (NOC) this month. Type to change it.</p>
-        <div class="field"><label for="f-review" id="l-review">自我点评</label><textarea id="f-review" data-k="review" rows="8" placeholder="完成了19R，總跟進名單12位。&#10;- [ ] Name (note)"></textarea></div>
+        <div class="field"><label>Recruitment prospects</label>
+          <span class="hint">Each month starts with last month’s list. Set how warm each person is. In the message the hottest come first. Names go in the text message only, never on the poster.</span>
+          <div class="pros" id="prosList"></div>
+          <div class="row"><button class="btn small" type="button" id="btnAddPro">+ Add prospect</button><span class="note" id="prosSum" style="margin:0"></span></div>
+        </div>
+        <div class="field"><label for="f-review" id="l-review">活动</label><textarea id="f-review" data-k="review" rows="5" placeholder="完成了19R，總跟進名單12位。&#10;- 10月份啟動新夥伴中。&#10;- 重新整理名單，目前主要跟進11月的有: Joe, Alvin"></textarea><span class="hint">The first line goes beside the 自我点评 title. Any other lines go after the prospect list.</span></div>
         <div class="field"><label for="f-plan" id="l-plan">计划与策略</label><textarea id="f-plan" data-k="plan" rows="5" placeholder="- 確保完成 50% Active Ratio"></textarea></div>
         <div class="field"><label for="f-comment">Comment for the team message</label>
           <ul class="ana" id="facts"></ul>
@@ -257,7 +271,7 @@ const DEFAULT_SETTINGS = {
 };
 const DEFAULT_DETAILS = {
   manpower: '1+5+1', ft: '4', pt: '3', dl1: '4', dl2: '1', dl4: '2', active: '',
-  review: '', plan: '',
+  review: '', plan: '', prospects: [],
   comment: ''
 };
 
@@ -367,15 +381,39 @@ const LABEL = {fycM:'FY_Comm', qfylpM:'QFYLP_C', pfylpM:'PFYLP', mfylpM:'MFYLP_C
 
 /* ---------- current state ---------- */
 function curMonth(){ return S.data && S.month != null ? S.data[S.month] : null; }
+function extractProspects(text){
+  const pros = [], rest = [];
+  for (const ln of String(text || '').split('\n')) {
+    const m = ln.match(/^\s*[-•*]\s*\[\s*[xX ]?\s*\]\s*(.+?)\s*$/);
+    if (!m) { rest.push(ln); continue; }
+    const hot = /\*\*\s*$/.test(m[1]);
+    const body = m[1].replace(/\s*\*+\s*$/, '');
+    const nm = body.match(/^(.*?)\s*\((.*)\)\s*$/);
+    pros.push({name: (nm ? nm[1] : body).trim(), note: nm ? nm[2].trim() : '', temp: hot ? 'hot' : 'warm'});
+  }
+  return {pros, rest: rest.join('\n').trim()};
+}
+function migrateDetails(d){
+  if (d.prosV) return;
+  if (!Array.isArray(d.prospects) || !d.prospects.length) {
+    const x = extractProspects(d.review);
+    if (x.pros.length) { d.prospects = x.pros; d.review = x.rest; }
+  }
+  if (!Array.isArray(d.prospects)) d.prospects = [];
+  d.prosV = 1;
+}
 function curDetails(){
   const m = curMonth(); if (!m) return null;
   const key = monthKey(m);
   if (!S.details[key]) {
-    // start from the most recent earlier month, else defaults
+    // start from the most recent earlier month (deep copy), else defaults. Activity and the team comment are
+    // specific to one month, so they always start empty.
     const prev = Object.keys(S.details).filter(k => k < key).sort().pop();
-    S.details[key] = Object.assign({}, DEFAULT_DETAILS, prev ? S.details[prev] : {}, {active: ''});
+    const clone = o => JSON.parse(JSON.stringify(o));
+    S.details[key] = Object.assign({}, clone(DEFAULT_DETAILS), prev ? clone(S.details[prev]) : {}, {active: '', review: '', comment: ''});
+    migrateDetails(S.details[key]);
     save();
-  }
+  } else migrateDetails(S.details[key]);
   return S.details[key];
 }
 
@@ -391,6 +429,24 @@ function ontrackLines(){
   return q.map((n, i) => { const a = t.slice(i*3, i*3+3); return `${n} Quarter ${a.join(', ')} = ${a.reduce((x, y) => x + y, 0)}%`; }).join('\n');
 }
 function activeCount(sum, d){ return String(d.active).trim() !== '' ? String(d.active).trim() : String(sum.active); }
+const TEMPS = {hot: {e: '🔥', n: 'Hot', r: 0}, warm: {e: '🟠', n: 'Warm', r: 1}, cold: {e: '❄️', n: 'Cold', r: 2}};
+const tempOf = t => TEMPS[t] || TEMPS.warm;
+const prosNamed = d => (d.prospects || []).filter(p => String(p.name).trim());
+function prosCounts(d){ const l = prosNamed(d); return {n: l.length, hot: l.filter(p => p.temp === 'hot').length, warm: l.filter(p => tempOf(p.temp) === TEMPS.warm).length, cold: l.filter(p => p.temp === 'cold').length}; }
+function prospectLines(d){
+  return prosNamed(d).slice().sort((a, b) => tempOf(a.temp).r - tempOf(b.temp).r)
+    .map(p => `- [ ] ${String(p.name).trim()}${String(p.note).trim() ? ` (${String(p.note).trim()})` : ''} ${tempOf(p.temp).e}`);
+}
+function reviewBlock(m, d){
+  const all = String(d.review).split('\n').map(x => x.replace(/\s+$/, ''));
+  const fi = all.findIndex(x => x.trim());
+  const intro = fi >= 0 ? all[fi].trim() : '', rest = fi >= 0 ? all.slice(fi + 1).join('\n').trim() : '';
+  const pros = prospectLines(d);
+  let out = `${m.mIdx + 1}月份自我点评:${intro ? ' ' + intro : ''}`;
+  if (pros.length) out += '\n' + pros.join('\n');
+  if (rest) out += (pros.length ? '\n\n' : '\n') + rest;
+  return out;
+}
 function buildMentor(m, sum, d){
   const s = S.settings, mi = m.mIdx, next = (mi + 1) % 12 + 1;
   const parts = [
@@ -403,7 +459,7 @@ function buildMentor(m, sum, d){
     `Manpower: ${d.manpower}\nFT: ${d.ft}\nPT: ${d.pt}`,
     `Active agent: ${activeCount(sum, d)}/${sum.headcount}\nDL1: ${d.dl1}\nDL2: ${d.dl2}\nDL4: ${d.dl4}`,
     `Unit NOC\nMonth: ${sum.tot.nocM}\nTotal: ${sum.tot.nocY}`,
-    `${mi + 1}月份自我点评: ${String(d.review).trim()}`,
+    reviewBlock(m, d),
     `${next}月份计划与策略:\n${String(d.plan).trim()}`,
     `🏆${m.year} Goal:\n🎯PS: QFYLP ${kLabel(s.psQ)} / ANP ${kLabel(s.psA)}\n🎯DG: PFYLP ${kLabel(s.dgP)} / ANP ${kLabel(s.dgA)}` + (String(s.goalExtra).trim() ? '\n' + String(s.goalExtra).trim() : ''),
   ];
@@ -447,6 +503,8 @@ function analyze(m, sum, d){
   const g = (label, goal, done, ytd) => A.lines.push({k: 'info', t: `${label}: ${pct(done, goal * mp / 100)} of this month’s goal · ACC ${pct(ytd, goal * cp / 100)} of ACC goal`});
   g('DG PFYLP', st.dgP, sum.tot.pfylpM, sum.tot.pfylpY);
   g('DG ANP', st.dgA, sum.tot.anpM, sum.tot.anpY);
+  const pc = prosCounts(d);
+  if (pc.n) A.lines.push({k: 'info', t: `Prospects: ${pc.n} (🔥 ${pc.hot} · 🟠 ${pc.warm} · ❄️ ${pc.cold})`});
   const none = m.people.filter(p => p.nocM === 0).map(p => p.name);
   if (none.length) A.lines.push({k: 'info', t: `No new cases this month (${none.length}/${m.people.length}): ${none.join(', ')}`});
   const top = m.people.slice().sort((a, b) => b.anpM - a.anpM)[0];
@@ -510,6 +568,7 @@ function renderFile(){
 }
 function renderDetails(){
   const m = curMonth(); const d = curDetails();
+  renderProspects(d);
   $('btnDraft').disabled = !d;
   document.querySelectorAll('[data-k]').forEach(el => { el.disabled = !d; el.value = d ? (d[el.dataset.k] ?? '') : ''; });
   if (!m) { $('facts').innerHTML = ''; return; }
@@ -518,10 +577,20 @@ function renderDetails(){
   if (String(d.active).trim() === '') $('f-active').value = sum.active;
   $('w-active').classList.toggle('overridden', String(d.active).trim() !== '' && String(d.active).trim() !== String(sum.active));
   const mi = m.mIdx, next = (mi + 1) % 12 + 1;
-  $('l-review').textContent = `${mi + 1}月份自我点评`;
+  $('l-review').textContent = `${mi + 1}月份活动`;
   $('l-plan').textContent = `${next}月份计划与策略`;
   const A = analyze(m, sum, d);
   $('facts').innerHTML = A.lines.map(l => `<li class="${l.k}">${esc(l.t)}</li>`).join('');
+}
+function renderProsSum(d){
+  const c = prosCounts(d);
+  $('prosSum').textContent = c.n ? `${c.n} prospects · 🔥 ${c.hot} hot · 🟠 ${c.warm} warm · ❄️ ${c.cold} cold · 總跟進名單${c.n}位` : '';
+}
+function renderProspects(d){
+  const box = $('prosList'); $('btnAddPro').disabled = !d;
+  if (!d) { box.innerHTML = ''; $('prosSum').textContent = ''; return; }
+  box.innerHTML = d.prospects.length ? d.prospects.map((p, i) => `<div class="pro" data-i="${i}"><input class="pn" aria-label="Prospect name" placeholder="Name" value="${esc(p.name)}"><input class="pnote" aria-label="Note" placeholder="Note, e.g. Follow up in Oct" value="${esc(p.note)}"><select class="pt t-${tempOf(p.temp) === TEMPS.warm ? 'warm' : p.temp}" aria-label="Temperature">${Object.keys(TEMPS).map(k => `<option value="${k}"${tempOf(p.temp) === TEMPS[k] ? ' selected' : ''}>${TEMPS[k].e} ${TEMPS[k].n}</option>`).join('')}</select><button class="x" type="button" aria-label="Remove prospect">✕</button></div>`).join('') : '<p class="empty-pros">No prospects yet. Press “Add prospect”.</p>';
+  renderProsSum(d);
 }
 function renderSettings(){
   document.querySelectorAll('[data-s]').forEach(el => {
@@ -633,9 +702,11 @@ function paintPoster(c, kind, m, sum, d, P){
     pchip(c, P, 718, 924, 314, 104, 'Manpower', String(d.manpower));
     const bullets = planBullets(d.plan).slice(0, 4);
     const showPlan = bullets.length > 0;
-    const items = showPlan ? bullets : A.lines.filter(l => !/^(No new cases|Top ANP)/.test(l.t)).slice(0, 4).map(l => l.t);
+    const items = showPlan ? bullets : A.lines.filter(l => !/^(No new cases|Top ANP|Prospects)/.test(l.t)).slice(0, 4).map(l => l.t);
     pcard(c, P, 48, 1052, 984, 244);
-    ptext(c, showPlan ? `${(mi + 1) % 12 + 1}月计划与策略` : 'Key points', 76, 1100, 28, 700, P.accent, 'left', 900);
+    ptext(c, showPlan ? `${(mi + 1) % 12 + 1}月计划与策略` : 'Key points', 76, 1100, 28, 700, P.accent, 'left', 520);
+    const pc = prosCounts(d);
+    if (pc.n) ptext(c, `Prospects ${pc.n} · 🔥${pc.hot} 🟠${pc.warm} ❄️${pc.cold}`, 1004, 1100, 24, 500, P.muted, 'right', 420);
     setFont(c, 27, 400);
     items.forEach((b, i) => ptext(c, '•  ' + ellipsize(c, b, 880), 76, 1148 + i * 42, 27, 400, P.ink, 'left'));
   } else {
@@ -740,6 +811,26 @@ $('btnDraft').addEventListener('click', () => {
   draftVar++;
   lastDraft = draftComment(m, summarize(m), d, draftVar);
   d.comment = lastDraft; save(); renderDetails(); renderOut();
+});
+$('prosList').addEventListener('input', e => {
+  const row = e.target.closest('.pro'), d = curDetails(); if (!row || !d) return;
+  const p = d.prospects[+row.dataset.i]; if (!p) return;
+  if (e.target.classList.contains('pn')) p.name = e.target.value; else if (e.target.classList.contains('pnote')) p.note = e.target.value; else return;
+  save(); renderProsSum(d); renderOut();
+});
+$('prosList').addEventListener('change', e => {
+  const row = e.target.closest('.pro'), d = curDetails(); if (!row || !d || !e.target.classList.contains('pt')) return;
+  const p = d.prospects[+row.dataset.i]; if (!p) return;
+  p.temp = e.target.value; e.target.className = 'pt t-' + p.temp; save(); renderProsSum(d); renderOut();
+});
+$('prosList').addEventListener('click', e => {
+  const x = e.target.closest('.x'), d = curDetails(); if (!x || !d) return;
+  d.prospects.splice(+x.closest('.pro').dataset.i, 1); save(); renderProspects(d); renderOut();
+});
+$('btnAddPro').addEventListener('click', () => {
+  const d = curDetails(); if (!d) return;
+  d.prospects.push({name: '', note: '', temp: 'warm'}); save(); renderProspects(d);
+  const ins = $('prosList').querySelectorAll('.pn'); ins[ins.length - 1].focus();
 });
 document.querySelectorAll('[data-fmt]').forEach(b => b.addEventListener('click', () => { S.ui.format = b.dataset.fmt; save(); renderOut(); }));
 $('style').addEventListener('change', e => { S.ui.style = e.target.value; save(); renderOut(); });
