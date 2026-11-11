@@ -302,7 +302,7 @@ footer p{margin:0}
       website: $('website').value,           // honeypot: real people leave this empty
       elapsed: Math.round((Date.now() - startedAt) / 1000)  // bots submit in under a few seconds
     };
-    fetch(ENDPOINT, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
+    fetch(ENDPOINT, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'fetch' }, body: JSON.stringify(body) })
       .then(function(r){ return r.json().catch(function(){ return null; }).then(function(d){ return { ok: r.ok, d: d }; }); })
       .then(function(res){
         if (res.ok && res.d && res.d.ok) {
