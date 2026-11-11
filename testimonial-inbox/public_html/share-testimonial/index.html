@@ -119,14 +119,14 @@ footer p{margin:0}
         <div class="field" id="f-name">
           <label for="client_name">Your name</label>
           <p class="hint" id="h-name">Shown on the website. Initials are fine, e.g. "Sarah L."</p>
-          <input type="text" id="client_name" name="client_name" maxlength="60" autocomplete="name" aria-describedby="h-name e-name" required>
+          <input type="text" id="client_name" name="client_name" maxlength="120" autocomplete="name" aria-describedby="h-name e-name" required>
           <span class="err" id="e-name">Please enter your name.</span>
         </div>
 
         <div class="field" id="f-area">
           <label for="area">Area or occupation</label>
           <p class="hint" id="h-area">Shown under your name, e.g. "Shah Alam" or "Business owner, Penang".</p>
-          <input type="text" id="area" name="area" maxlength="60" aria-describedby="h-area e-area" required>
+          <input type="text" id="area" name="area" maxlength="120" aria-describedby="h-area e-area" required>
           <span class="err" id="e-area">Please tell us your area or occupation.</span>
         </div>
 
@@ -140,8 +140,8 @@ footer p{margin:0}
         <div class="field" id="f-message">
           <label for="message">Your experience</label>
           <p class="hint" id="h-message">What did we help you with? How did it make a difference? Any language is fine.</p>
-          <textarea id="message" name="message" maxlength="1000" aria-describedby="h-message e-message c-message" required></textarea>
-          <span class="count" id="c-message">0 / 1000</span>
+          <textarea id="message" name="message" maxlength="400" aria-describedby="h-message e-message c-message" required></textarea>
+          <span class="count" id="c-message">0 / 400</span>
           <span class="err" id="e-message">Please write at least a sentence or two (20 characters or more).</span>
         </div>
 
@@ -205,15 +205,14 @@ footer p{margin:0}
 (function(){
   // Where the form is sent. The PHP endpoint saves it as "pending" for the admin page.
   var ENDPOINT = '/site-api/testimonial-submit.php';
-  var LIMIT = 1000, MIN = 20;
+  var LIMIT = 400, MIN = 20;
   var SVGNS = 'http://www.w3.org/2000/svg', STAR = 'M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z';
   var WORDS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
   var $ = function(id){ return document.getElementById(id); };
   var form = $('form'), rating = 0, startedAt = Date.now();
 
-  // Personal link: ?t=<code>&n=<first name>. The code ties the submission to the client you sent it to.
+  // Personal link: ?n=<first name> greets the client and fills in the name.
   var qs = new URLSearchParams(location.search);
-  var token = (qs.get('t') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
   var first = (qs.get('n') || '').trim().slice(0, 40);
   if (first) { $('hello').textContent = 'Hi ' + first + ', how was planning with us?'; $('client_name').value = first; }
 
@@ -300,7 +299,6 @@ footer p{margin:0}
       message: $('message').value.trim(),
       phone: $('phone').value.trim(),
       consent: true,
-      token: token,
       website: $('website').value,           // honeypot: real people leave this empty
       elapsed: Math.round((Date.now() - startedAt) / 1000)  // bots submit in under a few seconds
     };
