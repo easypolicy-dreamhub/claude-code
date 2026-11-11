@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>Testimonials | DreamHub E3</title>
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/members/e3-toolkit.css">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:#F4F2EF;color:#24333A;font:400 16px/1.55 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  background-image:radial-gradient(rgba(36,51,58,0.06) 1px,transparent 1px);background-size:22px 22px}
+:focus-visible{outline:3px solid #B9AFA7;outline-offset:2px;border-radius:8px}
+main{max-width:62rem;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:16px}
+.panel{background:#FFFFFF;border:1px solid #E2DDD8;border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(36,51,58,0.08)}
+.hint{margin:0;color:#5C6870;font-size:0.93rem}
+.msg{margin:0;padding:12px 14px;border-radius:12px;background:#FDECEA;color:#8A1C14;font-size:0.95rem}
+.ok{margin:0;padding:12px 14px;border-radius:12px;background:#E8F3EC;color:#17563A;font-size:0.95rem}
+.empty{text-align:center;color:#5C6870;padding:36px 12px}
+.empty b{display:block;font:600 1.05rem Poppins,"DM Sans",sans-serif;color:#24333A;margin-bottom:4px}
+
+.topbar .tb-btn{min-height:44px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid #E2DDD8;border-radius:10px;background:#FFFFFF;color:#24333A;font:600 14px "DM Sans",system-ui,sans-serif;cursor:pointer}
+.btn:hover{background:#EFEAE5}
+.btn.primary{background:#24333A;border-color:#24333A;color:#FFFFFF}
+.btn.primary:hover{background:#33464F}
+.btn.danger{color:#8A1C14}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.icon{min-width:44px;padding:0}
+
+.item{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-start;padding:16px 0;border-top:1px solid #E2DDD8}
+.item:first-child{border-top:0;padding-top:0}
+.item:last-child{padding-bottom:0}
+.item .body{flex:1 1 320px;min-width:0}
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+.stars svg{width:18px;height:18px}
+.quote{margin:6px 0 4px;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.who2{margin:0;color:#5C6870;font-size:0.93rem}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;border:1px solid #E2DDD8;background:#F4F2EF;color:#24333A;font-size:0.8rem;font-weight:500}
+.tag.on{background:#24333A;border-color:#24333A;color:#FFFFFF}
+.tag.warn{background:#FDECEA;border-color:#F3C3BE;color:#8A1C14}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+form{display:flex;flex-direction:column;gap:16px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+label.f,fieldset legend.f{display:block;font-weight:600;font-size:0.93rem;margin-bottom:6px;padding:0}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+input[type=text],textarea{width:100%;font:inherit;color:#24333A;background:#FFFFFF;border:1px solid #CFC8C1;border-radius:12px;padding:11px 13px;min-height:46px}
+textarea{min-height:130px;resize:vertical}
+input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shadow:0 0 0 3px rgba(185,175,167,0.45)}
+.count{margin:4px 0 0;text-align:right;font-size:0.82rem;color:#5C6870}
+.count.over{color:#8A1C14;font-weight:600}
+.rate{display:flex;gap:4px}
+.rate label{position:relative;display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center;cursor:pointer;border-radius:10px}
+.rate input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.rate svg{width:30px;height:30px;pointer-events:none}
+.rate input:focus-visible + svg{outline:3px solid #B9AFA7;outline-offset:3px;border-radius:6px}
+.checks{display:flex;flex-direction:column;gap:6px}
+.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;padding:8px 0}
+.check input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:#24333A}
+.check span small{display:block;color:#5C6870;font-size:0.84rem}
+.check.disabled{opacity:.55}
+.formbtns{display:flex;flex-wrap:wrap;gap:10px}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="e3-bar">
+  <a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>E3 Toolkit</a>
+  <span class="e3-brand">Dream<span>Hub</span> E3</span>
+</div>
+<div class="topbar">
+  <h1>Testimonials<small>What clients say about you, shown on the website. Only testimonials with written consent can be shown.</small></h1>
+  <div class="who" id="who"></div>
+  <button type="button" class="tb-btn primary" id="add" hidden>Add testimonial</button>
+</div>
+
+<main>
+  <p class="sr" id="status" role="status" aria-live="polite"></p>
+  <div id="notice"></div>
+  <div id="editor"></div>
+  <div class="panel" id="listpanel">
+    <p class="hint" id="loading">Loading…</p>
+  </div>
+</main>
+
+<script>
+(function(){
+  var API = "/members/api/testimonials.php";
+  var ME = "/members/api/me.php";
+  var state = { items: [], homeLimit: 3, messageMax: 400, editingId: null, busy: false };
+  var $ = function(id){ return document.getElementById(id); };
+  var STAR = "M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z";
+
+  function el(tag, attrs, kids){
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function(k){
+      if (k === "text") n.textContent = attrs[k];
+      else if (k === "class") n.className = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function(c){ if (c) n.appendChild(c); });
+    return n;
+  }
+  function starsSvg(n, size){
+    var s = el("span", { "class": "stars", role: "img", "aria-label": "Rated " + n + " out of 5" });
+    for (var i = 1; i <= 5; i++){
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+      if (size) { svg.setAttribute("width", size); svg.setAttribute("height", size); }
+      var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", STAR); p.setAttribute("fill", i <= n ? "#6E625A" : "#E2DDD8");
+      svg.appendChild(p); s.appendChild(svg);
+    }
+    return s;
+  }
+  function say(msg){ $("status").textContent = ""; setTimeout(function(){ $("status").textContent = msg; }, 30); }
+  function notice(kind, text){
+    var box = $("notice"); box.innerHTML = "";
+    if (text) box.appendChild(el("p", { "class": kind === "ok" ? "ok" : "msg", role: kind === "ok" ? "status" : "alert", text: text }));
+  }
+
+  function api(method, body){
+    var opts = { method: method, credentials: "same-origin", headers: { "Accept": "application/json", "X-Requested-With": "fetch" } };
+    if (body) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    return fetch(API, opts).then(function(r){
+      return r.json().then(function(d){ return { r: r, d: d }; }, function(){ return { r: r, d: null }; });
+    }).then(function(x){
+      if (x.d === null) { var e = new Error("Could not reach the server. Reload the page and try again."); e.status = 0; throw e; }
+      if (!x.r.ok) { var e2 = new Error(x.d.error || "Something went wrong."); e2.status = x.r.status; throw e2; }
+      return x.d;
+    }, function(){ var e3 = new Error("Could not reach the server. Check your connection and try again."); e3.status = 0; throw e3; });
+  }
+
+  /* ---------- the list ---------- */
+  function homeStatus(){          // which items really appear on the homepage: first N that are shown + marked
+    var seen = 0, out = {};
+    state.items.forEach(function(t){
+      if (t.is_visible && t.consent_confirmed && t.on_homepage){ out[t.id] = seen < state.homeLimit ? "in" : "beyond"; seen++; }
+    });
+    return out;
+  }
+  function renderList(){
+    var panel = $("listpanel"); panel.innerHTML = "";
+    if (!state.items.length){
+      panel.appendChild(el("div", { "class": "empty" }, [
+        el("b", { text: "No testimonials yet" }),
+        el("span", { text: "Tap “Add testimonial” to add the first one. It shows on the website once you tick the consent box and switch it on." })
+      ]));
+      return;
+    }
+    panel.appendChild(el("p", { "class": "hint", text: "The homepage shows the first " + state.homeLimit + " testimonials marked “On homepage”, in this order. Use the arrows to change the order." }));
+    var hs = homeStatus();
+    var wrap = el("div", { style: "margin-top:14px" });
+    state.items.forEach(function(t, i){
+      var tags = [];
+      if (!t.consent_confirmed) tags.push(el("span", { "class": "tag warn", text: "No consent yet" }));
+      if (t.is_visible) tags.push(el("span", { "class": "tag on", text: "Shown on website" })); else tags.push(el("span", { "class": "tag", text: "Hidden" }));
+      if (t.on_homepage && t.is_visible){
+        tags.push(el("span", { "class": hs[t.id] === "in" ? "tag on" : "tag warn", text: hs[t.id] === "in" ? "On homepage" : "Marked for homepage, but beyond the first " + state.homeLimit }));
+      }
+      var up = el("button", { type: "button", "class": "btn icon", "aria-label": "Move " + t.client_name + " up" }, [chev(true)]);
+      var down = el("button", { type: "button", "class": "btn icon", "aria-label": "Move " + t.client_name + " down" }, [chev(false)]);
+      if (i === 0) up.disabled = true;
+      if (i === state.items.length - 1) down.disabled = true;
+      up.addEventListener("click", function(){ move(i, -1); });
+      down.addEventListener("click", function(){ move(i, 1); });
+      var edit = el("button", { type: "button", "class": "btn", text: "Edit" });
+      edit.setAttribute("aria-label", "Edit testimonial from " + t.client_name);
+      edit.addEventListener("click", function(){ openEditor(t.id); });
+      var del = el("button", { type: "button", "class": "btn danger", text: "Delete" });
+      del.setAttribute("aria-label", "Delete testimonial from " + t.client_name);
+      del.addEventListener("click", function(){ remove(t); });
+      wrap.appendChild(el("article", { "class": "item" }, [
+        el("div", { "class": "body" }, [
+          starsSvg(t.rating),
+          el("p", { "class": "quote", text: t.message }),
+          el("p", { "class": "who2", text: t.client_name + " · " + t.area }),
+          el("div", { "class": "tags" }, tags)
+        ]),
+        el("div", { "class": "actions" }, [up, down, edit, del])
+      ]));
+    });
+    panel.appendChild(wrap);
+  }
+  function chev(upDir){
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "18"); svg.setAttribute("height", "18"); svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("fill", "none"); svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "2.2");
+    svg.setAttribute("stroke-linecap", "round"); svg.setAttribute("stroke-linejoin", "round");
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", upDir ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6");
+    svg.appendChild(p); return svg;
+  }
+
+  function load(){
+    return api("GET").then(function(d){
+      state.items = d.testimonials; state.homeLimit = d.home_limit; state.messageMax = d.message_max;
+      renderList();
+    });
+  }
+  function lockUi(on){ state.busy = on; Array.prototype.forEach.call(document.querySelectorAll("#listpanel button"), function(b){ if (on) b.disabled = true; }); }
+
+  function move(i, dir){
+    if (state.busy) return;
+    var ids = state.items.map(function(t){ return t.id; });
+    var j = i + dir; if (j < 0 || j >= ids.length) return;
+    var tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;
+    notice("", ""); lockUi(true);
+    api("POST", { action: "reorder", ids: ids }).then(load).then(function(){ say("Order saved."); })
+      .catch(function(e){ notice("err", e.message); return load().catch(function(){}); })
+      .then(function(){ state.busy = false; renderList(); });
+  }
+  function remove(t){
+    if (state.busy) return;
+    if (!window.confirm("Delete the testimonial from " + t.client_name + "? It will disappear from the website and cannot be brought back.")) return;
+    notice("", ""); lockUi(true);
+    api("POST", { action: "delete", id: t.id }).then(load).then(function(){ notice("ok", "Deleted."); say("Deleted."); })
+      .catch(function(e){ notice("err", e.message); return load().catch(function(){}); })
+      .then(function(){ state.busy = false; renderList(); });
+  }
+
+  /* ---------- the form ---------- */
+  function openEditor(id){
+    state.editingId = id;
+    var t = id ? state.items.filter(function(x){ return x.id === id; })[0] : null;
+    if (id && !t) return;
+    notice("", "");
+    var box = $("editor"); box.innerHTML = "";
+    var form = el("form", { novalidate: "novalidate", "aria-label": id ? "Edit testimonial" : "Add testimonial" });
+
+    var msgArea = el("textarea", { id: "f-message", maxlength: String(state.messageMax), required: "required", "aria-describedby": "f-count" });
+    msgArea.value = t ? t.message : "";
+    var count = el("p", { "class": "count", id: "f-count", "aria-live": "off" });
+    function updCount(){ var n = Array.from(msgArea.value).length; count.textContent = n + " / " + state.messageMax; count.className = "count" + (n > state.messageMax ? " over" : ""); }
+    msgArea.addEventListener("input", updCount);
+
+    var name = el("input", { type: "text", id: "f-name", maxlength: "120", autocomplete: "off", required: "required" }); name.value = t ? t.client_name : "";
+    var area = el("input", { type: "text", id: "f-area", maxlength: "120", autocomplete: "off", required: "required", placeholder: "e.g. Petaling Jaya" }); area.value = t ? t.area : "";
+
+    var rating = t ? t.rating : 0;
+    var rate = el("div", { "class": "rate" });
+    var radios = [];
+    function paintStars(){ radios.forEach(function(r){ r.path.setAttribute("fill", Number(r.input.value) <= rating ? "#6E625A" : "#E2DDD8"); r.input.checked = Number(r.input.value) === rating; }); }
+    for (var s = 1; s <= 5; s++){
+      (function(s){
+        var input = el("input", { type: "radio", name: "rating", value: String(s), "aria-label": s + (s === 1 ? " star" : " stars") });
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", STAR); svg.appendChild(path);
+        input.addEventListener("change", function(){ rating = s; paintStars(); });
+        var lab = el("label", {}, [input]); lab.appendChild(svg); rate.appendChild(lab);
+        radios.push({ input: input, path: path });
+      })(s);
+    }
+
+    var consent = el("input", { type: "checkbox", id: "f-consent" }); consent.checked = !!(t && t.consent_confirmed);
+    var shown = el("input", { type: "checkbox", id: "f-shown" }); shown.checked = !!(t && t.is_visible);
+    var home = el("input", { type: "checkbox", id: "f-home" }); home.checked = !!(t && t.on_homepage);
+    var shownRow = el("label", { "class": "check", "for": "f-shown" }, [shown, el("span", {}, [document.createTextNode("Show on the website"), el("small", { text: "Needs the consent box ticked." })])]);
+    var homeRow = el("label", { "class": "check", "for": "f-home" }, [home, el("span", {}, [document.createTextNode("Show on the homepage"), el("small", { text: "Only the first " + state.homeLimit + " in the list appear there." })])]);
+    function sync(){
+      if (!consent.checked) shown.checked = false;
+      shown.disabled = !consent.checked; shownRow.className = "check" + (shown.disabled ? " disabled" : "");
+      if (!shown.checked) home.checked = false;
+      home.disabled = !shown.checked; homeRow.className = "check" + (home.disabled ? " disabled" : "");
+    }
+    consent.addEventListener("change", sync); shown.addEventListener("change", sync);
+
+    var err = el("p", { "class": "msg", role: "alert", hidden: "hidden" });
+    var save = el("button", { type: "submit", "class": "btn primary", text: id ? "Save changes" : "Add testimonial" });
+    var cancel = el("button", { type: "button", "class": "btn", text: "Cancel" });
+    cancel.addEventListener("click", closeEditor);
+
+    form.appendChild(el("div", {}, [el("label", { "class": "f", "for": "f-message", text: "Testimonial message" }), msgArea, count]));
+    form.appendChild(el("div", { "class": "row" }, [
+      el("div", {}, [el("label", { "class": "f", "for": "f-name", text: "Client name" }), name]),
+      el("div", {}, [el("label", { "class": "f", "for": "f-area", text: "Area" }), area])
+    ]));
+    form.appendChild(el("fieldset", {}, [el("legend", { "class": "f", text: "Star rating" }), rate]));
+    form.appendChild(el("div", { "class": "checks" }, [
+      el("label", { "class": "check", "for": "f-consent" }, [consent, el("span", {}, [document.createTextNode("I have this client’s written consent to publish this testimonial"), el("small", { text: "For example a WhatsApp message or email. Keep it somewhere safe." })])]),
+      shownRow, homeRow
+    ]));
+    form.appendChild(err);
+    form.appendChild(el("div", { "class": "formbtns" }, [save, cancel]));
+
+    form.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      err.hidden = true;
+      if (state.busy) return;
+      var body = { action: id ? "update" : "create", message: msgArea.value, client_name: name.value, area: area.value, rating: rating || null,
+        consent_confirmed: consent.checked, is_visible: shown.checked, on_homepage: home.checked };
+      if (id) body.id = id;
+      state.busy = true; save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
+      api("POST", body).then(function(){ return load(); }).then(function(){
+        closeEditor(); notice("ok", id ? "Changes saved." : "Testimonial added."); say(id ? "Changes saved." : "Testimonial added.");
+        $("add").focus();
+      }).catch(function(e){
+        err.textContent = e.message; err.hidden = false; err.scrollIntoView({ block: "nearest" });
+      }).then(function(){ state.busy = false; save.disabled = false; cancel.disabled = false; save.textContent = id ? "Save changes" : "Add testimonial"; });
+    });
+
+    var panel = el("div", { "class": "panel" }, [el("h2", { text: id ? "Edit testimonial" : "Add a testimonial", style: "margin:0 0 14px;font:600 1.1rem Poppins,'DM Sans',sans-serif" }), form]);
+    box.appendChild(panel);
+    updCount(); paintStars(); sync();
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    msgArea.focus({ preventScroll: true });
+  }
+  function closeEditor(){ state.editingId = null; $("editor").innerHTML = ""; }
+
+  /* ---------- start: who is this? ---------- */
+  $("add").addEventListener("click", function(){ openEditor(null); });
+  fetch(ME, { credentials: "same-origin", headers: { "Accept": "application/json" } })
+    .then(function(r){ return r.ok ? r.json() : null; }, function(){ return null; })
+    .then(function(d){
+      if (!d || !d.member){ throw new Error("Could not check who you are. Reload the page, or sign in again."); }
+      if (d.member.is_admin !== true){
+        $("listpanel").innerHTML = "";
+        $("listpanel").appendChild(el("div", { "class": "empty" }, [el("b", { text: "This page is for the super admin only" }), el("span", { text: "Go back to the toolkit to use your own tools." })]));
+        return null;
+      }
+      $("who").textContent = "Signed in as " + d.member.name + " (admin)";
+      $("add").hidden = false;
+      return load();
+    })
+    .catch(function(e){
+      $("listpanel").innerHTML = "";
+      notice("err", e.message);
+      var retry = el("button", { type: "button", "class": "btn", text: "Try again" });
+      retry.addEventListener("click", function(){ location.reload(); });
+      $("listpanel").appendChild(el("div", { "class": "empty" }, [retry]));
+    });
+})();
+</script>
+</body>
+</html>
