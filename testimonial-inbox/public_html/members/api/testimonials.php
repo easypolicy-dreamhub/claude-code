@@ -8,9 +8,14 @@ declare(strict_types=1);
  *   POST {action:'update',  id, ...same fields }              -> { ok:true }
  *   POST {action:'delete',  id}                               -> { ok:true }
  *   POST {action:'reorder', ids:[...]}                        -> { ok:true }
+ * Client submissions from /share-testimonial/ (waiting for approval):
+ *   GET also returns  pending: [...]  (newest first; includes the client's private phone number)
+ *   POST {action:'approve', id, message?, client_name?, area?, rating?, is_visible?, on_homepage?} -> { id }  (the new testimonial)
+ *   POST {action:'reject',  id}                               -> { ok:true }
  */
 require_once __DIR__ . '/../../../private/bootstrap.php';
 require_once __DIR__ . '/../../../private/lib/testimonials.php';
+require_once __DIR__ . '/../../../private/lib/testimonial_submissions.php';
 
 [$config, $pdo, $me] = boot_member_request();
 
@@ -18,7 +23,8 @@ try {
     require_admin($me);
     $method = $_SERVER['REQUEST_METHOD'];
     if ($method === 'GET') {
-        json_response(200, ['testimonials' => testi_list_all($pdo), 'home_limit' => TESTI_HOME_LIMIT, 'message_max' => TESTI_MESSAGE_MAX]);
+        json_response(200, ['testimonials' => testi_list_all($pdo), 'home_limit' => TESTI_HOME_LIMIT, 'message_max' => TESTI_MESSAGE_MAX,
+            'pending' => tsub_list_pending($pdo)]);
     }
     if ($method !== 'POST') {
         throw new HttpError(405, 'Method not allowed.');
@@ -42,6 +48,17 @@ try {
             json_response(200, ['ok' => true]);
         case 'reorder':
             testi_reorder($pdo, $in['ids'] ?? null, (int)$me['id']);
+            json_response(200, ['ok' => true]);
+        case 'approve':
+            if ($id < 1) {
+                throw new HttpError(422, 'Missing submission.');
+            }
+            json_response(200, ['id' => tsub_approve($pdo, $id, $in, (int)$me['id'])]);
+        case 'reject':
+            if ($id < 1) {
+                throw new HttpError(422, 'Missing submission.');
+            }
+            tsub_reject($pdo, $id, (int)$me['id']);
             json_response(200, ['ok' => true]);
         default:
             throw new HttpError(400, 'Unknown action.');

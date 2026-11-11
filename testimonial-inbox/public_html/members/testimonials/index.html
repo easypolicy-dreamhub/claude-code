@@ -25,7 +25,7 @@ main{max-width:62rem;margin:0 auto;padding:20px 16px 56px;display:flex;flex-dire
 .empty b{display:block;font:600 1.05rem Poppins,"DM Sans",sans-serif;color:#24333A;margin-bottom:4px}
 
 .topbar .tb-btn{min-height:44px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid #E2DDD8;border-radius:10px;background:#FFFFFF;color:#24333A;font:600 14px "DM Sans",system-ui,sans-serif;cursor:pointer}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid #E2DDD8;border-radius:10px;background:#FFFFFF;color:#24333A;font:600 14px "DM Sans",system-ui,sans-serif;cursor:pointer}
 .btn:hover{background:#EFEAE5}
 .btn.primary{background:#24333A;border-color:#24333A;color:#FFFFFF}
 .btn.primary:hover{background:#33464F}
@@ -68,6 +68,21 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
 .check.disabled{opacity:.55}
 .formbtns{display:flex;flex-wrap:wrap;gap:10px}
 .sr{position:absolute;left:-9999px}
+
+/* client submissions waiting for approval */
+.pending{border-color:#B9AFA7;border-width:2px}
+.pending h2,.ask h2{margin:0 0 4px;font:600 1.1rem Poppins,"DM Sans",sans-serif}
+.pending .quote.full{display:block;-webkit-line-clamp:unset;overflow:visible}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 8px;margin-left:6px;border-radius:999px;background:#24333A;color:#FFFFFF;font:700 0.85rem "DM Sans",sans-serif;vertical-align:2px}
+.meta{margin:6px 0 0;color:#5C6870;font-size:0.85rem}
+.meta a{color:#24333A}
+/* ask a client */
+.ask summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font:600 1.05rem Poppins,"DM Sans",sans-serif}
+.ask summary::-webkit-details-marker{display:none}
+.ask summary::after{content:"+";font:400 1.6rem/1 "DM Sans",sans-serif;color:#5C6870}
+.ask[open] summary::after{content:"\2212"}
+.ask .inner{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.ask .preview{margin:0;padding:12px 14px;border-radius:12px;background:#F4F2EF;white-space:pre-wrap;overflow-wrap:anywhere;font-size:0.93rem}
 </style>
 </head>
 <body>
@@ -84,7 +99,24 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
 <main>
   <p class="sr" id="status" role="status" aria-live="polite"></p>
   <div id="notice"></div>
+  <details class="panel ask" id="askpanel" hidden>
+    <summary>Ask a client for a testimonial</summary>
+    <div class="inner">
+      <p class="hint">Send this link to your client. What they write comes back to the “Waiting for your approval” list below. Nothing shows on the website until you approve it.</p>
+      <div class="row">
+        <div><label class="f" for="ask-name">Client’s first name <span style="font-weight:400;color:#5C6870">(optional)</span></label><input type="text" id="ask-name" maxlength="40" autocomplete="off" placeholder="e.g. Aisyah"></div>
+        <div><label class="f" for="ask-phone">Client’s WhatsApp number <span style="font-weight:400;color:#5C6870">(optional)</span></label><input type="text" id="ask-phone" maxlength="20" inputmode="tel" autocomplete="off" placeholder="e.g. 012-345 6789"></div>
+      </div>
+      <div><label class="f" for="ask-msg">Message</label><textarea id="ask-msg" style="min-height:110px"></textarea></div>
+      <div class="formbtns">
+        <a class="btn primary" id="ask-wa" href="#" target="_blank" rel="noopener">Send by WhatsApp</a>
+        <button type="button" class="btn" id="ask-copy">Copy message</button>
+        <button type="button" class="btn" id="ask-copylink">Copy link only</button>
+      </div>
+    </div>
+  </details>
   <div id="editor"></div>
+  <div class="panel pending" id="pendingpanel" hidden></div>
   <div class="panel" id="listpanel">
     <p class="hint" id="loading">Loading…</p>
   </div>
@@ -94,7 +126,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
 (function(){
   var API = "/members/api/testimonials.php";
   var ME = "/members/api/me.php";
-  var state = { items: [], homeLimit: 3, messageMax: 400, editingId: null, busy: false };
+  var state = { items: [], pending: [], homeLimit: 3, messageMax: 400, editingId: null, busy: false };
   var $ = function(id){ return document.getElementById(id); };
   var STAR = "M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z";
 
@@ -202,10 +234,11 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
   function load(){
     return api("GET").then(function(d){
       state.items = d.testimonials; state.homeLimit = d.home_limit; state.messageMax = d.message_max;
-      renderList();
+      state.pending = Array.isArray(d.pending) ? d.pending : [];
+      renderList(); renderPending();
     });
   }
-  function lockUi(on){ state.busy = on; Array.prototype.forEach.call(document.querySelectorAll("#listpanel button"), function(b){ if (on) b.disabled = true; }); }
+  function lockUi(on){ state.busy = on; Array.prototype.forEach.call(document.querySelectorAll("#listpanel button, #pendingpanel button"), function(b){ if (on) b.disabled = true; }); }
 
   function move(i, dir){
     if (state.busy) return;
@@ -226,14 +259,109 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
       .then(function(){ state.busy = false; renderList(); });
   }
 
+  /* ---------- client submissions waiting for approval ---------- */
+  function when(s){            // "2026-11-11 22:11:05" -> "11 Nov 2026, 10:11 pm"
+    var d = new Date(String(s).replace(" ", "T"));
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) + ", " + d.toLocaleTimeString("en-MY", { hour: "numeric", minute: "2-digit" });
+  }
+  function waNumber(phone){    // Malaysian numbers: 012-345 6789 -> 60123456789
+    var d = String(phone || "").replace(/\D/g, "");
+    if (!d) return "";
+    if (d.charAt(0) === "0") d = "6" + d;
+    return d;
+  }
+  function renderPending(){
+    var panel = $("pendingpanel"); panel.innerHTML = "";
+    if (!state.pending.length){ panel.hidden = true; return; }
+    panel.hidden = false;
+    var h = el("h2", { text: "Waiting for your approval" }); h.appendChild(el("span", { "class": "badge", text: String(state.pending.length) }));
+    panel.appendChild(h);
+    panel.appendChild(el("p", { "class": "hint", text: "Sent by clients through your testimonial link. They agreed on the form to have it published. Nothing shows on the website until you approve it." }));
+    var wrap = el("div", { style: "margin-top:14px" });
+    state.pending.forEach(function(sub){
+      var meta = el("p", { "class": "meta", text: "Received " + when(sub.created_at) });
+      if (sub.phone){
+        meta.appendChild(document.createTextNode(" · Phone "));
+        var wa = waNumber(sub.phone);
+        meta.appendChild(wa ? el("a", { href: "https://wa.me/" + wa, target: "_blank", rel: "noopener", text: sub.phone }) : document.createTextNode(sub.phone));
+        meta.appendChild(document.createTextNode(" (private, never shown)"));
+      }
+      var ok = el("button", { type: "button", "class": "btn primary", text: "Approve and show", "aria-label": "Approve and show the testimonial from " + sub.client_name });
+      ok.addEventListener("click", function(){ approveNow(sub); });
+      var edit = el("button", { type: "button", "class": "btn", text: "Edit first", "aria-label": "Edit the testimonial from " + sub.client_name + " before approving" });
+      edit.addEventListener("click", function(){ openEditor(null, sub); });
+      var no = el("button", { type: "button", "class": "btn danger", text: "Reject", "aria-label": "Reject the testimonial from " + sub.client_name });
+      no.addEventListener("click", function(){ reject(sub); });
+      wrap.appendChild(el("article", { "class": "item" }, [
+        el("div", { "class": "body" }, [
+          starsSvg(sub.rating),
+          el("p", { "class": "quote full", text: sub.message }),
+          el("p", { "class": "who2", text: sub.client_name + " · " + sub.area }),
+          meta
+        ]),
+        el("div", { "class": "actions" }, [ok, edit, no])
+      ]));
+    });
+    panel.appendChild(wrap);
+  }
+  function approveNow(sub){
+    if (state.busy) return;
+    notice("", ""); lockUi(true);
+    api("POST", { action: "approve", id: sub.id, is_visible: true, on_homepage: false }).then(load)
+      .then(function(){ notice("ok", "Approved. The testimonial from " + sub.client_name + " is now on the website (at the bottom of the list)."); say("Approved."); })
+      .catch(function(e){ notice("err", e.message); return load().catch(function(){}); })
+      .then(function(){ state.busy = false; renderList(); renderPending(); });
+  }
+  function reject(sub){
+    if (state.busy) return;
+    if (!window.confirm("Reject the testimonial from " + sub.client_name + "? It will not be shown on the website.")) return;
+    notice("", ""); lockUi(true);
+    api("POST", { action: "reject", id: sub.id }).then(load)
+      .then(function(){ notice("ok", "Rejected. It will not be shown."); say("Rejected."); })
+      .catch(function(e){ notice("err", e.message); return load().catch(function(){}); })
+      .then(function(){ state.busy = false; renderList(); renderPending(); });
+  }
+
+  /* ---------- ask a client: link + WhatsApp message ---------- */
+  var askEdited = false;
+  function askLink(){
+    var n = $("ask-name").value.trim();
+    return location.origin + "/share-testimonial/" + (n ? "?n=" + encodeURIComponent(n) : "");
+  }
+  function askDefault(){
+    var n = $("ask-name").value.trim();
+    return "Hi" + (n ? " " + n : "") + ", thank you for trusting me with your planning! Would you mind sharing a few words about your experience? It takes about 2 minutes:\n" + askLink();
+  }
+  function askSync(){
+    if (!askEdited) $("ask-msg").value = askDefault();
+    var wa = waNumber($("ask-phone").value);
+    $("ask-wa").href = "https://wa.me/" + wa + "?text=" + encodeURIComponent($("ask-msg").value);
+  }
+  function copy(text, done){
+    var ok = function(){ notice("ok", done); say(done); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(ok, function(){ notice("err", "Could not copy. Select the text and copy it yourself."); }); return; }
+    var t = el("textarea", { style: "position:fixed;left:-9999px" }); t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); ok(); } catch (e) { notice("err", "Could not copy. Select the text and copy it yourself."); }
+    document.body.removeChild(t);
+  }
+  $("ask-name").addEventListener("input", askSync);
+  $("ask-phone").addEventListener("input", askSync);
+  $("ask-msg").addEventListener("input", function(){ askEdited = true; askSync(); });
+  $("ask-copy").addEventListener("click", function(){ copy($("ask-msg").value, "Message copied. Paste it into WhatsApp."); });
+  $("ask-copylink").addEventListener("click", function(){ copy(askLink(), "Link copied."); });
+  askSync();
+
   /* ---------- the form ---------- */
-  function openEditor(id){
+  function openEditor(id, sub){     // sub: a client submission to check and approve
     state.editingId = id;
-    var t = id ? state.items.filter(function(x){ return x.id === id; })[0] : null;
+    var t = sub || (id ? state.items.filter(function(x){ return x.id === id; })[0] : null);
     if (id && !t) return;
+    var mode = sub ? "approve" : (id ? "update" : "create");
+    var LABEL = { approve: "Approve", update: "Save changes", create: "Add testimonial" };
     notice("", "");
     var box = $("editor"); box.innerHTML = "";
-    var form = el("form", { novalidate: "novalidate", "aria-label": id ? "Edit testimonial" : "Add testimonial" });
+    var form = el("form", { novalidate: "novalidate", "aria-label": sub ? "Check and approve testimonial" : id ? "Edit testimonial" : "Add testimonial" });
 
     var msgArea = el("textarea", { id: "f-message", maxlength: String(state.messageMax), required: "required", "aria-describedby": "f-count" });
     msgArea.value = t ? t.message : "";
@@ -260,8 +388,9 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
       })(s);
     }
 
-    var consent = el("input", { type: "checkbox", id: "f-consent" }); consent.checked = !!(t && t.consent_confirmed);
-    var shown = el("input", { type: "checkbox", id: "f-shown" }); shown.checked = !!(t && t.is_visible);
+    var consent = el("input", { type: "checkbox", id: "f-consent" }); consent.checked = sub ? true : !!(t && t.consent_confirmed);
+    if (sub) consent.disabled = true;     // the client ticked consent on the form themselves
+    var shown = el("input", { type: "checkbox", id: "f-shown" }); shown.checked = sub ? true : !!(t && t.is_visible);
     var home = el("input", { type: "checkbox", id: "f-home" }); home.checked = !!(t && t.on_homepage);
     var shownRow = el("label", { "class": "check", "for": "f-shown" }, [shown, el("span", {}, [document.createTextNode("Show on the website"), el("small", { text: "Needs the consent box ticked." })])]);
     var homeRow = el("label", { "class": "check", "for": "f-home" }, [home, el("span", {}, [document.createTextNode("Show on the homepage"), el("small", { text: "Only the first " + state.homeLimit + " in the list appear there." })])]);
@@ -274,7 +403,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
     consent.addEventListener("change", sync); shown.addEventListener("change", sync);
 
     var err = el("p", { "class": "msg", role: "alert", hidden: "hidden" });
-    var save = el("button", { type: "submit", "class": "btn primary", text: id ? "Save changes" : "Add testimonial" });
+    var save = el("button", { type: "submit", "class": "btn primary", text: LABEL[mode] });
     var cancel = el("button", { type: "button", "class": "btn", text: "Cancel" });
     cancel.addEventListener("click", closeEditor);
 
@@ -285,7 +414,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
     ]));
     form.appendChild(el("fieldset", {}, [el("legend", { "class": "f", text: "Star rating" }), rate]));
     form.appendChild(el("div", { "class": "checks" }, [
-      el("label", { "class": "check", "for": "f-consent" }, [consent, el("span", {}, [document.createTextNode("I have this client’s written consent to publish this testimonial"), el("small", { text: "For example a WhatsApp message or email. Keep it somewhere safe." })])]),
+      el("label", { "class": "check", "for": "f-consent" }, [consent, el("span", {}, [document.createTextNode("I have this client’s written consent to publish this testimonial"), el("small", { text: sub ? "The client agreed on the testimonial form on " + when(sub.created_at) + "." : "For example a WhatsApp message or email. Keep it somewhere safe." })])]),
       shownRow, homeRow
     ]));
     form.appendChild(err);
@@ -295,19 +424,21 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
       ev.preventDefault();
       err.hidden = true;
       if (state.busy) return;
-      var body = { action: id ? "update" : "create", message: msgArea.value, client_name: name.value, area: area.value, rating: rating || null,
+      var body = { action: mode, message: msgArea.value, client_name: name.value, area: area.value, rating: rating || null,
         consent_confirmed: consent.checked, is_visible: shown.checked, on_homepage: home.checked };
       if (id) body.id = id;
+      if (sub) body.id = sub.id;
       state.busy = true; save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
       api("POST", body).then(function(){ return load(); }).then(function(){
-        closeEditor(); notice("ok", id ? "Changes saved." : "Testimonial added."); say(id ? "Changes saved." : "Testimonial added.");
+        var done = mode === "approve" ? (shown.checked ? "Approved. It is now on the website." : "Approved and saved as hidden. Switch it on any time with Edit.") : id ? "Changes saved." : "Testimonial added.";
+        closeEditor(); notice("ok", done); say(done);
         $("add").focus();
       }).catch(function(e){
         err.textContent = e.message; err.hidden = false; err.scrollIntoView({ block: "nearest" });
-      }).then(function(){ state.busy = false; save.disabled = false; cancel.disabled = false; save.textContent = id ? "Save changes" : "Add testimonial"; });
+      }).then(function(){ state.busy = false; save.disabled = false; cancel.disabled = false; save.textContent = LABEL[mode]; });
     });
 
-    var panel = el("div", { "class": "panel" }, [el("h2", { text: id ? "Edit testimonial" : "Add a testimonial", style: "margin:0 0 14px;font:600 1.1rem Poppins,'DM Sans',sans-serif" }), form]);
+    var panel = el("div", { "class": "panel" }, [el("h2", { text: sub ? "Check before approving" : id ? "Edit testimonial" : "Add a testimonial", style: "margin:0 0 14px;font:600 1.1rem Poppins,'DM Sans',sans-serif" }), form]);
     box.appendChild(panel);
     updCount(); paintStars(); sync();
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -328,6 +459,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
       }
       $("who").textContent = "Signed in as " + d.member.name + " (admin)";
       $("add").hidden = false;
+      $("askpanel").hidden = false;
       return load();
     })
     .catch(function(e){
