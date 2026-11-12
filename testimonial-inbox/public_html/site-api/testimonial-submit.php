@@ -5,10 +5,11 @@ declare(strict_types=1);
  * Public: receives the client testimonial form (/share-testimonial/) and saves it as pending.
  *   POST JSON { client_name, area, rating, message, phone?, consent: true, website (must be empty), elapsed }
  *   -> 200 { ok: true }   or   4xx { error: "plain words for the client" }
- * Nothing is published here. The admin approves or rejects it later.
+ * Nothing is published here. The admin approves or rejects it later, and gets an email for each new one.
  */
 require_once __DIR__ . '/../../private/bootstrap_public.php';
 require_once __DIR__ . '/../../private/lib/testimonial_submissions.php';
+require_once __DIR__ . '/../../private/lib/site_settings.php';
 
 [$config, $pdo] = boot_public_request();
 
@@ -25,7 +26,10 @@ try {
     if (!is_array($in)) {
         throw new HttpError(400, 'Sorry, something went wrong. Please try again.');
     }
-    tsub_submit($pdo, $in);
+    $id = tsub_submit($pdo, $in);
+    if ($id > 0) {
+        tsub_notify_admin($pdo, $config, $id);   // email the owner; never fails the request
+    }
     json_response(200, ['ok' => true]);
 } catch (HttpError $e) {
     json_response($e->status, ['error' => $e->getMessage()]);

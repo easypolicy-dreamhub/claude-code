@@ -104,6 +104,54 @@ function tsub_submit(PDO $pdo, array $in): int
     return $id;
 }
 
+/**
+ * Emails the owner that a new testimonial is waiting. Never throws: a mail problem must not lose the testimonial.
+ * The address is $config['testimonial_notify_email'] if set, otherwise the contact email in the site settings.
+ * @param callable|null $send for tests; defaults to PHP mail()
+ */
+function tsub_notify_admin(PDO $pdo, array $config, int $id, ?callable $send = null): bool
+{
+    try {
+        $to = trim((string)($config['testimonial_notify_email'] ?? ''));
+        if ($to === '' && function_exists('site_settings_get')) {
+            $to = trim((string)(site_settings_get($pdo, $config)['email'] ?? ''));
+        }
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            error_log('testimonial notify: no valid email address to send to');
+            return false;
+        }
+        $stmt = $pdo->prepare('SELECT * FROM testimonial_submissions WHERE id = ?');
+        $stmt->execute([$id]);
+        $r = $stmt->fetch();
+        if (!$r) {
+            return false;
+        }
+        $host = strtolower(preg_replace('/[^A-Za-z0-9.\-]/', '', (string)($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        $site = $host !== '' ? 'https://' . $host : '';
+        $domain = preg_replace('/^www\./', '', $host) ?: 'localhost';
+        $name = testi_line($r['client_name']);
+        $subject = 'New testimonial from ' . $name . ' is waiting for your approval';
+        $body = "A client has sent a testimonial through your website.\n\n"
+            . 'Name: ' . $name . "\n"
+            . 'Area: ' . testi_line($r['area']) . "\n"
+            . 'Rating: ' . (int)$r['rating'] . " out of 5\n"
+            . 'Phone given: ' . ($r['phone'] ? 'yes (they would like a WhatsApp when it is published)' : 'no') . "\n\n"
+            . "Testimonial:\n" . (string)$r['message'] . "\n\n"
+            . "Nothing is on the website yet. Approve or reject it here:\n" . $site . "/members/testimonials/\n";
+        $headers = 'From: DreamHub E3 Website <noreply@' . $domain . ">\r\n"
+            . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit";
+        $send ??= 'mail';
+        $ok = (bool)$send($to, mb_encode_mimeheader($subject, 'UTF-8'), $body, $headers);
+        if (!$ok) {
+            error_log('testimonial notify: mail() returned false');
+        }
+        return $ok;
+    } catch (Throwable $e) {
+        error_log('testimonial notify: ' . $e->getMessage());
+        return false;
+    }
+}
+
 /* ---- Admin side. Call these only from admin code that has already checked the admin is logged in. ---- */
 
 /** @return array<string, mixed> */

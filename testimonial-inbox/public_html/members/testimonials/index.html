@@ -157,6 +157,16 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
     var box = $("notice"); box.innerHTML = "";
     if (text) box.appendChild(el("p", { "class": kind === "ok" ? "ok" : "msg", role: kind === "ok" ? "status" : "alert", text: text }));
   }
+  // After approving a client's testimonial that is shown on the website: offer to WhatsApp them, if they left a number.
+  function tellClient(sub, name){
+    var wa = waNumber(sub.phone);
+    if (!wa) return;
+    var first = String(name || sub.client_name).trim().split(/\s+/)[0];
+    var text = "Hi " + first + ", your testimonial is now on our website. Thank you so much for your kind words!\n" + location.origin + "/testimonials/";
+    var p = $("notice").firstChild; if (!p) return;
+    p.appendChild(document.createTextNode(" " + sub.client_name + " asked to be told when it is published. "));
+    p.appendChild(el("a", { "class": "btn primary", href: "https://wa.me/" + wa + "?text=" + encodeURIComponent(text), target: "_blank", rel: "noopener", style: "margin-top:8px", text: "Tell " + first + " on WhatsApp" }));
+  }
 
   function api(method, body){
     var opts = { method: method, credentials: "same-origin", headers: { "Accept": "application/json", "X-Requested-With": "fetch" } };
@@ -309,7 +319,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
     if (state.busy) return;
     notice("", ""); lockUi(true);
     api("POST", { action: "approve", id: sub.id, is_visible: true, on_homepage: false }).then(load)
-      .then(function(){ notice("ok", "Approved. The testimonial from " + sub.client_name + " is now on the website (at the bottom of the list)."); say("Approved."); })
+      .then(function(){ notice("ok", "Approved. The testimonial from " + sub.client_name + " is now on the website (at the bottom of the list)."); tellClient(sub); say("Approved."); })
       .catch(function(e){ notice("err", e.message); return load().catch(function(){}); })
       .then(function(){ state.busy = false; renderList(); renderPending(); });
   }
@@ -431,7 +441,7 @@ input[type=text]:focus,textarea:focus{outline:none;border-color:#B9AFA7;box-shad
       state.busy = true; save.disabled = true; cancel.disabled = true; save.textContent = "Saving…";
       api("POST", body).then(function(){ return load(); }).then(function(){
         var done = mode === "approve" ? (shown.checked ? "Approved. It is now on the website." : "Approved and saved as hidden. Switch it on any time with Edit.") : id ? "Changes saved." : "Testimonial added.";
-        closeEditor(); notice("ok", done); say(done);
+        closeEditor(); notice("ok", done); if (sub && shown.checked) tellClient(sub, name.value); say(done);
         $("add").focus();
       }).catch(function(e){
         err.textContent = e.message; err.hidden = false; err.scrollIntoView({ block: "nearest" });
