@@ -3,5 +3,5 @@ window.CC_SITE = {
   // Cloudflare dashboard > Turnstile > your widget > Site key (the PUBLIC one).
   turnstileSiteKey: 'REPLACE_WITH_TURNSTILE_SITE_KEY',
   apiBase: 'api/',
-  whatsapp: '60126718056'
+  whatsapp: '601176218056'
 };

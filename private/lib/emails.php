@@ -67,7 +67,7 @@ function build_candidate_email(array $cand, array $scores, array $owner, array $
     $rank = rank_types($scores);
     $code = implode('', array_slice($rank, 0, 3));
     $contact = $config['contact'] ?? [];
-    $wa = (string)($contact['whatsapp'] ?? 'https://wa.me/60126718056');
+    $wa = (string)($contact['whatsapp'] ?? 'https://wa.me/601176218056');
     if (preg_match('/^\d{9,15}$/', (string)($owner['whatsapp'] ?? ''))) {   // the advisor's own number when they have one
         $wa = 'https://wa.me/' . $owner['whatsapp'];
     }

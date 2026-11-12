@@ -33,5 +33,5 @@ return [
         // Only for 'smtp':  'host' => 'mail.dreamhub-e3.com', 'port' => 465, 'secure' => 'ssl' ('ssl' | 'tls' | ''),
         //                   'user' => 'hello@dreamhub-e3.com', 'pass' => '...', 'verify_tls' => true,
     ],
-    'contact' => ['whatsapp' => 'https://wa.me/60126718056', 'email' => 'hello@dreamhub-e3.com'],
+    'contact' => ['whatsapp' => 'https://wa.me/601176218056', 'email' => 'hello@dreamhub-e3.com'],
 ];

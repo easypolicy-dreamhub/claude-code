@@ -58,7 +58,7 @@ var P = function () { return PUB[lang]; };
 var I_ = function (t) { return INFO[lang][t]; };
 var COLOR = function (t) { return getComputedStyle(document.documentElement).getPropertyValue('--' + t).trim(); };
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-var wa = function (msg, num) { return 'https://wa.me/' + (num || SITE.whatsapp || '60126718056') + '?text=' + encodeURIComponent(msg); };
+var wa = function (msg, num) { return 'https://wa.me/' + (num || SITE.whatsapp || '601176218056') + '?text=' + encodeURIComponent(msg); };
 
 /* ---------- state + saved progress (Fix 6) ---------- */
 var state, current = 'welcome', clientId = null;

@@ -127,7 +127,7 @@ check('recipients: candidate, advisor Amy, upline You', in_array('amy@example.co
 check('AA (not in the chain) was not emailed', !in_array('aa@x.com', $to, true));
 $cm = $mailer->sent[0]; $am = $mailer->sent[1];
 check('candidate subject has the code', $cm['subject'] === 'Your Career Code: ESC');
-check('candidate email: names the types, advisor, WhatsApp', str_contains($cm['text'], 'Enterprising') && str_contains($cm['text'], 'Social') && str_contains($cm['text'], 'Amy A') && str_contains($cm['html'], 'wa.me/60126718056'));
+check('candidate email: names the types, advisor, WhatsApp', str_contains($cm['text'], 'Enterprising') && str_contains($cm['text'], 'Social') && str_contains($cm['text'], 'Amy A') && str_contains($cm['html'], 'wa.me/601176218056'));
 check('candidate email shows strengths and fields', str_contains($cm['text'], 'Persuasion') && str_contains($cm['text'], 'Financial services'));
 check('advisor notice links to the dashboard for THIS candidate', str_contains($am['text'], 'https://dreamhub-e3.com/members/career-code/dashboard/?candidate=' . $r['candidate_id']));
 check('advisor notice has NO scores, verdict or interview notes', !preg_match('/\b34\b|Strong fit|Good fit|Borderline|interview|criteria|Watch-outs/i', $am['text'] . $am['html']));

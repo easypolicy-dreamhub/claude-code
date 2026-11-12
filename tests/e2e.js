@@ -39,7 +39,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   page.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) problems.push('console: ' + m.text()); });
   await page.route('**/*', (r) => (new URL(r.request().url()).hostname === '127.0.0.1' ? r.continue() : r.abort()));
-  await page.route('**/site-config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.CC_SITE={turnstileSiteKey:'TEST',apiBase:'api/',whatsapp:'60126718056'};" }));
+  await page.route('**/site-config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.CC_SITE={turnstileSiteKey:'TEST',apiBase:'api/',whatsapp:'601176218056'};" }));
 
   console.log('Welcome + details');
   await page.goto(`${BASE}/career-code/?p=internship&ref=amy`);
@@ -93,7 +93,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   check('server-calculated code is ESC', code === 'ESC', code);
   check('score table has the paper totals (E34 S30 C18)', /34/.test(await page.textContent('#r-scores')) && /30/.test(await page.textContent('#r-scores')) && /18/.test(await page.textContent('#r-scores')));
   check('names the advisor (Amy A, from ?ref=amy)', /Amy A/.test(await page.textContent('#r-next-text')));
-  check('WhatsApp link to the advisor', /wa\.me\/60126718056/.test(await page.getAttribute('#waPost', 'href')));
+  check('WhatsApp link to the advisor', /wa\.me\/601176218056/.test(await page.getAttribute('#waPost', 'href')));
   check('progress cleared after finishing', (await page.evaluate(() => localStorage.getItem('e3cc.v1'))) === null);
   await page.screenshot({ path: path.join(SHOTS, '5-results.png'), fullPage: true });
   await page.click('#langBtn');
