@@ -128,7 +128,7 @@ function manage(id) {
   }
   if (v.super_admin) {
     html += '<div class="sec"><h3>Details</h3><label class="f" for="mName">Name</label><input type="text" id="mName" value="' + esc(m.name) + '"><label class="f" for="mEmail">Login email (must match Cloudflare)</label><input type="email" id="mEmail" value="' + esc(m.email) + '">' +
-      '<label class="f" for="mWa">WhatsApp number (candidates who tap WhatsApp reach this advisor)</label><input type="tel" id="mWa" inputmode="tel" placeholder="e.g. 60123456789" value="' + esc(m.whatsapp || '') + '"><label class="f" for="mRef">Personal link code</label><input type="text" id="mRef" value="' + esc(m.referral_code) + '"><div class="row"><button class="btn plain" id="mSave">Save details</button></div></div>';
+      '<label class="f" for="mWa">WhatsApp number (candidates who tap WhatsApp reach this advisor)</label><input type="text" id="mWa" inputmode="tel" placeholder="e.g. 60123456789" value="' + esc(m.whatsapp || '') + '"><label class="f" for="mRef">Personal link code</label><input type="text" id="mRef" value="' + esc(m.referral_code) + '"><div class="row"><button class="btn plain" id="mSave">Save details</button></div></div>';
   }
   if (!m.is_admin && m.id !== v.id) {
     html += '<div class="sec"><h3>Remove</h3><div class="row"><button class="btn danger" id="mRemove">They left the business…</button>' + (v.super_admin ? '<button class="btn danger" id="mGroup">Remove whole group…</button>' : '') + '</div></div>';
@@ -222,7 +222,7 @@ function reactivate(id) {
 $('#addBtn').addEventListener('click', function () {
   var ranks = Object.keys(st.data.ranks).map(function (r) { return '<option value="' + r + '">' + esc(rankName(r)) + '</option>'; }).join('');
   openDlg('<h2>Add a member</h2><label class="f" for="nName">Name</label><input type="text" id="nName"><label class="f" for="nEmail">Login email (the one on the Cloudflare list)</label><input type="email" id="nEmail">' +
-    '<label class="f" for="nWa">WhatsApp number (optional)</label><input type="tel" id="nWa" inputmode="tel" placeholder="e.g. 60123456789">' +
+    '<label class="f" for="nWa">WhatsApp number (optional)</label><input type="text" id="nWa" inputmode="tel" placeholder="e.g. 60123456789">' +
     '<label class="f" for="nRank">Rank</label><select id="nRank">' + ranks + '</select><label class="f" for="nUp">Upline</label><select id="nUp">' + destOptions(null, V().id, true) + '</select>' +
     '<label class="f" for="nRef">Personal link code (optional, made from the name if empty)</label><input type="text" id="nRef">' +
     '<div class="row"><button class="btn" id="nGo">Add</button></div><p class="note">They can log in once their email is also on the Cloudflare Zero Trust list.</p>');
