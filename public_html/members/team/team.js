@@ -48,6 +48,19 @@ function sortNodes(a) {
   return a.slice().sort(function (x, y) { return (y.is_active - x.is_active) || (lvl[y.rank] - lvl[x.rank]) || x.name.localeCompare(y.name); });
 }
 function rankPill(r) { return '<span class="pill ' + (r === 'group_manager' ? 'gm' : r === 'unit_manager' ? 'um' : '') + '">' + esc(rankName(r)) + '</span>'; }
+function portalLine(m) {
+  var p = m.portal; if (!p || !m.is_active) return '';
+  var s;
+  if (p.owner) s = 'Always on';
+  else if (!p.enabled) return '<div class="sub">Client Portal: Off</div>';
+  else s = 'On';
+  if (!p.clients) s += ' · not loaded yet';
+  else {
+    s += ' · ' + p.clients + ' client' + (p.clients === 1 ? '' : 's') + ' · ' + p.policies + ' polic' + (p.policies === 1 ? 'y' : 'ies');
+    s += p.inforce && p.details >= p.inforce ? ' · complete' : ' · details ' + p.details + ' of ' + p.inforce + ' inforce';
+  }
+  return '<div class="sub">Client Portal: ' + esc(s) + '</div>';
+}
 function nodeHtml(m) {
   var v = V(), pills = rankPill(m.rank);
   if (m.is_admin) pills += '<span class="pill admin">Super admin</span>';
@@ -61,7 +74,7 @@ function nodeHtml(m) {
   if (!m.is_active && v.super_admin) acts += '<button class="btn small" data-react="' + m.id + '">Reactivate</button>';
   var kids = sortNodes(st.kids[m.id] || []);
   return '<li><div class="node' + (m.is_active ? '' : ' inactive') + '"><div class="who"><span class="name">' + esc(m.name) + '</span><span class="pills">' + pills + '</span>' +
-    '<div class="sub">' + esc(m.email) + ' · ' + m.candidates + ' candidate' + (m.candidates === 1 ? '' : 's') + (kids.length ? ' · ' + kids.length + ' directly under' : '') + '</div></div><div class="acts">' + acts + '</div></div>' +
+    '<div class="sub">' + esc(m.email) + ' · ' + m.candidates + ' candidate' + (m.candidates === 1 ? '' : 's') + (kids.length ? ' · ' + kids.length + ' directly under' : '') + '</div>' + portalLine(m) + '</div><div class="acts">' + acts + '</div></div>' +
     (kids.length ? '<ul>' + kids.map(nodeHtml).join('') + '</ul>' : '') + '</li>';
 }
 function render() {
@@ -110,6 +123,9 @@ function manage(id) {
   if (v.super_admin && m.rank === 'group_manager' && !m.is_admin) {
     html += '<div class="sec"><h3>Team admin</h3><p class="note">' + (m.is_team_admin ? esc(m.name) + ' can change ranks, move and remove people in their own group.' : 'Let ' + esc(m.name) + ' change ranks, move and remove people in their own group (never anyone else).') + '</p><div class="row"><button class="btn plain" id="mTA" data-on="' + (m.is_team_admin ? '0' : '1') + '">' + (m.is_team_admin ? 'Remove team admin' : 'Make team admin') + '</button></div></div>';
   }
+  if (v.super_admin && m.portal && !m.portal.owner) {
+    html += '<div class="sec"><h3>Client Portal</h3><p class="note">' + (m.portal.enabled ? esc(m.name) + ' can open the Client Portal and sees only their own clients. You and their leaders see numbers only, never names.' : 'Let ' + esc(m.name) + ' use the Client Portal. They see only their own clients. Their email must also be on the Cloudflare \u201cClient Portal\u201d policy.') + '</p><div class="row"><button class="btn plain" id="mPortal" data-on="' + (m.portal.enabled ? '0' : '1') + '">' + (m.portal.enabled ? 'Switch off' : 'Switch on') + '</button></div></div>';
+  }
   if (v.super_admin) {
     html += '<div class="sec"><h3>Details</h3><label class="f" for="mName">Name</label><input type="text" id="mName" value="' + esc(m.name) + '"><label class="f" for="mEmail">Login email (must match Cloudflare)</label><input type="email" id="mEmail" value="' + esc(m.email) + '">' +
       '<label class="f" for="mWa">WhatsApp number (candidates who tap WhatsApp reach this advisor)</label><input type="tel" id="mWa" inputmode="tel" placeholder="e.g. 60123456789" value="' + esc(m.whatsapp || '') + '"><label class="f" for="mRef">Personal link code</label><input type="text" id="mRef" value="' + esc(m.referral_code) + '"><div class="row"><button class="btn plain" id="mSave">Save details</button></div></div>';
@@ -125,6 +141,7 @@ function manage(id) {
     act({ action: 'move', id: id, to: to, with_team: withTeam }).then(function () { dlg.close(); toast(m.name + ' moved under ' + name + '.'); }).catch(fail);
   };
   if ($('#mTA')) $('#mTA').onclick = function () { var on = this.dataset.on === '1'; act({ action: 'team_admin', id: id, on: on }).then(function () { dlg.close(); toast(on ? m.name + ' is now a team admin.' : m.name + ' is no longer a team admin.'); }).catch(fail); };
+  if ($('#mPortal')) $('#mPortal').onclick = function () { var on = this.dataset.on === '1'; act({ action: 'portal_toggle', id: id, on: on }).then(function () { dlg.close(); toast('Client Portal ' + (on ? 'switched on for ' : 'switched off for ') + m.name + '.'); }).catch(fail); };
   if ($('#mSave')) $('#mSave').onclick = function () { act({ action: 'edit', id: id, name: $('#mName').value, email: $('#mEmail').value, whatsapp: $('#mWa').value, referral_code: $('#mRef').value }).then(function () { dlg.close(); toast('Details saved.'); }).catch(fail); };
   if ($('#mRemove')) $('#mRemove').onclick = function () { removeMember(id); };
   if ($('#mGroup')) $('#mGroup').onclick = function () { removeGroup(id); };

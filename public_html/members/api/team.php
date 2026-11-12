@@ -7,10 +7,25 @@ declare(strict_types=1);
  *   GET  [?inactive=1]            the tree the viewer may see
  *   GET  ?export_group=ID         super admin: CSV of that person's group's candidates (copy before removal)
  *   POST {action, ...}            add | edit | preview_rank | apply_rank | move | preview_remove | remove |
- *                                 preview_remove_group | remove_group | preview_reactivate | reactivate | team_admin
+ *                                 preview_remove_group | remove_group | preview_reactivate | reactivate | team_admin |
+ *                                 portal_toggle (Client Portal on/off, super admin only)
  */
 require_once __DIR__ . '/../../../private/bootstrap.php';
 require_once __DIR__ . '/../../../private/lib/team.php';
+
+// Client Portal link (optional): if the bridge file is missing or broken, this page works exactly as before.
+$e3pbFile = __DIR__ . '/../../../e3-client-portal/team-bridge.php';
+if (is_file($e3pbFile)) {
+    try { require_once $e3pbFile; } catch (Throwable $e) { error_log('team.php bridge: ' . $e->getMessage()); }
+}
+$e3pb = static function (string $fn, ...$args) {
+    if (!function_exists($fn)) { return null; }
+    try { return $fn(...$args); } catch (Throwable $e) { error_log('team.php ' . $fn . ': ' . $e->getMessage()); return null; }
+};
+$withPortal = static function (array $tree) use ($e3pb): array {
+    $t = $e3pb('e3pb_overlay', $tree);
+    return is_array($t) ? $t : $tree;
+};
 
 [$config, $pdo, $me] = boot_member_request();
 
@@ -31,7 +46,7 @@ try {
             echo $csv;
             exit;
         }
-        json_response(200, team_tree($pdo, $map, $me, $inactive));
+        json_response(200, $withPortal(team_tree($pdo, $map, $me, $inactive)));
     }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new HttpError(405, 'Method not allowed.');
@@ -51,7 +66,9 @@ try {
             break;
         case 'edit':
             if (!is_super_admin($me)) { throw new HttpError(403, 'Only the super admin can edit details.'); }
+            $oldEmail = (string)($map[$id]['email'] ?? '');
             $result = update_member($pdo, $me['id'], $id, array_intersect_key($in, array_flip(['name', 'email', 'referral_code', 'whatsapp'])));
+            if ($oldEmail !== '' && isset($in['email'])) { $e3pb('e3pb_rename', $oldEmail, (string)$in['email']); }
             break;
         case 'preview_rank':
             if (!can_manage($map, $me, $id)) { throw new HttpError(403, 'You cannot change this member\'s rank.'); }
@@ -68,19 +85,28 @@ try {
             $result = plan_remove_member($pdo, $map, $me, $id);
             break;
         case 'remove':
+            $gone = (string)($map[$id]['email'] ?? '');
             remove_member($pdo, $me, $id, $opt('team_to'), ($in['move_candidates'] ?? true) !== false);
+            if ($gone !== '') { $e3pb('e3pb_revoke', $gone); }
             break;
         case 'preview_remove_group':
             $result = plan_remove_group($pdo, $map, $me, $id);
             break;
         case 'remove_group':
             $result = remove_group($pdo, $me, $id, (string)($in['confirm'] ?? ''), $config);
+            foreach ((array)($result['emails'] ?? []) as $gone) { $e3pb('e3pb_revoke', (string)$gone); }
             break;
         case 'preview_reactivate':
             $result = plan_reactivate($map, $me, $id);
             break;
         case 'reactivate':
             reactivate_member($pdo, $me, $id, $opt('to'), ($in['with_team'] ?? true) !== false);
+            break;
+        case 'portal_toggle':
+            if (!is_super_admin($me)) { throw new HttpError(403, 'Only the super admin can switch the Client Portal on or off.'); }
+            if (!isset($map[$id]) || empty($map[$id]['email'])) { throw new HttpError(404, 'Member not found.'); }
+            if (!function_exists('e3pb_toggle')) { throw new HttpError(503, 'The Client Portal link is not installed on the server.'); }
+            e3pb_toggle((string)$map[$id]['email'], (string)($map[$id]['name'] ?? ''), ($in['on'] ?? false) === true);
             break;
         case 'team_admin':
             set_team_admin($pdo, $me, $id, ($in['on'] ?? false) === true);
@@ -89,7 +115,7 @@ try {
             throw new HttpError(400, 'Unknown action.');
     }
     $map = load_member_map($pdo);
-    json_response(200, ['result' => $result, 'tree' => team_tree($pdo, $map, $map[$me['id']], $inactive)]);
+    json_response(200, ['result' => $result, 'tree' => $withPortal(team_tree($pdo, $map, $map[$me['id']], $inactive))]);
 } catch (HttpError $e) {
     json_response($e->status, ['error' => $e->getMessage()]);
 } catch (Throwable $e) {
