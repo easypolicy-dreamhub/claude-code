@@ -18,8 +18,27 @@ function public_member(array $m): array
         'id' => (int)$m['id'], 'email' => $m['email'], 'name' => $m['name'],
         'rank' => $m['rank_label'], 'upline_id' => $m['upline_id'] === null ? null : (int)$m['upline_id'],
         'is_admin' => (bool)$m['is_admin'], 'is_team_admin' => (bool)($m['is_team_admin'] ?? 0), 'referral_code' => $m['referral_code'],
-        'is_active' => (bool)$m['is_active'],
+        'is_active' => (bool)$m['is_active'], 'whatsapp' => (string)($m['whatsapp'] ?? ''),
     ];
+}
+
+/** Digits only, with country code. A leading 0 is taken as Malaysia (012… becomes 6012…). Empty clears it. */
+function normalise_whatsapp(string $raw): ?string
+{
+    $d = preg_replace('/\D+/', '', $raw) ?? '';
+    if ($d === '') {
+        if (trim($raw) !== '') {
+            throw new HttpError(422, 'Enter the WhatsApp number with country code, for example 60123456789.');
+        }
+        return null;
+    }
+    if ($d[0] === '0') {
+        $d = '6' . $d;
+    }
+    if (strlen($d) < 9 || strlen($d) > 15) {
+        throw new HttpError(422, 'Enter the WhatsApp number with country code, for example 60123456789.');
+    }
+    return $d;
 }
 
 function normalise_referral(string $code): string
@@ -64,6 +83,7 @@ function create_member(PDO $pdo, ?int $actorId, array $in): array
     if (!in_array($rank, RANKS, true)) {
         throw new HttpError(422, 'Unknown rank.');
     }
+    $wa = normalise_whatsapp((string)($in['whatsapp'] ?? ''));
     $map = load_member_map($pdo);
     $upline = isset($in['upline_id']) && $in['upline_id'] !== '' ? (int)$in['upline_id'] : null;
     if ($upline !== null && !isset($map[$upline])) {
@@ -85,6 +105,9 @@ function create_member(PDO $pdo, ?int $actorId, array $in): array
         throw new HttpError(409, 'Email or referral code is already taken.');
     }
     $id = (int)$pdo->lastInsertId();
+    if ($wa !== null) {
+        $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute([$wa, $id]);
+    }
     audit($pdo, $actorId, 'member.create', $id, ['email' => $email, 'upline_id' => $upline]);
     return public_member(load_member_map($pdo)[$id]);
 }
@@ -130,6 +153,9 @@ function update_member(PDO $pdo, int $actorId, int $id, array $in): array
     }
     if (array_key_exists('referral_code', $in)) {
         $set['referral_code'] = normalise_referral((string)$in['referral_code']);
+    }
+    if (array_key_exists('whatsapp', $in)) {
+        $set['whatsapp'] = normalise_whatsapp((string)$in['whatsapp']);
     }
     if (array_key_exists('upline_id', $in)) {
         $up = $in['upline_id'] === null || $in['upline_id'] === '' ? null : (int)$in['upline_id'];

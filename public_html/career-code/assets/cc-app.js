@@ -58,7 +58,7 @@ var P = function () { return PUB[lang]; };
 var I_ = function (t) { return INFO[lang][t]; };
 var COLOR = function (t) { return getComputedStyle(document.documentElement).getPropertyValue('--' + t).trim(); };
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-var wa = function (msg) { return 'https://wa.me/' + (SITE.whatsapp || '60126718056') + '?text=' + encodeURIComponent(msg); };
+var wa = function (msg, num) { return 'https://wa.me/' + (num || SITE.whatsapp || '60126718056') + '?text=' + encodeURIComponent(msg); };
 
 /* ---------- state + saved progress (Fix 6) ---------- */
 var state, current = 'welcome', clientId = null;
@@ -74,7 +74,7 @@ function save() {
   if (!state.token || state.scores) return;
   try {
     var a = {}; ['A', 'B', 'C'].forEach(function (p) { a[p] = {}; TYPES.forEach(function (t) { a[p][t] = Array.from(state.answers[p][t]); }); });
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, copyMe: state.copyMe, cid: state.candidateId, advisor: state.advisor, name: state.name, part: state.part, a: a, r: state.ratings }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ts: Date.now(), lang: lang, purpose: purpose, ref: ref, token: state.token, copyMe: state.copyMe, cid: state.candidateId, advisor: state.advisor, advisorWa: state.advisorWa, name: state.name, part: state.part, a: a, r: state.ratings }));
   } catch (e) { /* private mode or storage full: the test still works, just without resume */ }
 }
 function clearSaved() { try { localStorage.removeItem(STORE_KEY); } catch (e) {} }
@@ -87,7 +87,7 @@ function loadSaved() {
 }
 function restore(s) {
   state = freshState();
-  state.token = s.token; state.copyMe = !!s.copyMe; state.candidateId = s.cid || null; state.advisor = s.advisor; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
+  state.token = s.token; state.copyMe = !!s.copyMe; state.candidateId = s.cid || null; state.advisor = s.advisor; state.advisorWa = s.advisorWa; state.name = s.name || ''; state.part = Math.min(Math.max(+s.part || 0, 0), 3);
   ['A', 'B', 'C'].forEach(function (p) { TYPES.forEach(function (t) { ((s.a && s.a[p] && s.a[p][t]) || []).forEach(function (i) { state.answers[p][t].add(i); }); }); });
   TYPES.forEach(function (t) { if (s.r && Array.isArray(s.r[t])) state.ratings[t] = s.r[t].slice(0, 2); });
   if (s.lang === 'zh' || s.lang === 'en') lang = s.lang;
@@ -283,7 +283,7 @@ function payload() {
 function submit() {
   var next = $('#t-next'); next.disabled = true; $('#t-err').textContent = P().submitting;
   (LIVE ? api('live.php', { action: 'submit', submit_token: state.token, answers: payload(), copy_me: !!state.copyMe }) : api('submit.php', { submit_token: state.token, answers: payload() }))
-    .then(function (r) { state.scores = r.scores; state.code = r.code; state.advisor = r.advisor_name || state.advisor; state.candidateId = r.candidate_id || state.candidateId; state.candidateEmail = !!r.candidate_emailed; clearSaved(); renderResults(); })
+    .then(function (r) { state.scores = r.scores; state.code = r.code; state.advisor = r.advisor_name || state.advisor; state.advisorWa = r.advisor_whatsapp || state.advisorWa; state.candidateId = r.candidate_id || state.candidateId; state.candidateEmail = !!r.candidate_emailed; clearSaved(); renderResults(); })
     .catch(function (e) { $('#t-err').textContent = friendly(e); })
     .then(function () { next.disabled = false; });
 }
@@ -319,7 +319,7 @@ function renderResults() {
     $('#r-next-title').textContent = 'Saved to your candidate list';
     $('#r-next-text').textContent = 'Their result is saved' + (state.candidateEmail ? ' and emailed to them.' : '. No email address was given, so nothing was emailed to them.') + ' Open the candidate to see your advisor notes.';
     $('#waPost').textContent = 'Open advisor view'; $('#waPost').href = '/members/career-code/dashboard/?candidate=' + (state.candidateId || '');
-  } else { $('#waPost').textContent = P().waPost; $('#waPost').href = wa(P().waAdv); }
+  } else { $('#waPost').textContent = P().waPost; $('#waPost').href = wa(P().waAdv, state.advisorWa); }
   var old = document.title; document.title = Lx.fileName(state.name || Lx.candidate); setTimeout(function () { document.title = old; }, 0);
   show('results');
 }

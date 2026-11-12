@@ -46,12 +46,12 @@ try {
             if (!is_super_admin($me)) { throw new HttpError(403, 'Only the super admin can add members.'); }
             $result = create_member($pdo, $me['id'], [
                 'email' => $in['email'] ?? '', 'name' => $in['name'] ?? '', 'rank' => $in['rank'] ?? 'agent',
-                'upline_id' => $opt('upline_id'), 'referral_code' => $in['referral_code'] ?? '',
+                'upline_id' => $opt('upline_id'), 'referral_code' => $in['referral_code'] ?? '', 'whatsapp' => $in['whatsapp'] ?? '',
             ]);
             break;
         case 'edit':
             if (!is_super_admin($me)) { throw new HttpError(403, 'Only the super admin can edit details.'); }
-            $result = update_member($pdo, $me['id'], $id, array_intersect_key($in, array_flip(['name', 'email', 'referral_code'])));
+            $result = update_member($pdo, $me['id'], $id, array_intersect_key($in, array_flip(['name', 'email', 'referral_code', 'whatsapp'])));
             break;
         case 'preview_rank':
             if (!can_manage($map, $me, $id)) { throw new HttpError(403, 'You cannot change this member\'s rank.'); }

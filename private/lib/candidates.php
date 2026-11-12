@@ -185,7 +185,7 @@ function submit_assessment(PDO $pdo, string $token, mixed $answers): array
         $a = $pdo->prepare('SELECT scores_json, code FROM assessments WHERE candidate_id = ? ORDER BY id DESC LIMIT 1');
         $a->execute([(int)$cand['id']]);
         $row = $a->fetch();
-        return ['candidate' => $cand, 'scores' => json_decode($row['scores_json'], true), 'code' => $row['code'], 'advisor_name' => $owner['name'], 'already' => true];
+        return ['candidate' => $cand, 'scores' => json_decode($row['scores_json'], true), 'code' => $row['code'], 'advisor_name' => $owner['name'], 'advisor_whatsapp' => (string)($owner['whatsapp'] ?? ''), 'already' => true];
     }
     if (strtotime($cand['started_at'] . ' UTC') < time() - SUBMIT_WINDOW_SECONDS) {
         throw new HttpError(410, 'This test has expired. Please start again.');
@@ -194,7 +194,7 @@ function submit_assessment(PDO $pdo, string $token, mixed $answers): array
     $scores = score_test($answers);
     $code = holland_code($scores);
     store_assessment($pdo, (int)$cand['id'], 'test', json_encode($answers), $scores, $code, null);
-    return ['candidate' => $cand, 'scores' => $scores, 'code' => $code, 'advisor_name' => $owner['name'], 'already' => false];
+    return ['candidate' => $cand, 'scores' => $scores, 'code' => $code, 'advisor_name' => $owner['name'], 'advisor_whatsapp' => (string)($owner['whatsapp'] ?? ''), 'already' => false];
 }
 
 /**

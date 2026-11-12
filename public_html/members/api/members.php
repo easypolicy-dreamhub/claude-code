@@ -30,7 +30,7 @@ try {
             throw new HttpError(400, 'Missing ?id=');
         }
         // Ranks, moves and removals go through the Team page rules (api/team.php), never straight here.
-        $in = array_intersect_key(json_body(), array_flip(['name', 'email', 'referral_code']));
+        $in = array_intersect_key(json_body(), array_flip(['name', 'email', 'referral_code', 'whatsapp']));
         json_response(200, ['member' => update_member($pdo, $me['id'], $id, $in)]);
     }
     throw new HttpError(405, 'Method not allowed.');

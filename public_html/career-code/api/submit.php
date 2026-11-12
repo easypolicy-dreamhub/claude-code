@@ -15,7 +15,7 @@ try {
     if (!$r['already']) {
         notify_completion($pdo, $config, make_mailer($config), $r['candidate'], $r['scores'], $r['code']);
     }
-    json_response(200, ['scores' => $r['scores'], 'code' => $r['code'], 'advisor_name' => $r['advisor_name']]);
+    json_response(200, ['scores' => $r['scores'], 'code' => $r['code'], 'advisor_name' => $r['advisor_name'], 'advisor_whatsapp' => $r['advisor_whatsapp']]);
 } catch (HttpError $e) {
     json_response($e->status, ['error' => $e->getMessage()]);
 } catch (Throwable $e) {

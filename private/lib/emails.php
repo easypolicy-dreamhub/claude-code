@@ -68,6 +68,9 @@ function build_candidate_email(array $cand, array $scores, array $owner, array $
     $code = implode('', array_slice($rank, 0, 3));
     $contact = $config['contact'] ?? [];
     $wa = (string)($contact['whatsapp'] ?? 'https://wa.me/60126718056');
+    if (preg_match('/^\d{9,15}$/', (string)($owner['whatsapp'] ?? ''))) {   // the advisor's own number when they have one
+        $wa = 'https://wa.me/' . $owner['whatsapp'];
+    }
     $mail = (string)($contact['email'] ?? 'hello@dreamhub-e3.com');
 
     $summary = $S['summary']($I[$rank[0]]['name'], $I[$rank[1]]['name'], $I[$rank[2]]['name']);
