@@ -337,7 +337,7 @@ function access_remove(PDO $pdo, ?CfPolicy $cf, array $actor, string $emailRaw):
             }
             $cfState = 'ok';
         } catch (Throwable $e) {
-            throw new HttpError(502, ($m !== null ? 'They are blocked on this site already, but ' : '') . 'Cloudflare could not be updated (' . $e->getMessage() . '). Press Remove again to retry.');
+            throw new HttpError(424, ($m !== null ? 'They are blocked on this site already, but ' : '') . 'Cloudflare could not be updated (' . $e->getMessage() . '). Press Remove again to retry.');
         }
     }
     return ['email' => $email, 'cloudflare' => $cfState];

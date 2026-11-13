@@ -10,6 +10,10 @@ require_once __DIR__ . '/http.php';
  * config.php needs:  'cf_api' => ['token' => '...', 'account_id' => '...', 'policy_id' => '...']
  * The token goes only in config.php (outside public_html), never in a web page.
  */
+/**
+ * Cloudflare failures use HTTP 424, never 502/504: Cloudflare (in front of this site) swaps any 502/504 from the origin for
+ * its own generic error page, which would hide the real reason from the screen.
+ */
 final class CfPolicy
 {
     private const BASE = 'https://api.cloudflare.com/client/v4';
@@ -53,7 +57,7 @@ final class CfPolicy
         if (self::$trace) { (self::$trace)('cf ' . $method . ' answered in ' . round(microtime(true) - $t0, 2) . 's, success=' . (is_array($res) && !empty($res['success']) ? 'yes' : 'no')); }
         if (!is_array($res) || empty($res['success'])) {
             $msg = is_array($res) ? (string)($res['errors'][0]['message'] ?? 'unknown error') : 'no answer';
-            throw new HttpError(502, 'Cloudflare said: ' . $msg);
+            throw new HttpError(424, 'Cloudflare said: ' . $msg);
         }
         return $res;
     }
@@ -175,7 +179,7 @@ final class CfPolicy
         if ($raw === false) {
             $err = curl_error($ch);
             curl_close($ch);
-            throw new HttpError(502, 'Could not reach Cloudflare (' . $err . ').');
+            throw new HttpError(424, 'Could not reach Cloudflare (' . $err . ').');
         }
         curl_close($ch);
         $d = json_decode((string)$raw, true);

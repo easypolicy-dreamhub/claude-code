@@ -218,13 +218,13 @@ check('...and flagged', $cfList->hasOtherRules());
 
 [$pdo, $you] = setup();
 $failing = fake_cf(['you@x.com'], $lf, true);
-throws('Cloudflare refuses -> add fails and nothing is created', 502, fn () => access_add($pdo, $failing, $you, ['email' => 'f@x.com', 'name' => 'F', 'type' => 'admin']));
+throws('Cloudflare refuses -> add fails and nothing is created', 424, fn () => access_add($pdo, $failing, $you, ['email' => 'f@x.com', 'name' => 'F', 'type' => 'admin']));
 check('...no member row was made', access_find_by_email(load_member_map($pdo), 'f@x.com') === null);
 $ok = fake_cf(['you@x.com'], $lo);
 access_add($pdo, $ok, $you, ['email' => 'g@x.com', 'name' => 'G', 'type' => 'admin']);
 $g = access_find_by_email(load_member_map($pdo), 'g@x.com');
 $failing2 = fake_cf(['you@x.com', 'g@x.com'], $lf2, true);
-try { access_remove($pdo, $failing2, $you, 'g@x.com'); check('remove with Cloudflare down should fail', false); } catch (HttpError $e) { check('Cloudflare down on remove -> clear error, retryable', $e->status === 502 && str_contains($e->getMessage(), 'blocked on this site already')); }
+try { access_remove($pdo, $failing2, $you, 'g@x.com'); check('remove with Cloudflare down should fail', false); } catch (HttpError $e) { check('Cloudflare down on remove -> clear error, retryable', $e->status === 424 && str_contains($e->getMessage(), 'blocked on this site already')); }
 check('...but they are already blocked on the site', !load_member_map($pdo)[$g['id']]['is_active']);
 
 $ov = access_overview($pdo, fake_cf(['you@x.com', 'g@x.com', 'stranger@x.com'], $lv), load_member_map($pdo));
