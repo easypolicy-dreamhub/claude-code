@@ -153,12 +153,15 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
       ul.className = "grid";
       items.forEach(function(a){
         var li = document.createElement("li"), link = document.createElement("a");
-        link.className = "app"; link.href = a.url; link.target = "_blank"; link.rel = "noopener";
+        // Tools on this site open in the same tab (the back link / back button returns here); outside links open in a new tab.
+        var external = /^https?:\/\//i.test(a.url) && a.url.indexOf(location.origin) !== 0;
+        link.className = "app"; link.href = a.url;
+        if (external) { link.target = "_blank"; link.rel = "noopener"; }
         link.innerHTML = '<span class="icon" aria-hidden="true"></span><span><div class="name"></div><div class="about"></div></span><svg class="go" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
         link.querySelector(".icon").textContent = a.icon || "🔗";
         link.querySelector(".name").textContent = a.name;
         link.querySelector(".about").textContent = a.about || "";
-        link.setAttribute("aria-label", a.name + " (opens in a new tab)");
+        link.setAttribute("aria-label", external ? a.name + " (opens in a new tab)" : a.name);
         if (a.note){ var nt = document.createElement("div"); nt.className = "note"; nt.textContent = a.note; link.children[1].appendChild(nt); }
         li.appendChild(link); ul.appendChild(li);
       });
