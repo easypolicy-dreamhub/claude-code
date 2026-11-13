@@ -364,3 +364,57 @@ function access_set_suspended(PDO $pdo, array $actor, int $id, bool $on): void
     }
     audit($pdo, (int)$actor['id'], $on ? 'access.pause' : 'access.resume', $id, []);
 }
+
+/**
+ * Step-by-step Cloudflare check for the "Run Cloudflare check" button. Never throws.
+ * @return array<int,array{ok:bool,label:string,detail:string}>
+ */
+function access_diagnose(array $config, ?callable $http = null): array
+{
+    $c = $config['cf_api'] ?? null;
+    $steps = [];
+    $add = static function (bool $ok, string $label, string $detail) use (&$steps): void {
+        $steps[] = ['ok' => $ok, 'label' => $label, 'detail' => $detail];
+    };
+    if (!is_array($c)) {
+        $add(false, 'Settings in config.php', 'There is no cf_api block in private/config.php.');
+        return $steps;
+    }
+    $missing = array_values(array_filter(['token', 'account_id', 'policy_id'], static fn (string $k): bool => trim((string)($c[$k] ?? '')) === ''));
+    if ($missing) {
+        $add(false, 'Settings in config.php', 'These are empty: ' . implode(', ', $missing) . '.');
+        return $steps;
+    }
+    $acc = (string)$c['account_id'];
+    $pol = (string)$c['policy_id'];
+    $accOk = preg_match('/^[0-9a-f]{32}$/', $acc) === 1;
+    $polOk = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $pol) === 1;
+    $tokOdd = $c['token'] !== trim((string)$c['token']) || preg_match('/\s/', (string)$c['token']) === 1;
+    $add($accOk && $polOk && !$tokOdd, 'Settings in config.php',
+        ($accOk ? '' : 'The account_id is not 32 letters/numbers (it has ' . strlen($acc) . ' characters). ')
+        . ($polOk ? '' : 'The policy_id does not look right (it should be like 8-4-4-4-12 letters/numbers; yours has ' . strlen($pol) . ' characters). ')
+        . ($tokOdd ? 'The token has a space or line break in it. ' : '')
+        . ($accOk && $polOk && !$tokOdd ? 'The three settings are present and look well-formed.' : ''));
+    $cf = new CfPolicy($c, $http);
+    $t = $cf->checkToken();
+    $add($t['ok'], 'Is the token accepted?', $t['detail']);
+    if (!$t['ok']) {
+        return $steps;
+    }
+    $l = $cf->listPolicies();
+    $add($l['ok'], 'Can the token see the account\'s policies?', $l['ok'] ? $l['detail'] : $l['detail'] . ' Usually the account_id is wrong, or the token was limited to a different account.');
+    if ($l['ok']) {
+        $names = array_map(static fn (array $p): string => $p['name'] . ' (' . $p['id'] . ')', $l['policies']);
+        $found = array_values(array_filter($l['policies'], static fn (array $p): bool => $p['id'] === $pol));
+        $add((bool)$found, 'Is your policy_id one of them?', $found
+            ? 'Yes: "' . $found[0]['name'] . '".'
+            : 'No. Policies in this account: ' . ($names ? implode('; ', $names) : 'none') . '. Use the id of the one called Email Access.');
+    }
+    try {
+        $emails = $cf->emails();
+        $add(true, 'Can it read the email list?', count($emails) . ' email' . (count($emails) === 1 ? '' : 's') . ' on the policy.');
+    } catch (Throwable $e) {
+        $add(false, 'Can it read the email list?', $e->getMessage());
+    }
+    return $steps;
+}

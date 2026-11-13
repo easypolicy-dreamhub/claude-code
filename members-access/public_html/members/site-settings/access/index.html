@@ -164,10 +164,10 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 4200);
     $('status').textContent = ''; setTimeout(function () { $('status').textContent = msg; }, 30);
   }
-  function req(method, body) {
+  function req(method, body, query) {
     var h = { 'Accept': 'application/json' };
     if (method !== 'GET') { h['Content-Type'] = 'application/json'; h['X-Requested-With'] = 'fetch'; }
-    return fetch(API, { method: method, headers: h, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
+    return fetch(API + (query || ''), { method: method, headers: h, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
       .then(function (r) { return r.json().catch(function () { return null; }).then(function (d) { return { r: r, d: d }; }); },
             function () { throw new Error('Could not reach the server. Check your connection and try again.'); })
       .then(function (x) {
@@ -202,13 +202,25 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     if (!c.configured) {
       b.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare is not connected yet. ' }), 'You can name people and tick tools, but adding or removing someone here will not change Zero Trust. Follow the “Connect Cloudflare” steps in the guide, then reload this page.'])]));
     } else if (!c.connected) {
-      b.appendChild(el('div', { 'class': 'banner bad' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Could not read the Cloudflare list. ' }), c.error || '', ' Check the token and policy settings in config.php.'])]));
+      b.appendChild(el('div', { 'class': 'banner bad' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Could not read the Cloudflare list. ' }), c.error || '', ' ', el('div', { style: 'margin-top:8px' }, [el('button', { type: 'button', 'class': 'btn small', text: 'Run Cloudflare check', onclick: runCheck })])])]));
     } else {
       var n = D.people.filter(function (p) { return p.in_cloudflare; }).length;
       var attn = D.people.filter(needsAttention).length;
       b.appendChild(el('div', { 'class': 'banner ' + (attn ? 'warn' : 'ok') }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare connected. ' }), n + ' email' + (n === 1 ? '' : 's') + ' on the list' + (attn ? ', ' + attn + ' need' + (attn === 1 ? 's' : '') + ' your attention (see “Needs setup”).' : ', all matched.')])]));
       if (c.other_rules) b.appendChild(el('div', { 'class': 'banner warn', style: 'margin-top:8px' }, [el('span', { 'class': 'dot' }), el('div', { text: 'The Cloudflare policy also has rules that are not plain emails (a list or a domain). Those are left exactly as they are.' })]));
     }
+  }
+
+  /* ---------- Cloudflare check ---------- */
+  function runCheck() {
+    var body = openDlg('Cloudflare check', 'Tests each step and says which one fails', function (b) { b.appendChild(el('p', { 'class': 'sum', text: 'Checking…' })); });
+    req('GET', null, '?diagnose=1').then(function (d) {
+      body.innerHTML = '';
+      d.steps.forEach(function (s) {
+        body.appendChild(el('div', { 'class': 'banner ' + (s.ok ? 'ok' : 'bad') }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: (s.ok ? 'OK: ' : 'Problem: ') + s.label }), el('div', { text: s.detail })])]));
+      });
+      body.appendChild(el('p', { 'class': 'hint', text: 'Fix the first problem shown, save config.php, reload this page and run the check again.' }));
+    }).catch(function (e) { body.innerHTML = ''; body.appendChild(el('p', { 'class': 'err', text: e.message })); });
   }
 
   /* ---------- main screen ---------- */

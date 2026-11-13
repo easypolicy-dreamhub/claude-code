@@ -50,6 +50,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
      ],
  ```
  Never paste the token anywhere else.
+ 7. If the screen shows a red "Could not read the Cloudflare list" bar, press **Run Cloudflare check**. It tests each step (settings, token, account, policy) and says in plain words which one fails.
 
 **5. Check it works.**
  1. Open **Members & Access**: you at the top, "Cloudflare connected" in green or amber.

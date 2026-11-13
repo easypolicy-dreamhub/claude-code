@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 /**
  * Members & Access (super admin only).
+ *   GET ?diagnose=1                      -> step-by-step Cloudflare check (for the "Run Cloudflare check" button)
  *   GET                                  -> everyone on the list, the tool catalog, and whether Cloudflare is connected
  *   POST {action:'add', email, name, type, tools?|copy_from?}      add on Cloudflare + this site (also "set up" a new email)
  *   POST {action:'update', id, name?, type?}
@@ -23,6 +24,9 @@ try {
     }
     $cf = CfPolicy::fromConfig($config);
     $method = $_SERVER['REQUEST_METHOD'];
+    if ($method === 'GET' && isset($_GET['diagnose'])) {
+        json_response(200, ['steps' => access_diagnose($config)]);
+    }
     if ($method === 'GET') {
         json_response(200, access_overview($pdo, $cf, load_member_map($pdo)) + ['me' => ['id' => (int)$me['id'], 'name' => $me['name']]]);
     }

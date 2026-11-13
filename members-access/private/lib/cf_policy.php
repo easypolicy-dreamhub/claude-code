@@ -117,6 +117,30 @@ final class CfPolicy
         return ['added' => $add, 'removed' => $removeNow];
     }
 
+    /** @return array{ok:bool,detail:string} is the token accepted by Cloudflare at all? */
+    public function checkToken(): array
+    {
+        try {
+            $r = $this->call('GET', self::BASE . '/user/tokens/verify');
+            $st = (string)($r['result']['status'] ?? '');
+            return ['ok' => $st === 'active', 'detail' => $st === 'active' ? 'The token is active.' : 'The token status is "' . $st . '".'];
+        } catch (HttpError $e) {
+            return ['ok' => false, 'detail' => $e->getMessage()];
+        }
+    }
+
+    /** @return array{ok:bool,detail:string,policies:array<int,array{id:string,name:string}>} every Access policy in the account */
+    public function listPolicies(): array
+    {
+        try {
+            $r = $this->call('GET', self::BASE . '/accounts/' . rawurlencode((string)$this->cfg['account_id']) . '/access/policies');
+            $list = array_map(static fn ($p): array => ['id' => (string)($p['id'] ?? ''), 'name' => (string)($p['name'] ?? '')], (array)($r['result'] ?? []));
+            return ['ok' => true, 'detail' => count($list) . ' polic' . (count($list) === 1 ? 'y' : 'ies') . ' found in this account.', 'policies' => $list];
+        } catch (HttpError $e) {
+            return ['ok' => false, 'detail' => $e->getMessage(), 'policies' => []];
+        }
+    }
+
     /** Sign the person out everywhere right now (their Cloudflare sessions end). */
     public function revoke(string $email): void
     {

@@ -243,6 +243,31 @@ check('overview: Cloudflare not set up', $ov['cloudflare']['configured'] === fal
 check('fromConfig: missing settings -> not connected', CfPolicy::fromConfig([]) === null && CfPolicy::fromConfig(['cf_api' => ['token' => 'x']]) === null);
 check('cf_sync_try: not connected is not an error', cf_sync_try([], ['a@x.com'], []) === 'not_connected');
 
+
+echo "\nCloudflare check (diagnose)\n";
+$cfgOk = ['cf_api' => ['token' => 'tok', 'account_id' => str_repeat('a', 32), 'policy_id' => 'bd462e1a-ff22-4975-8662-fc3c8801ac26']];
+$mk = function (array $opts) { return function (string $m, string $u, ?array $b, string $t) use ($opts): array {
+    if (str_ends_with($u, '/user/tokens/verify')) { return $opts['verify'] ?? ['success' => true, 'result' => ['status' => 'active']]; }
+    if (str_ends_with($u, '/access/policies')) { return $opts['list'] ?? ['success' => true, 'result' => [['id' => 'bd462e1a-ff22-4975-8662-fc3c8801ac26', 'name' => 'Email Access']]]; }
+    return $opts['get'] ?? ['success' => true, 'result' => ['include' => [['email' => ['email' => 'a@x.com']]]]];
+}; };
+$d = access_diagnose([]);
+check('no cf_api block is reported', !$d[0]['ok'] && str_contains($d[0]['detail'], 'no cf_api'));
+$d = access_diagnose(['cf_api' => ['token' => '', 'account_id' => 'x', 'policy_id' => '']]);
+check('empty settings are named', !$d[0]['ok'] && str_contains($d[0]['detail'], 'token') && str_contains($d[0]['detail'], 'policy_id'));
+$d = access_diagnose(['cf_api' => ['token' => 'tok', 'account_id' => 'abc', 'policy_id' => 'bd462e1a-ff22-4975-8662-fc3c8801ac2']], $mk([]));
+check('badly formed IDs are explained with their lengths', !$d[0]['ok'] && str_contains($d[0]['detail'], '3 characters') && str_contains($d[0]['detail'], '35 characters'));
+$d = access_diagnose($cfgOk, $mk(['verify' => ['success' => false, 'errors' => [['message' => 'Invalid API Token']]]]));
+check('a bad token stops at the token step', count($d) === 2 && !$d[1]['ok'] && str_contains($d[1]['detail'], 'Invalid API Token'));
+$d = access_diagnose($cfgOk, $mk(['list' => ['success' => false, 'errors' => [['message' => 'access.api.error.not_found']]]]));
+check('cannot list policies -> account id suspected', !$d[2]['ok'] && str_contains($d[2]['detail'], 'account_id is wrong'));
+$d = access_diagnose($cfgOk, $mk(['list' => ['success' => true, 'result' => [['id' => '11111111-2222-3333-4444-555555555555', 'name' => 'Email Access']]]]));
+check('policy id not in the account -> lists the real ones', !$d[3]['ok'] && str_contains($d[3]['detail'], 'Email Access (11111111-2222-3333-4444-555555555555)'));
+$d = access_diagnose($cfgOk, $mk([]));
+check('everything fine -> all steps OK', count($d) === 5 && !array_filter($d, fn ($x) => !$x['ok']));
+$d = access_diagnose($cfgOk, $mk(['get' => ['success' => false, 'errors' => [['message' => 'access.api.error.not_found']]]]));
+check('policy readable by list but not by id is reported on the last step', !end($d)['ok']);
+
 echo "\nReturning person\n";
 [$pdo, $you] = setup();
 $cf = fake_cf(['you@x.com'], $lr);
