@@ -75,6 +75,10 @@ a.app:active{ transform:scale(0.99); }
 
 .empty{ margin-top:2rem; color:var(--muted); }
 footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var(--muted); font-size:0.88rem; display:flex; flex-wrap:wrap; justify-content:space-between; gap:0.5rem; border-top:1px solid var(--line); }
+a.app.is-open{ background:#EEF6F0; border-color:#7FB394; box-shadow:inset 3px 0 0 #3F8F62; }
+a.app.is-open:hover{ background:#E5F1E8; border-color:#5FA07C; }
+:root[data-theme="dark"] a.app.is-open{ background:#1F3A2E; border-color:#3F8F62; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) a.app.is-open{ background:#1F3A2E; border-color:#3F8F62; } }
 .openpill{ display:inline-block; margin-left:0.5rem; padding:0.05rem 0.55rem; border-radius:999px; background:#E8F3EC; color:#17563A; font:700 0.72rem "DM Sans",system-ui,sans-serif; vertical-align:middle; letter-spacing:0.01em; }
 .toast{ position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); max-width:min(92vw,28rem); padding:0.8rem 1.1rem; border-radius:12px; background:var(--slate); color:#FFFFFF; font-weight:500; font-size:0.95rem; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,0.25); }
 @media (prefers-reduced-motion: reduce){ a.app{ transition:none; } }
@@ -196,7 +200,7 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
         link.innerHTML = '<span class="icon" aria-hidden="true"></span><span><div class="name"></div><div class="about"></div></span><svg class="go" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
         link.querySelector(".icon").textContent = a.icon || "🔗";
         link.querySelector(".name").textContent = a.name;
-        if (openTabs[a.key || a.name]) { var pill = document.createElement("span"); pill.className = "openpill"; pill.textContent = "Open"; link.querySelector(".name").appendChild(pill); }
+        if (openTabs[a.key || a.name]) { link.classList.add("is-open"); var pill = document.createElement("span"); pill.className = "openpill"; pill.textContent = "Open"; link.querySelector(".name").appendChild(pill); }
         link.querySelector(".about").textContent = a.about || "";
         link.setAttribute("aria-label", external ? a.name + " (opens in a new tab)" : a.name);
         if (a.note){ var nt = document.createElement("div"); nt.className = "note"; nt.textContent = a.note; link.children[1].appendChild(nt); }
