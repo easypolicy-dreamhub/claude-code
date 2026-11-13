@@ -168,11 +168,15 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     var h = { 'Accept': 'application/json' };
     if (method !== 'GET') { h['Content-Type'] = 'application/json'; h['X-Requested-With'] = 'fetch'; }
     return fetch(API + (query || ''), { method: method, headers: h, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
-      .then(function (r) { return r.json().catch(function () { return null; }).then(function (d) { return { r: r, d: d }; }); },
+      .then(function (r) { return r.text().then(function (t) { var d = null; try { d = JSON.parse(t); } catch (e) {} return { r: r, d: d, t: t }; }); },
             function () { throw new Error('Could not reach the server. Check your connection and try again.'); })
       .then(function (x) {
-        if (!x.d) throw new Error('Could not reach the server. Reload the page and try again.');
-        if (!x.r.ok) { var e = new Error(x.d.error || 'Something went wrong.'); e.status = x.r.status; throw e; }
+        if (!x.r.ok) {
+          var msg = (x.d && x.d.error) || 'Something went wrong';
+          var more = (x.d && x.d.detail) || (!x.d ? String(x.t || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) : (x.d.message || ''));
+          var e = new Error(msg + ' (HTTP ' + x.r.status + ')' + (more ? ': ' + more : '') + '.'); e.status = x.r.status; throw e;
+        }
+        if (!x.d) throw new Error('The server sent an answer this page could not read' + (x.t ? ': ' + String(x.t).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) : '') + '.');
         return x.d;
       });
   }

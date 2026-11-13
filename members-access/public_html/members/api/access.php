@@ -65,5 +65,6 @@ try {
     json_response($e->status, ['error' => $e->getMessage()]);
 } catch (Throwable $e) {
     error_log('access.php: ' . $e->getMessage());
-    json_response(500, ['error' => 'Server error.']);
+    // Only the super admin can reach this far, so the real reason is shown to help fix problems.
+    json_response(500, ['error' => 'Server error.', 'detail' => basename($e->getFile()) . ':' . $e->getLine() . ' ' . get_class($e) . ': ' . $e->getMessage()]);
 }
