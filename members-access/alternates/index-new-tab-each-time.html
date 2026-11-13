@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>E3 Advisor Toolkit | DreamHub E3</title>
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="apple-touch-icon" href="/images/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="apps.js"></script>
+<style>
+:root{
+  --slate:#24333A; --slate-2:#2F4049; --taupe:#B9AFA7; --brown:#6E625A;
+  --bg:#F4F2EF; --surface:#FFFFFF; --ink:#24333A; --muted:#5C6870; --line:#E2DDD8; --tile:#F4F2EF; --hover:#EFEAE5;
+  color-scheme: light only;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1A262C; --surface:#22323A; --ink:#F1ECE6; --muted:#B5ADA5; --line:#34464F; --tile:#2B3D46; --hover:#2A3B44; --brown:#CFC5BC; }
+}
+:root[data-theme="dark"]{ --bg:#1A262C; --surface:#22323A; --ink:#F1ECE6; --muted:#B5ADA5; --line:#34464F; --tile:#2B3D46; --hover:#2A3B44; --brown:#CFC5BC; }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+body{ margin:0; background:var(--bg); color:var(--ink); font:400 1rem/1.55 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  background-image:radial-gradient(rgba(36,51,58,0.06) 1px,transparent 1px); background-size:22px 22px; }
+a{ color:inherit; }
+:focus-visible{ outline:3px solid var(--taupe); outline-offset:3px; border-radius:8px; }
+
+.top{ position:relative; overflow:hidden; background-color:var(--slate); color:#FFFFFF;
+  background-image:radial-gradient(circle at 85% 10%,rgba(185,175,167,0.28),transparent 50%),linear-gradient(rgba(255,255,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.035) 1px,transparent 1px);
+  background-size:auto,48px 48px,48px 48px; }
+.top .mark{ position:absolute; right:-40px; top:-10px; width:280px; opacity:0.09; pointer-events:none; }
+.bar, .hero, main{ max-width:64rem; margin:0 auto; padding-left:1.25rem; padding-right:1.25rem; }
+.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-top:1rem; padding-bottom:1rem; position:relative; }
+.brand{ font-family:Poppins,system-ui,sans-serif; font-weight:700; font-size:1.1rem; text-decoration:none; color:#FFFFFF; }
+.brand span{ color:var(--taupe); }
+.back{ display:inline-flex; align-items:center; min-height:44px; padding:0 1rem; border:1px solid rgba(255,255,255,0.28); border-radius:999px; color:#FFFFFF; text-decoration:none; font-size:0.92rem; font-weight:500; }
+.back:hover{ background:rgba(255,255,255,0.08); }
+.hero{ position:relative; padding-top:1.5rem; padding-bottom:4.5rem; }
+.hero p.kicker{ margin:0 0 0.6rem; color:var(--taupe); font-weight:500; font-size:0.95rem; }
+.hero h1{ font-family:Poppins,system-ui,sans-serif; font-weight:700; font-size:clamp(2.1rem,6vw,3.2rem); line-height:1.05; letter-spacing:-0.02em; margin:0 0 0.6rem; }
+.hero p.intro{ margin:0; color:#CFD5D8; font-size:1.08rem; max-width:34rem; }
+
+main{ position:relative; margin-top:-2.4rem; padding-bottom:3rem; }
+.searchwrap{ position:relative; }
+.searchwrap svg{ position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+.search{ width:100%; min-height:3.4rem; padding:0.85rem 1rem 0.85rem 2.9rem; font:inherit; font-size:1rem; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 30px rgba(36,51,58,0.12); }
+.search:focus{ outline:none; border-color:var(--taupe); box-shadow:0 0 0 3px rgba(185,175,167,0.45),0 10px 30px rgba(36,51,58,0.12); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem; }
+.chip{ font:inherit; font-size:0.9rem; font-weight:500; min-height:40px; padding:0 0.95rem; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
+.chip[aria-pressed="true"]{ background:var(--slate); color:#FFFFFF; border-color:var(--slate); }
+
+section{ margin-top:2.2rem; }
+section h2{ font-family:Poppins,system-ui,sans-serif; font-weight:600; font-size:1.05rem; margin:0 0 0.8rem; display:flex; align-items:center; gap:0.6rem; }
+section h2 .n{ font-family:"DM Sans",system-ui,sans-serif; font-weight:500; font-size:0.85rem; color:var(--muted); }
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,19rem),1fr)); gap:0.85rem; margin:0; padding:0; list-style:none; }
+a.app{ height:100%; display:grid; grid-template-columns:3.1rem 1fr auto; gap:0.95rem; align-items:start; padding:1.1rem; background:var(--surface);
+  border:1px solid var(--line); border-radius:16px; text-decoration:none; color:inherit; transition:background .2s ease, border-color .2s ease, transform .2s ease; }
+a.app:hover{ background:var(--hover); border-color:var(--taupe); }
+a.app:active{ transform:scale(0.99); }
+.icon{ width:3.1rem; height:3.1rem; display:grid; place-items:center; font-size:1.5rem; background:var(--tile); border-radius:12px; }
+.name{ font-family:Poppins,system-ui,sans-serif; font-weight:600; font-size:1.02rem; line-height:1.3; margin-bottom:0.2rem; }
+.about{ color:var(--muted); font-size:0.93rem; }
+.note{ margin-top:0.5rem; font-size:0.84rem; color:var(--brown); padding-left:0.6rem; border-left:2px solid var(--taupe); }
+.go{ color:var(--muted); margin-top:0.2rem; }
+
+.empty{ margin-top:2rem; color:var(--muted); }
+footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var(--muted); font-size:0.88rem; display:flex; flex-wrap:wrap; justify-content:space-between; gap:0.5rem; border-top:1px solid var(--line); }
+@media (prefers-reduced-motion: reduce){ a.app{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="top">
+  <img class="mark" src="/images/e3mark.png" alt="" aria-hidden="true">
+  <div class="bar">
+    <a class="brand" href="/">Dream<span>Hub</span> E3</a>
+    <a class="back" href="/">Back to main site</a>
+  </div>
+  <div class="hero">
+    <p class="kicker">E3 member area</p>
+    <h1 id="title"></h1>
+    <p class="intro" id="intro"></p>
+  </div>
+</div>
+
+<main>
+  <div class="searchwrap">
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <label for="q" style="position:absolute;left:-9999px">Search tools</label>
+    <input id="q" class="search" type="search" placeholder="Search tools" autocomplete="off">
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Filter by group"></div>
+  <div id="list"></div>
+  <p id="empty" class="empty">Loading your tools&hellip;</p>
+</main>
+
+<footer>
+  <span id="count"></span>
+  <span>Embrace | Engage | Empower</span>
+</footer>
+
+<script>
+(function(){
+  var allApps = (typeof APPS !== "undefined") ? APPS : [];
+  // Nothing is shown until the server says which tools this person may use (Site Settings > Members & Access).
+  // The super admin sees every card. If the server cannot be reached, no cards are shown.
+  var apps = [];
+  var state = "loading";   // loading | ready | none | error | blocked
+  var blockedMsg = "";
+  document.getElementById("title").textContent = (typeof PAGE_TITLE !== "undefined") ? PAGE_TITLE : "E3 Advisor Toolkit";
+  document.getElementById("intro").textContent = (typeof PAGE_INTRO !== "undefined") ? PAGE_INTRO : "";
+
+  var listEl = document.getElementById("list"), emptyEl = document.getElementById("empty"), chipsEl = document.getElementById("chips"), q = document.getElementById("q");
+  var groupNames = [];
+  var active = "All";
+
+  function buildChips(){
+    groupNames = [];
+    apps.forEach(function(a){ var g = a.group || "Other"; if (groupNames.indexOf(g) < 0) groupNames.push(g); });
+    if (active !== "All" && groupNames.indexOf(active) < 0) active = "All";
+    chipsEl.innerHTML = "";
+    if (!apps.length) return;
+    ["All"].concat(groupNames).forEach(function(g){
+      var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = g;
+      b.setAttribute("aria-pressed", g === active ? "true" : "false");
+      b.addEventListener("click", function(){ active = g; Array.prototype.forEach.call(chipsEl.children, function(c){ c.setAttribute("aria-pressed", c.textContent === g ? "true" : "false"); }); render(); });
+      chipsEl.appendChild(b);
+    });
+  }
+
+  function render(){
+    var f = q.value.trim().toLowerCase();
+    var shown = apps.filter(function(a){
+      var inGroup = active === "All" || (a.group || "Other") === active;
+      var text = [a.name, a.about, a.group, a.note].join(" ").toLowerCase();
+      return inGroup && (!f || text.indexOf(f) >= 0);
+    });
+    listEl.innerHTML = "";
+    groupNames.forEach(function(g){
+      var items = shown.filter(function(a){ return (a.group || "Other") === g; });
+      if (!items.length) return;
+      var sec = document.createElement("section"), h = document.createElement("h2"), n = document.createElement("span"), ul = document.createElement("ul");
+      h.textContent = g; n.className = "n"; n.textContent = items.length + (items.length === 1 ? " tool" : " tools"); h.appendChild(n);
+      ul.className = "grid";
+      items.forEach(function(a){
+        var li = document.createElement("li"), link = document.createElement("a");
+        link.className = "app"; link.href = a.url; link.target = "_blank"; link.rel = "noopener";
+        link.innerHTML = '<span class="icon" aria-hidden="true"></span><span><div class="name"></div><div class="about"></div></span><svg class="go" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
+        link.querySelector(".icon").textContent = a.icon || "🔗";
+        link.querySelector(".name").textContent = a.name;
+        link.querySelector(".about").textContent = a.about || "";
+        link.setAttribute("aria-label", a.name + " (opens in a new tab)");
+        if (a.note){ var nt = document.createElement("div"); nt.className = "note"; nt.textContent = a.note; link.children[1].appendChild(nt); }
+        li.appendChild(link); ul.appendChild(li);
+      });
+      sec.appendChild(h); sec.appendChild(ul); listEl.appendChild(sec);
+    });
+    var msg = "";
+    if (state === "loading") msg = "Loading your tools…";
+    else if (state === "error") msg = "Could not load your tools. Reload the page, or sign in again.";
+    else if (state === "blocked") msg = blockedMsg;
+    else if (state === "none") msg = "You do not have any tools yet. Ask the super admin to switch some on for you.";
+    else if (!shown.length) msg = "No tool matches that. Clear the search or choose All to see everything.";
+    emptyEl.textContent = msg;
+    emptyEl.hidden = msg === "";
+    document.getElementById("count").textContent = state === "ready" ? apps.length + (apps.length === 1 ? " tool" : " tools") + " in the toolkit" : "";
+  }
+  q.addEventListener("input", render);
+  buildChips();
+  render();
+
+  // Ask the server who this is and which tools they may use. The server also checks every tool page itself,
+  // so this only decides which cards to show.
+  fetch("/members/api/me.php", { credentials: "same-origin", headers: { "Accept": "application/json" } })
+    .then(function(r){ return r.json().catch(function(){ return null; }).then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(x){
+      var d = x.ok ? x.d : null;
+      if (!x.ok && x.status === 403 && x.d && x.d.error) { state = "blocked"; blockedMsg = x.d.error; render(); return; }
+      if (!d || !d.member) { state = "error"; render(); return; }
+      var isAdmin = d.member.is_admin === true;
+      var mine = Array.isArray(d.tools) ? d.tools : [];
+      apps = allApps.filter(function(a){ return isAdmin || (!a.adminOnly && a.key && mine.indexOf(a.key) >= 0); });
+      state = apps.length ? "ready" : "none";
+      buildChips();
+      render();
+    })
+    .catch(function(){ state = "error"; render(); });
+})();
+</script>
+</body>
+</html>

@@ -34,4 +34,4 @@ if ($hit['kind'] === 'php') {
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: private, no-cache');
 header('X-Content-Type-Options: nosniff');
-readfile($hit['file']);
+echo gate_inject((string)file_get_contents($hit['file']));

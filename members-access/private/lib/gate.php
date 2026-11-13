@@ -65,6 +65,17 @@ function gate_resolve(string $membersDir, string $rel): ?array
     return ['tool' => $tool, 'file' => $file, 'kind' => $kind];
 }
 
+/** Adds the tab helper (public_html/members/tool-tab.js) to a tool page so its "E3 Toolkit" link can close the tab. */
+function gate_inject(string $html): string
+{
+    if (stripos($html, 'tool-tab.js') !== false) {
+        return $html;
+    }
+    $tag = '<script src="/members/tool-tab.js" defer></script>';
+    $pos = strripos($html, '</body>');
+    return $pos === false ? $html . $tag : substr($html, 0, $pos) . $tag . substr($html, $pos);
+}
+
 /** The one standard page for "you may not open this", used by every tool. Ends the request. */
 function render_denied(int $status, string $headline, string $detail, array $config = []): never
 {

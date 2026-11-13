@@ -137,6 +137,21 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
     });
   }
 
+  // Each tool lives in its own named tab. Clicking a tool that is already open goes back to that tab (it is not reloaded);
+  // the tool's "E3 Toolkit" link closes it again (public_html/members/tool-tab.js). If the browser blocks the new tab,
+  // or the click is a ctrl/cmd/middle click, the link just behaves normally.
+  function openTool(ev, a){
+    if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    var w = null;
+    try { w = window.open("", "e3tool-" + (a.key || a.name)); } catch (e) { w = null; }
+    if (!w) return;                       // blocked: let the link open normally
+    ev.preventDefault();
+    var fresh = false;
+    try { fresh = w.location.href === "about:blank"; } catch (e) { fresh = false; }
+    if (fresh) { w.location.href = a.url; }
+    else { try { w.focus(); } catch (e) {} }
+  }
+
   function render(){
     var f = q.value.trim().toLowerCase();
     var shown = apps.filter(function(a){
@@ -157,6 +172,7 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
         var external = /^https?:\/\//i.test(a.url) && a.url.indexOf(location.origin) !== 0;
         link.className = "app"; link.href = a.url;
         if (external) { link.target = "_blank"; link.rel = "noopener"; }
+        else { link.addEventListener("click", function(ev){ openTool(ev, a); }); }
         link.innerHTML = '<span class="icon" aria-hidden="true"></span><span><div class="name"></div><div class="about"></div></span><svg class="go" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
         link.querySelector(".icon").textContent = a.icon || "🔗";
         link.querySelector(".name").textContent = a.name;

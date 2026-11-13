@@ -326,6 +326,11 @@ check('gate: Site Admin page for a non-admin -> super admin only', gate_decide($
 check('gate: super admin -> in everywhere', gate_decide($pdo, $you, $ev)['ok'] && gate_decide($pdo, $you, $tm)['ok']);
 $inactive = $cm; $inactive['is_active'] = 0;
 check('gate: removed person -> blocked even with ticks', !gate_decide($pdo, $inactive, $mr)['ok']);
+
+check('gate adds the tab helper before </body>', gate_inject('<html><body><a href="/members/">x</a></body></html>') === '<html><body><a href="/members/">x</a><script src="/members/tool-tab.js" defer></script></body></html>');
+check('...once only', substr_count(gate_inject(gate_inject('<body></body>')), 'tool-tab.js') === 1);
+check('...and at the end when a page has no </body>', gate_inject('<p>hi</p>') === '<p>hi</p><script src="/members/tool-tab.js" defer></script>');
+check('...using the LAST </body>', substr_count(gate_inject('<body>a</body> text </BODY>'), 'tool-tab.js') === 1 && str_ends_with(gate_inject('<body>a</body> text </BODY>'), '</BODY>'));
 exec('rm -rf ' . escapeshellarg($dir));
 exec('rm -rf ' . escapeshellarg($bridgeDir));
 finish();
