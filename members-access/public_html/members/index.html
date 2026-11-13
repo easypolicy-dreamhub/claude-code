@@ -114,7 +114,8 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
   // Nothing is shown until the server says which tools this person may use (Site Settings > Members & Access).
   // The super admin sees every card. If the server cannot be reached, no cards are shown.
   var apps = [];
-  var state = "loading";   // loading | ready | none | error
+  var state = "loading";   // loading | ready | none | error | blocked
+  var blockedMsg = "";
   document.getElementById("title").textContent = (typeof PAGE_TITLE !== "undefined") ? PAGE_TITLE : "E3 Advisor Toolkit";
   document.getElementById("intro").textContent = (typeof PAGE_INTRO !== "undefined") ? PAGE_INTRO : "";
 
@@ -166,6 +167,7 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
     var msg = "";
     if (state === "loading") msg = "Loading your tools…";
     else if (state === "error") msg = "Could not load your tools. Reload the page, or sign in again.";
+    else if (state === "blocked") msg = blockedMsg;
     else if (state === "none") msg = "You do not have any tools yet. Ask the super admin to switch some on for you.";
     else if (!shown.length) msg = "No tool matches that. Clear the search or choose All to see everything.";
     emptyEl.textContent = msg;
@@ -179,8 +181,10 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
   // Ask the server who this is and which tools they may use. The server also checks every tool page itself,
   // so this only decides which cards to show.
   fetch("/members/api/me.php", { credentials: "same-origin", headers: { "Accept": "application/json" } })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
+    .then(function(r){ return r.json().catch(function(){ return null; }).then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(x){
+      var d = x.ok ? x.d : null;
+      if (!x.ok && x.status === 403 && x.d && x.d.error) { state = "blocked"; blockedMsg = x.d.error; render(); return; }
       if (!d || !d.member) { state = "error"; render(); return; }
       var isAdmin = d.member.is_admin === true;
       var mine = Array.isArray(d.tools) ? d.tools : [];

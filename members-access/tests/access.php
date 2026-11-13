@@ -9,6 +9,7 @@ require_once __DIR__ . '/helpers.php';
 function db(): PDO {
     $pdo = fresh_db();
     $pdo->exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT 'team'");
+    $pdo->exec('ALTER TABLE members ADD COLUMN is_suspended INTEGER NOT NULL DEFAULT 0');
     $pdo->exec('CREATE TABLE tool_access (member_id INTEGER NOT NULL, tool_key TEXT NOT NULL, PRIMARY KEY (member_id, tool_key))');
     return $pdo;
 }
@@ -102,6 +103,32 @@ $dm = load_member_map($pdo)[$david['id']];
 check('Team member -> Admin leaves the tree (no upline), ticks kept', member_type($dm) === 'admin' && $dm['upline_id'] === null && tools_of($pdo, 'david@x.com') === basic_keys());
 throws('bad type on update', 422, fn () => access_update($pdo, $you, $david['id'], ['type' => 'king']));
 throws('super admin cannot be edited here', 403, fn () => access_update($pdo, $you, $you['id'], ['name' => 'X']));
+
+echo "\nPause (suspend)\n";
+[$pdo, $you] = setup();
+$p1 = access_add($pdo, null, $you, ['email' => 'pause@x.com', 'name' => 'Pause Me', 'type' => 'team']);
+$row = fn () => load_member_map($pdo)[$p1['id']];
+check('not paused to start', !(int)$row()['is_suspended']);
+member_access_check($row() + ['is_active' => 1]);
+check('login check lets an active, unpaused member through', true);
+access_set_suspended($pdo, $you, $p1['id'], true);
+throws('paused member is refused at the login check', 403, fn () => member_access_check($row()));
+try { member_access_check($row()); } catch (HttpError $e) { check('...with a plain message', $e->getMessage() === 'Your access is paused. Please contact your admin.'); }
+check('paused: ticks and team place are kept', tools_of($pdo, 'pause@x.com') === basic_keys() && $row()['upline_id'] === $you['id'] && (int)$row()['is_active'] === 1);
+$ov = access_overview($pdo, null, load_member_map($pdo));
+check('overview marks them paused', array_column($ov['people'], null, 'email')['pause@x.com']['suspended'] === true);
+access_set_suspended($pdo, $you, $p1['id'], false);
+member_access_check($row());
+check('resume -> allowed again', !(int)$row()['is_suspended']);
+throws('super admin cannot be paused', 403, fn () => access_set_suspended($pdo, $you, $you['id'], true));
+throws('unknown person', 404, fn () => access_set_suspended($pdo, $you, 9999, true));
+$susAdmin = ['is_active' => 1, 'is_admin' => 1, 'is_suspended' => 1];
+member_access_check($susAdmin);
+check('a super admin flag is never locked out by a stray pause flag', true);
+$old = ['is_active' => 1, 'is_admin' => 0];
+member_access_check($old);
+check('works before the column exists (older database)', true);
+throws('removed member still refused', 403, fn () => member_access_check(['is_active' => 0, 'is_admin' => 0]));
 
 echo "\nCloudflare\n";
 [$pdo, $you] = setup();

@@ -95,14 +95,14 @@ function access_overview(PDO $pdo, ?CfPolicy $cf, array $map): array
         $seen[$m['email']] = true;
         $people[] = [
             'id' => (int)$m['id'], 'email' => $m['email'], 'name' => $m['name'], 'type' => member_type($m),
-            'super' => tool_is_super($m), 'active' => (bool)$m['is_active'], 'in_cloudflare' => $inCf,
+            'super' => tool_is_super($m), 'active' => (bool)$m['is_active'], 'in_cloudflare' => $inCf, 'suspended' => !empty($m['is_suspended']),
             'tools' => tool_is_super($m) ? $grantable : array_values(array_intersect($grantable, $ticks[(int)$m['id']] ?? [])),
             'status' => !$m['is_active'] ? 'removed_still_in_cloudflare' : ($inCf === false ? 'not_in_cloudflare' : 'ok'),
         ];
     }
     foreach ($cfEmails ?? [] as $e) {
         if (!isset($seen[$e])) {
-            $people[] = ['id' => null, 'email' => $e, 'name' => '', 'type' => null, 'super' => false, 'active' => false, 'in_cloudflare' => true, 'tools' => [], 'status' => 'new'];
+            $people[] = ['id' => null, 'email' => $e, 'name' => '', 'type' => null, 'super' => false, 'active' => false, 'in_cloudflare' => true, 'tools' => [], 'suspended' => false, 'status' => 'new'];
         }
     }
     usort($people, static function (array $a, array $b): int {
@@ -312,4 +312,18 @@ function access_add_to_cloudflare(PDO $pdo, ?CfPolicy $cf, array $actor, string 
     $cf->change([$email], [], access_protected_emails($map));
     audit($pdo, (int)$actor['id'], 'access.cf_add', (int)$m['id'], ['email' => $email]);
     return ['email' => $email, 'cloudflare' => 'ok'];
+}
+
+/** Pause or resume someone completely. Blocked at the login check, so every page and every data call stops at once. */
+function access_set_suspended(PDO $pdo, array $actor, int $id, bool $on): void
+{
+    $map = load_member_map($pdo);
+    if (!isset($map[$id]) || !$map[$id]['is_active']) {
+        throw new HttpError(404, 'Person not found.');
+    }
+    if (tool_is_super($map[$id]) || $id === (int)$actor['id']) {
+        throw new HttpError(403, 'The super admin cannot be paused.');
+    }
+    $pdo->prepare('UPDATE members SET is_suspended = ? WHERE id = ?')->execute([$on ? 1 : 0, $id]);
+    audit($pdo, (int)$actor['id'], $on ? 'access.pause' : 'access.resume', $id, []);
 }

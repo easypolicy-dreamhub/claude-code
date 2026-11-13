@@ -7,6 +7,7 @@ require_once __DIR__ . '/../private/lib/activity.php';
 require_once __DIR__ . '/helpers.php';
 $pdo = fresh_db();
 $pdo->exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT 'team'");
+$pdo->exec('ALTER TABLE members ADD COLUMN is_suspended INTEGER NOT NULL DEFAULT 0');
 $pdo->exec('CREATE TABLE tool_access (member_id INTEGER NOT NULL, tool_key TEXT NOT NULL, PRIMARY KEY (member_id, tool_key))');
 $you = create_member($pdo, null, ['email' => 'you@x.com', 'name' => 'You', 'rank' => 'group_manager', 'is_admin' => true, 'referral_code' => 'you']);
 $you = load_member_map($pdo)[$you['id']];

@@ -5,6 +5,9 @@ SET NAMES utf8mb4;
 -- Team member (default, everyone today), Admin (staff with their own job) or Tester.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS member_type ENUM('team','admin','tester') NOT NULL DEFAULT 'team' AFTER is_team_admin;
 
+-- Pause switch: a paused person is blocked everywhere (pages and data) but keeps their record, team place and candidates.
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_suspended TINYINT(1) NOT NULL DEFAULT 0 AFTER member_type;
+
 -- One row per person per tool they may use. The super admin needs no rows (always has every tool).
 CREATE TABLE IF NOT EXISTS tool_access (
   member_id INT UNSIGNED NOT NULL,

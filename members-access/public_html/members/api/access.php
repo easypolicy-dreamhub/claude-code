@@ -8,6 +8,7 @@ declare(strict_types=1);
  *   POST {action:'update', id, name?, type?}
  *   POST {action:'tool', id, tool, on}   switch one tool for one person
  *   POST {action:'tools', id, tools[]}   replace one person's tools
+ *   POST {action:'suspend', id, on}      pause / resume someone completely (blocked everywhere, nothing deleted)
  *   POST {action:'remove', email}        Admin / Tester: off the site and Cloudflare, signed out
  *   POST {action:'cf_add', email}        put someone already on this site onto Cloudflare
  */
@@ -42,6 +43,9 @@ try {
             break;
         case 'tools':
             access_set_tools($pdo, $me, (int)($in['id'] ?? 0), is_array($in['tools'] ?? null) ? $in['tools'] : []);
+            break;
+        case 'suspend':
+            access_set_suspended($pdo, $me, (int)($in['id'] ?? 0), ($in['on'] ?? false) === true);
             break;
         case 'remove':
             $result = access_remove($pdo, $cf, $me, (string)($in['email'] ?? ''));

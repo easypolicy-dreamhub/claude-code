@@ -5,6 +5,7 @@ One screen, **Site Settings › Members & Access** (`/members/site-settings/acce
 - sees **every email on the Cloudflare "Email Access" policy**, and gives each a **name** and a **type** (Team member, Admin, Tester)
 - **adds / removes** people, which updates Cloudflare for you (removal also signs them out at once)
 - switches **each tool on or off per person** (by person, or by tool)
+- **pauses** anyone with one switch: blocked from every page and all data at once, nothing deleted, resume any time
 
 The super admin always has every tool. Testimonials, Events, Site Settings and Members & Access are super admin only and can never be given to anyone.
 Every tool page is **checked on the server** and shows one standard "You don't have access to …" page, so a hidden tool cannot be opened by typing its address.
@@ -15,6 +16,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 |---|---|
 | `private/schema_phase10.sql` | new: run in phpMyAdmin (step 2) |
 | `private/lib/tools.php`, `access.php`, `cf_policy.php`, `gate.php` | new |
+| `private/lib/auth.php` | replace: the login check that refuses paused people |
 | `private/lib/team.php`, `activity.php` | replace: Admins and Testers stay out of the team tree and Team Activity |
 | `public_html/members/.htaccess` | new: sends tool pages through the gate |
 | `public_html/members/gate.php` | new |
@@ -27,9 +29,9 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 ## Steps
 
 **1. Back up** (2 minutes). In File Manager, compress `public_html/members` and `private/lib` into zips and keep them. Also check these sizes before you start. If any differs, stop and tell Claude (it means a newer edit is on the server):
-`members/api/team.php` 6492 bytes, `members/api/me.php` 459, `members/team/team.js` 21014, `private/lib/team.php` 19947, `private/lib/activity.php` 8140.
+`members/api/team.php` 6492 bytes, `members/api/me.php` 459, `members/team/team.js` 21014, `private/lib/team.php` 19947, `private/lib/activity.php` 8140, `private/lib/auth.php` 1379.
 
-**2. Database** (before uploading). phpMyAdmin › your database (`dreamhub_members`) › **SQL** tab › paste the contents of `private/schema_phase10.sql` › Go. Run it **once**. It adds the person types, a table for the ticks, and gives every current active member the tools they see today (everything except Monthly Report and the Site Admin tools) so nobody loses anything on day one.
+**2. Database** (before uploading). phpMyAdmin › your database (`dreamhub_members`) › **SQL** tab › paste the contents of `private/schema_phase10.sql` › Go. Run it **once**. It adds the person types, the pause switch, a table for the ticks, and gives every current active member the tools they see today (everything except Monthly Report and the Site Admin tools) so nobody loses anything on day one.
 
 **3. Upload.** Upload the zip to your home folder and **Extract**.
 
@@ -64,6 +66,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 
 ## Good to know
 
+- **Pause** blocks the person at the login check every page and data call uses, so it stops everything on this site at once (they can still pass Cloudflare). The Client Portal has its own login, so also switch it off on the Team page for them. To remove someone completely, use Remove.
 - **Client Portal** keeps its own switch on the Team page and always shows its card; its own Cloudflare app protects it.
 - **HNW Coach** opens in Gemini: switching it off only hides the card. Gemini's own sharing is what really blocks it.
 - **Team members** are still removed on the Team page (it looks after their team and candidates). It now also removes them from Cloudflare and signs them out.
