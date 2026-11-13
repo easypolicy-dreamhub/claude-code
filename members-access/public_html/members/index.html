@@ -75,6 +75,8 @@ a.app:active{ transform:scale(0.99); }
 
 .empty{ margin-top:2rem; color:var(--muted); }
 footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var(--muted); font-size:0.88rem; display:flex; flex-wrap:wrap; justify-content:space-between; gap:0.5rem; border-top:1px solid var(--line); }
+.openpill{ display:inline-block; margin-left:0.5rem; padding:0.05rem 0.55rem; border-radius:999px; background:#E8F3EC; color:#17563A; font:700 0.72rem "DM Sans",system-ui,sans-serif; vertical-align:middle; letter-spacing:0.01em; }
+.toast{ position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); max-width:min(92vw,28rem); padding:0.8rem 1.1rem; border-radius:12px; background:var(--slate); color:#FFFFFF; font-weight:500; font-size:0.95rem; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,0.25); }
 @media (prefers-reduced-motion: reduce){ a.app{ transition:none; } }
 </style>
 </head>
@@ -102,6 +104,7 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
   <div id="list"></div>
   <p id="empty" class="empty">Loading your tools&hellip;</p>
 </main>
+<div id="toast" class="toast" role="status" hidden></div>
 
 <footer>
   <span id="count"></span>
@@ -140,17 +143,34 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
   // Each tool lives in its own named tab. Clicking a tool that is already open goes back to that tab (it is not reloaded);
   // the tool's "E3 Toolkit" link closes it again (public_html/members/tool-tab.js). If the browser blocks the new tab,
   // or the click is a ctrl/cmd/middle click, the link just behaves normally.
+  var openTabs = {};                      // tool key -> its tab, while we know it is open
+  function say(msg){
+    var t = document.getElementById("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(say.t); say.t = setTimeout(function(){ t.hidden = true; }, 4200);
+  }
   function openTool(ev, a){
     if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-    var w = null;
-    try { w = window.open("", "e3tool-" + (a.key || a.name)); } catch (e) { w = null; }
+    var key = a.key || a.name, w = null;
+    try { w = window.open("", "e3tool-" + key); } catch (e) { w = null; }
     if (!w) return;                       // blocked: let the link open normally
     ev.preventDefault();
     var fresh = false;
     try { fresh = w.location.href === "about:blank"; } catch (e) { fresh = false; }
-    if (fresh) { w.location.href = a.url; }
-    else { try { w.focus(); } catch (e) {} }
+    openTabs[key] = w;
+    if (fresh) { w.location.href = a.url; render(); }
+    else {
+      try { w.focus(); } catch (e) {}
+      // Browsers do not let a page switch tabs for you, so say where it is.
+      say(a.name + " is already open in another tab. Switch to that tab to continue.");
+      render();
+    }
   }
+  // Show a small "Open" tag on cards whose tab is open; drop it when that tab is closed.
+  setInterval(function(){
+    var changed = false;
+    Object.keys(openTabs).forEach(function(k){ var w = openTabs[k]; var gone = true; try { gone = !w || w.closed; } catch (e) {} if (gone) { delete openTabs[k]; changed = true; } });
+    if (changed) render();
+  }, 1500);
 
   function render(){
     var f = q.value.trim().toLowerCase();
@@ -176,6 +196,7 @@ footer{ max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 2.5rem; color:var
         link.innerHTML = '<span class="icon" aria-hidden="true"></span><span><div class="name"></div><div class="about"></div></span><svg class="go" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>';
         link.querySelector(".icon").textContent = a.icon || "🔗";
         link.querySelector(".name").textContent = a.name;
+        if (openTabs[a.key || a.name]) { var pill = document.createElement("span"); pill.className = "openpill"; pill.textContent = "Open"; link.querySelector(".name").appendChild(pill); }
         link.querySelector(".about").textContent = a.about || "";
         link.setAttribute("aria-label", external ? a.name + " (opens in a new tab)" : a.name);
         if (a.note){ var nt = document.createElement("div"); nt.className = "note"; nt.textContent = a.note; link.children[1].appendChild(nt); }
