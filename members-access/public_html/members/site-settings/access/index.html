@@ -190,7 +190,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
   var byId = function (id) { return D.people.filter(function (p) { return p.id === id; })[0]; };
   var byEmail = function (e) { return D.people.filter(function (p) { return p.email === e; })[0]; };
   var needsAttention = function (p) { return p.status !== 'ok'; };
-  var flagText = { 'paused': 'Paused: blocked everywhere', 'new': 'New on Cloudflare: not set up yet', 'not_in_cloudflare': 'Not on Cloudflare: cannot log in', 'removed_still_in_cloudflare': 'Removed, but still on Cloudflare' };
+  var flagText = { 'paused': 'Paused: blocked everywhere', 'new': 'On Cloudflare, not set up here yet', 'not_in_cloudflare': 'Not on Cloudflare: cannot log in', 'removed_still_in_cloudflare': 'Removed, but still on Cloudflare' };
   var catByGroup = function () {
     return D.groups.map(function (g) { return { group: g, tools: D.catalog.filter(function (t) { return t.group === g; }) }; }).filter(function (x) { return x.tools.length; });
   };
@@ -277,7 +277,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
       var main = el('div', {}, [title, el('div', { 'class': 'em', text: p.email })]);
       if (p.suspended) main.appendChild(el('span', { 'class': 'flag', text: flagText.paused }));
       if (p.status !== 'ok') main.appendChild(el('span', { 'class': 'flag', text: flagText[p.status] }));
-      var count = p.super ? 'All tools' : (p.status === 'new' ? 'No tools' : p.tools.length + ' of ' + total + ' tools');
+      var count = p.super ? 'All tools' : (p.status === 'new' ? (p.tools.indexOf('client-portal') >= 0 ? 'Client Portal only' : 'No tools yet') : p.tools.length + ' of ' + total + ' tools');
       main.appendChild(el('div', { 'class': 'cnt-m', text: (p.type ? typeName(p.type) + ' · ' : '') + count }));
       var meta = el('div', { 'class': 'meta' }, [
         p.super ? el('span', { 'class': 'badge super', text: 'Super admin' }) : (p.type ? el('span', { 'class': 'badge ' + p.type, text: typeName(p.type) }) : null),
@@ -468,7 +468,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     var start = type === 'team' ? 'basic' : 'none';
     openDlg(title, '', function (body) {
       var err = el('p', { 'class': 'err', role: 'alert', hidden: true });
-      if (existing && existing.status === 'new') body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', { text: 'This email is on the Cloudflare list but has no name or tools yet. Until you set it up they get nothing.' })]));
+      if (existing && existing.status === 'new') body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', { text: 'This email is already on the Cloudflare list, so nothing changes there. It just has no name or toolkit tools here yet' + (existing.tools.indexOf('client-portal') >= 0 ? ', and it already uses the Client Portal (that stays on).' : '. Until you set it up, they get no toolkit tools.') })]));
       if (existing && existing.status === 'removed_still_in_cloudflare') {
         body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Removed on this site, but the email is still on Cloudflare. ' }), el('button', { type: 'button', 'class': 'btn danger small', style: 'margin-top:8px', text: 'Finish removing from Cloudflare', onclick: function (ev) {
           ev.target.disabled = true;
@@ -514,7 +514,9 @@ input[readonly]{background:var(--tile);color:var(--muted)}
         req('POST', payload).then(function (d) {
           take(d); dlg.close();
           var cf = d.result && d.result.cloudflare;
-          toast((nameIn.value.trim() || emailIn.value.trim()) + ' added.' + (cf === 'ok' ? ' Cloudflare updated, they can log in now.' : ' Cloudflare is not connected, so add the email in Zero Trust yourself.'));
+          var who = nameIn.value.trim() || emailIn.value.trim();
+          toast(!cf || cf === 'not_connected' ? who + ' saved. Cloudflare is not connected, so add the email in Zero Trust yourself.'
+            : (d.result.cloudflare_added ? who + ' added. Cloudflare updated, they can log in now.' : who + ' set up. Their email was already on Cloudflare, so nothing changed there.'));
         }).catch(function (e) { go.disabled = false; err.textContent = e.message; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); });
       });
       body.appendChild(el('div', {}, [go]));

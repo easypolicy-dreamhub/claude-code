@@ -121,7 +121,8 @@ function access_overview(PDO $pdo, ?CfPolicy $cf, array $map): array
     }
     foreach ($cfEmails ?? [] as $e) {
         if (!isset($seen[$e])) {
-            $people[] = ['id' => null, 'email' => $e, 'name' => '', 'type' => null, 'super' => false, 'active' => false, 'in_cloudflare' => true, 'tools' => [], 'suspended' => false, 'status' => 'new'];
+            $people[] = ['id' => null, 'email' => $e, 'name' => '', 'type' => null, 'super' => false, 'active' => false, 'in_cloudflare' => true,
+                'tools' => in_array($e, $portalOn, true) ? ['client-portal'] : [], 'suspended' => false, 'status' => 'new'];
         }
     }
     usort($people, static function (array $a, array $b): int {
@@ -170,10 +171,12 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
 
     access_trace('add: checked, type=' . $type . ', tools=' . count($tools));
     $cfState = 'not_connected';
+    $cfAdded = false;
     if ($cf !== null) {
-        $cf->change([$email], [], access_protected_emails($map));
+        $changed = $cf->change([$email], [], access_protected_emails($map));
+        $cfAdded = in_array($email, $changed['added'], true);   // false = they were already on the Cloudflare list
         $cfState = 'ok';
-        access_trace('add: cloudflare list updated');
+        access_trace('add: cloudflare list ' . ($cfAdded ? 'updated' : 'already had them'));
     }
 
     $pdo->beginTransaction();
@@ -205,19 +208,20 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
         access_trace('add: database step failed: ' . $e->getMessage());
         throw $e;
     }
-    $portal = 'unchanged';
-    $wantPortal = in_array('client-portal', $tools, true);
-    if ($wantPortal || portal_enabled($email)) {
+    // Setting someone up only ever switches the Client Portal ON when asked. It is never switched off here, because a person
+    // who is already on Cloudflare may already be using it (switch it off later on their own row if you want).
+    $portal = portal_enabled($email) ? 'on' : 'unchanged';
+    if (in_array('client-portal', $tools, true)) {
         try {
-            portal_set($email, $name, $wantPortal);
-            $portal = $wantPortal ? 'on' : 'off';
+            portal_set($email, $name, true);
+            $portal = 'on';
         } catch (Throwable $e) {
             $portal = 'failed';
             error_log('access_add portal: ' . $e->getMessage());
         }
     }
     access_trace('add: finished, portal=' . $portal);
-    return ['id' => $id, 'email' => $email, 'cloudflare' => $cfState, 'portal' => $portal];
+    return ['id' => $id, 'email' => $email, 'cloudflare' => $cfState, 'cloudflare_added' => $cfAdded, 'portal' => $portal];
 }
 
 /**

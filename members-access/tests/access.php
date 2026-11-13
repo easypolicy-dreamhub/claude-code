@@ -132,6 +132,18 @@ access_set_tool($pdo, $you, $pa['id'], 'client-portal', true);
 $cp2 = access_add($pdo, null, $you, ['email' => 'cp2@x.com', 'name' => 'Cp2', 'type' => 'tester', 'copy_from' => $pa['id']]);
 check('"copy from" copies the Client Portal too', portal_enabled('cp2@x.com') && !portal_enabled('cp@x.com'));
 $r = access_add($pdo, null, $you, ['email' => 'all@x.com', 'name' => 'All', 'type' => 'admin', 'tools' => switchable_keys()]);
+$ex1 = access_add($pdo, null, $you, ['email' => 'portaluser@x.com', 'name' => 'PU', 'type' => 'tester', 'tools' => []]);
+check('a brand-new person is not on the Client Portal', !portal_enabled('portaluser@x.com'));
+e3pb_toggle('already@x.com', 'Already', true);   // someone who already uses the Client Portal, not yet set up here
+$ov0 = access_overview($pdo, fake_cf(['you@x.com', 'already@x.com'], $lo0), load_member_map($pdo));
+check('a Cloudflare-only email that already uses the Client Portal says so', array_column($ov0['people'], null, 'email')['already@x.com']['tools'] === ['client-portal']);
+access_add($pdo, null, $you, ['email' => 'already@x.com', 'name' => 'Already', 'type' => 'tester', 'tools' => []]);
+check('setting them up with "Nothing" keeps their Client Portal ON', portal_enabled('already@x.com'));
+$cfx = fake_cf(['you@x.com', 'already2@x.com'], $lx);
+$rr = access_add($pdo, $cfx, $you, ['email' => 'already2@x.com', 'name' => 'A2', 'type' => 'tester']);
+check('already on Cloudflare: reported as not newly added', $rr['cloudflare'] === 'ok' && $rr['cloudflare_added'] === false && !array_filter($lx, fn ($c) => $c[0] === 'PUT'));
+$rr = access_add($pdo, $cfx, $you, ['email' => 'fresh@x.com', 'name' => 'Fresh', 'type' => 'tester']);
+check('a new email: reported as added to Cloudflare', $rr['cloudflare_added'] === true);
 check('add with "all tools" turns the portal on', portal_enabled('all@x.com') && $r['portal'] === 'on' && count(tools_of($pdo, 'all@x.com')) === 18);
 access_remove($pdo, null, $you, 'cp2@x.com');
 check('removing someone switches the portal off (data kept)', !portal_enabled('cp2@x.com') && isset(e3pb_load()['cp2@x.com']));
