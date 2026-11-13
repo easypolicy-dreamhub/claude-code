@@ -18,6 +18,17 @@ require_once __DIR__ . '/../../../private/lib/access.php';
 
 [$config, $pdo, $me] = boot_member_request();
 
+// Step log for troubleshooting (private/access_trace.log) and a longer time limit for the Cloudflare calls.
+define('ACCESS_TRACE', true);
+@set_time_limit(60);
+$accessT0 = microtime(true);
+CfPolicy::$trace = 'access_trace';
+access_trace('request ' . ($_SERVER['REQUEST_METHOD'] ?? '?'));
+register_shutdown_function(static function () use ($accessT0): void {
+    $e = error_get_last();
+    access_trace('end after ' . round(microtime(true) - $accessT0, 2) . 's' . ($e && in_array($e['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true) ? ' FATAL: ' . $e['message'] . ' at ' . basename($e['file']) . ':' . $e['line'] : ''));
+});
+
 try {
     if (!tool_is_super($me)) {
         throw new HttpError(403, 'Only the super admin can do this.');
@@ -34,6 +45,7 @@ try {
         throw new HttpError(405, 'Method not allowed.');
     }
     $in = json_body();
+    access_trace('action ' . (string)($in['action'] ?? '?'));
     $result = [];
     switch ((string)($in['action'] ?? '')) {
         case 'add':

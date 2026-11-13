@@ -18,6 +18,8 @@ final class CfPolicy
 
     /** @var callable(string,string,?array,string):array  (method, url, body, token) => decoded JSON */
     private $http;
+    /** @var callable|null  optional step logger: fn(string $line) */
+    public static $trace = null;
 
     public function __construct(private array $cfg, ?callable $http = null)
     {
@@ -40,7 +42,15 @@ final class CfPolicy
 
     private function call(string $method, string $url, ?array $body = null): array
     {
-        $res = ($this->http)($method, $url, $body, (string)$this->cfg['token']);
+        $t0 = microtime(true);
+        if (self::$trace) { (self::$trace)('cf ' . $method . ' ' . preg_replace('#^.*/client/v4#', '', $url) . ' ...'); }
+        try {
+            $res = ($this->http)($method, $url, $body, (string)$this->cfg['token']);
+        } catch (Throwable $e) {
+            if (self::$trace) { (self::$trace)('cf ' . $method . ' failed after ' . round(microtime(true) - $t0, 2) . 's: ' . $e->getMessage()); }
+            throw $e;
+        }
+        if (self::$trace) { (self::$trace)('cf ' . $method . ' answered in ' . round(microtime(true) - $t0, 2) . 's, success=' . (is_array($res) && !empty($res['success']) ? 'yes' : 'no')); }
         if (!is_array($res) || empty($res['success'])) {
             $msg = is_array($res) ? (string)($res['errors'][0]['message'] ?? 'unknown error') : 'no answer';
             throw new HttpError(502, 'Cloudflare said: ' . $msg);
@@ -153,7 +163,9 @@ final class CfPolicy
         curl_setopt_array($ch, [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_TIMEOUT => 20,
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,   // some hosts hang on IPv6 routes
             CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json', 'Accept: application/json'],
         ]);
         if ($body !== null) {

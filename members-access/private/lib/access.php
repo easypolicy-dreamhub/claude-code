@@ -9,6 +9,23 @@ require_once __DIR__ . '/cf_policy.php';
  * Everything here is for the super admin; api/access.php checks that before calling any of it.
  */
 
+/** Private step log (private/access_trace.log), switched on by api/access.php. No emails, tokens or request bodies. */
+function access_trace(string $msg): void
+{
+    if (!defined('ACCESS_TRACE')) {
+        return;
+    }
+    try {
+        $f = dirname(__DIR__) . '/access_trace.log';
+        if (is_file($f) && filesize($f) > 200000) {
+            @rename($f, $f . '.old');
+        }
+        @file_put_contents($f, gmdate('Y-m-d H:i:s') . ' ' . $msg . "\n", FILE_APPEND | LOCK_EX);
+    } catch (Throwable $e) {
+        // logging must never break the request
+    }
+}
+
 function access_find_by_email(array $map, string $email): ?array
 {
     foreach ($map as $m) {
@@ -151,10 +168,12 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
         $tools = default_tools_for($type);
     }
 
+    access_trace('add: checked, type=' . $type . ', tools=' . count($tools));
     $cfState = 'not_connected';
     if ($cf !== null) {
         $cf->change([$email], [], access_protected_emails($map));
         $cfState = 'ok';
+        access_trace('add: cloudflare list updated');
     }
 
     $pdo->beginTransaction();
@@ -180,8 +199,10 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
         set_ticked_tools($pdo, $id, $tools);   // keeps only the stored tools; the Client Portal is handled below
         audit($pdo, (int)$actor['id'], 'access.add', $id, ['email' => $email, 'type' => $type, 'tools' => count($tools)]);
         $pdo->commit();
+        access_trace('add: saved on the site');
     } catch (Throwable $e) {
         $pdo->rollBack();
+        access_trace('add: database step failed: ' . $e->getMessage());
         throw $e;
     }
     $portal = 'unchanged';
@@ -195,6 +216,7 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
             error_log('access_add portal: ' . $e->getMessage());
         }
     }
+    access_trace('add: finished, portal=' . $portal);
     return ['id' => $id, 'email' => $email, 'cloudflare' => $cfState, 'portal' => $portal];
 }
 
