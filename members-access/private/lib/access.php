@@ -85,6 +85,8 @@ function access_overview(PDO $pdo, ?CfPolicy $cf, array $map): array
         $ticks[(int)$r['member_id']][] = (string)$r['tool_key'];
     }
     $grantable = grantable_keys();
+    $switchable = switchable_keys();
+    $portalOn = portal_enabled_emails();
     $people = [];
     $seen = [];
     foreach ($map as $m) {
@@ -96,7 +98,7 @@ function access_overview(PDO $pdo, ?CfPolicy $cf, array $map): array
         $people[] = [
             'id' => (int)$m['id'], 'email' => $m['email'], 'name' => $m['name'], 'type' => member_type($m),
             'super' => tool_is_super($m), 'active' => (bool)$m['is_active'], 'in_cloudflare' => $inCf, 'suspended' => !empty($m['is_suspended']),
-            'tools' => tool_is_super($m) ? $grantable : array_values(array_intersect($grantable, $ticks[(int)$m['id']] ?? [])),
+            'tools' => tool_is_super($m) ? $switchable : array_values(array_merge(array_intersect($grantable, $ticks[(int)$m['id']] ?? []), in_array($m['email'], $portalOn, true) ? ['client-portal'] : [])),
             'status' => !$m['is_active'] ? 'removed_still_in_cloudflare' : ($inCf === false ? 'not_in_cloudflare' : 'ok'),
         ];
     }
@@ -111,7 +113,7 @@ function access_overview(PDO $pdo, ?CfPolicy $cf, array $map): array
     });
     return [
         'people' => $people,
-        'catalog' => tool_catalog(),
+        'catalog' => array_map(static fn (array $t): array => $t + ['available' => !$t['bridge'] || portal_available()], tool_catalog()),
         'groups' => TOOL_GROUPS,
         'types' => MEMBER_TYPES,
         'basic' => basic_keys(),
@@ -142,9 +144,9 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
         if (!isset($map[$src])) {
             throw new HttpError(422, 'The person to copy from was not found.');
         }
-        $tools = tool_is_super($map[$src]) ? grantable_keys() : ticked_tools($pdo, $src);
+        $tools = tool_is_super($map[$src]) ? switchable_keys() : member_tool_keys($pdo, $map[$src]);
     } elseif (isset($in['tools']) && is_array($in['tools'])) {
-        $tools = array_values(array_intersect(grantable_keys(), array_map('strval', $in['tools'])));
+        $tools = array_values(array_intersect(switchable_keys(), array_map('strval', $in['tools'])));
     } else {
         $tools = default_tools_for($type);
     }
@@ -175,14 +177,25 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
             $pdo->prepare('UPDATE members SET name = ?, is_active = 1, deactivated_at = NULL, removal_batch = NULL, upline_id = ? WHERE id = ?')->execute([$name, $up, $id]);
         }
         $pdo->prepare('UPDATE members SET member_type = ? WHERE id = ?')->execute([$type, $id]);
-        set_ticked_tools($pdo, $id, $tools);
+        set_ticked_tools($pdo, $id, $tools);   // keeps only the stored tools; the Client Portal is handled below
         audit($pdo, (int)$actor['id'], 'access.add', $id, ['email' => $email, 'type' => $type, 'tools' => count($tools)]);
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
         throw $e;
     }
-    return ['id' => $id, 'email' => $email, 'cloudflare' => $cfState];
+    $portal = 'unchanged';
+    $wantPortal = in_array('client-portal', $tools, true);
+    if ($wantPortal || portal_enabled($email)) {
+        try {
+            portal_set($email, $name, $wantPortal);
+            $portal = $wantPortal ? 'on' : 'off';
+        } catch (Throwable $e) {
+            $portal = 'failed';
+            error_log('access_add portal: ' . $e->getMessage());
+        }
+    }
+    return ['id' => $id, 'email' => $email, 'cloudflare' => $cfState, 'portal' => $portal];
 }
 
 /**
@@ -234,6 +247,11 @@ function access_set_tool(PDO $pdo, array $actor, int $id, string $key, bool $on)
     if (tool_is_super($map[$id])) {
         throw new HttpError(403, 'The super admin always has every tool.');
     }
+    if (in_array($key, bridge_keys(), true)) {
+        portal_set((string)$map[$id]['email'], (string)$map[$id]['name'], $on);   // the Client Portal's own record
+        audit($pdo, (int)$actor['id'], 'access.tool', $id, ['tool' => $key, 'on' => $on]);
+        return member_tool_keys($pdo, load_member_map($pdo)[$id]);
+    }
     if (!in_array($key, grantable_keys(), true)) {
         throw new HttpError(422, 'That tool cannot be switched here.');
     }
@@ -253,8 +271,13 @@ function access_set_tools(PDO $pdo, array $actor, int $id, array $keys): array
     if (tool_is_super($map[$id])) {
         throw new HttpError(403, 'The super admin always has every tool.');
     }
+    $keys = array_map('strval', $keys);
+    $wantPortal = in_array('client-portal', $keys, true);
+    if ($wantPortal !== portal_enabled((string)$map[$id]['email'])) {
+        portal_set((string)$map[$id]['email'], (string)$map[$id]['name'], $wantPortal);
+    }
     $res = set_ticked_tools($pdo, $id, $keys);
-    audit($pdo, (int)$actor['id'], 'access.tools', $id, ['count' => count($res)]);
+    audit($pdo, (int)$actor['id'], 'access.tools', $id, ['count' => count($res) + ($wantPortal ? 1 : 0)]);
     return $res;
 }
 
@@ -280,6 +303,7 @@ function access_remove(PDO $pdo, ?CfPolicy $cf, array $actor, string $emailRaw):
         $pdo->prepare('UPDATE members SET is_active = 0, deactivated_at = ?, removal_batch = NULL WHERE id = ?')->execute([gmdate('Y-m-d H:i:s'), (int)$m['id']]);
         audit($pdo, (int)$actor['id'], 'access.remove', (int)$m['id'], ['email' => $email]);
     }
+    portal_off($email);   // the Client Portal keeps their data but switches them off
     $cfState = 'not_connected';
     if ($cf !== null) {
         try {
@@ -325,5 +349,18 @@ function access_set_suspended(PDO $pdo, array $actor, int $id, bool $on): void
         throw new HttpError(403, 'The super admin cannot be paused.');
     }
     $pdo->prepare('UPDATE members SET is_suspended = ? WHERE id = ?')->execute([$on ? 1 : 0, $id]);
+    // The Client Portal has its own login, so pausing also switches it off; resuming switches it back on if it was on.
+    $email = (string)$map[$id]['email'];
+    if ($on && portal_enabled($email)) {
+        $pdo->prepare("INSERT INTO tool_access (member_id, tool_key) VALUES (?, 'portal-was-on')")->execute([$id]);
+        portal_off($email);
+    } elseif (!$on) {
+        $st = $pdo->prepare("SELECT 1 FROM tool_access WHERE member_id = ? AND tool_key = 'portal-was-on'");
+        $st->execute([$id]);
+        if ($st->fetchColumn()) {
+            portal_set($email, (string)$map[$id]['name'], true);
+            $pdo->prepare("DELETE FROM tool_access WHERE member_id = ? AND tool_key = 'portal-was-on'")->execute([$id]);
+        }
+    }
     audit($pdo, (int)$actor['id'], $on ? 'access.pause' : 'access.resume', $id, []);
 }

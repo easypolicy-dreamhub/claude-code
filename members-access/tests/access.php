@@ -2,6 +2,11 @@
 declare(strict_types=1);
 
 // Run: php tests/access.php   Members & Access: tool ticks, Cloudflare sync (with a pretend Cloudflare), the page gate.
+// A throw-away copy of the Client Portal bridge, so the tests never touch a real agents.json.
+$bridgeDir = sys_get_temp_dir() . '/bridge_' . getmypid();
+mkdir($bridgeDir);
+copy(__DIR__ . '/fixtures/team-bridge.php', $bridgeDir . '/team-bridge.php');
+putenv('E3_PORTAL_BRIDGE=' . $bridgeDir . '/team-bridge.php');
 require_once __DIR__ . '/../private/lib/access.php';
 require_once __DIR__ . '/../private/lib/gate.php';
 require_once __DIR__ . '/helpers.php';
@@ -47,7 +52,7 @@ function tools_of(PDO $pdo, string $email): array { $m = access_find_by_email(lo
 echo "Catalog\n";
 check('23 tools in the catalog (your 22 + Members & Access)', count(tool_catalog()) === 23);
 check('Site Admin tools are locked and not grantable', !array_intersect(['testimonials', 'events', 'site-settings', 'access'], grantable_keys()));
-check('Client Portal is not tick-controlled', !in_array('client-portal', grantable_keys(), true));
+check('Client Portal is switched through the bridge, not stored as a tick', !in_array('client-portal', grantable_keys(), true) && in_array('client-portal', switchable_keys(), true) && count(switchable_keys()) === 19);
 check('basic set = Servicing + Sales + Recruitment (12)', count(basic_keys()) === 12 && !in_array('monthly-report', basic_keys(), true) && !in_array('team', basic_keys(), true));
 check('career-code/dashboard maps to Career Code Candidates', tool_for_path('career-code/dashboard/index.html')['key'] === 'career-code-candidates');
 check('career-code/live maps to Career Code', tool_for_path('career-code/live/')['key'] === 'career-code');
@@ -75,7 +80,7 @@ throws('cannot tick a Site Admin tool for someone', 422, fn () => access_set_too
 throws('cannot change the super admin\'s ticks', 403, fn () => access_set_tool($pdo, $you, $you['id'], 'team', false));
 check('locked tools stay super-admin-only even if a row sneaks into the table',
     (function () use ($pdo, $cindy) { $pdo->exec('INSERT INTO tool_access VALUES (' . $cindy['id'] . ", 'site-settings')"); return !can_use_tool($pdo, load_member_map($pdo)[$cindy['id']], 'site-settings'); })());
-check('Client Portal card is always offered (it has its own switch)', in_array('client-portal', allowed_tools($pdo, load_member_map($pdo)[$cindy['id']]), true));
+check('Client Portal card is hidden until it is switched on', !in_array('client-portal', allowed_tools($pdo, load_member_map($pdo)[$cindy['id']]), true));
 check('set_ticked_tools ignores unknown keys', set_ticked_tools($pdo, $cindy['id'], ['team', 'nonsense', 'testimonials']) === ['team']);
 $copy = access_add($pdo, null, $you, ['email' => 'amy@x.com', 'name' => 'Amy', 'type' => 'tester', 'copy_from' => $david['id']]);
 check('"copy from David" copies his ticks', tools_of($pdo, 'amy@x.com') === tools_of($pdo, 'david@x.com'));
@@ -103,6 +108,49 @@ $dm = load_member_map($pdo)[$david['id']];
 check('Team member -> Admin leaves the tree (no upline), ticks kept', member_type($dm) === 'admin' && $dm['upline_id'] === null && tools_of($pdo, 'david@x.com') === basic_keys());
 throws('bad type on update', 422, fn () => access_update($pdo, $you, $david['id'], ['type' => 'king']));
 throws('super admin cannot be edited here', 403, fn () => access_update($pdo, $you, $you['id'], ['name' => 'X']));
+
+echo "\nClient Portal switch (same store as the Team page)\n";
+[$pdo, $you] = setup();
+$pa = access_add($pdo, null, $you, ['email' => 'pa@x.com', 'name' => 'Pa', 'type' => 'team']);
+$pm = fn () => load_member_map($pdo)[$pa['id']];
+check('portal off by default', !portal_enabled('pa@x.com') && !in_array('client-portal', allowed_tools($pdo, $pm()), true));
+access_set_tool($pdo, $you, $pa['id'], 'client-portal', true);
+check('tick Client Portal -> on in the portal record', portal_enabled('pa@x.com') && json_decode(file_get_contents(e3pb_file()), true)['members']['pa@x.com']['enabled'] === true);
+check('...and the card is offered', in_array('client-portal', allowed_tools($pdo, $pm()), true));
+$ov = access_overview($pdo, null, load_member_map($pdo));
+check('overview lists it among their tools', in_array('client-portal', array_column($ov['people'], null, 'email')['pa@x.com']['tools'], true));
+e3pb_toggle('pa@x.com', 'Pa', false);
+$ov = access_overview($pdo, null, load_member_map($pdo));
+check('switch flipped on the Team page shows here too (one store)', !in_array('client-portal', array_column($ov['people'], null, 'email')['pa@x.com']['tools'], true));
+access_set_tools($pdo, $you, $pa['id'], ['team', 'client-portal']);
+check('tools list with Client Portal: stored ticks + portal on', tools_of($pdo, 'pa@x.com') === ['team'] && portal_enabled('pa@x.com'));
+access_set_tools($pdo, $you, $pa['id'], []);
+check('"None" switches the Client Portal off too', tools_of($pdo, 'pa@x.com') === [] && !portal_enabled('pa@x.com'));
+$cp = access_add($pdo, null, $you, ['email' => 'cp@x.com', 'name' => 'Cp', 'type' => 'tester', 'copy_from' => $pa['id']]);
+access_set_tool($pdo, $you, $pa['id'], 'client-portal', true);
+$cp2 = access_add($pdo, null, $you, ['email' => 'cp2@x.com', 'name' => 'Cp2', 'type' => 'tester', 'copy_from' => $pa['id']]);
+check('"copy from" copies the Client Portal too', portal_enabled('cp2@x.com') && !portal_enabled('cp@x.com'));
+$r = access_add($pdo, null, $you, ['email' => 'all@x.com', 'name' => 'All', 'type' => 'admin', 'tools' => switchable_keys()]);
+check('add with "all tools" turns the portal on', portal_enabled('all@x.com') && $r['portal'] === 'on' && count(tools_of($pdo, 'all@x.com')) === 18);
+access_remove($pdo, null, $you, 'cp2@x.com');
+check('removing someone switches the portal off (data kept)', !portal_enabled('cp2@x.com') && isset(e3pb_load()['cp2@x.com']));
+// pause also switches it off, resume brings it back
+access_set_suspended($pdo, $you, $pa['id'], true);
+check('pause switches the Client Portal off', !portal_enabled('pa@x.com'));
+access_set_tools($pdo, $you, $pa['id'], ['sum-assured']);
+access_set_suspended($pdo, $you, $pa['id'], false);
+check('resume switches it back on, ticks kept', portal_enabled('pa@x.com') && tools_of($pdo, 'pa@x.com') === ['sum-assured']);
+$pb = access_add($pdo, null, $you, ['email' => 'pb@x.com', 'name' => 'Pb', 'type' => 'team']);
+access_set_suspended($pdo, $you, $pb['id'], true); access_set_suspended($pdo, $you, $pb['id'], false);
+check('pause/resume leaves a portal that was off, off', !portal_enabled('pb@x.com'));
+// bridge missing
+putenv('E3_PORTAL_BRIDGE=' . $bridgeDir . '/nope.php');
+$ov = access_overview($pdo, null, load_member_map($pdo));
+check('bridge missing: switch reported unavailable, nothing else breaks', array_column($ov['catalog'], null, 'key')['client-portal']['available'] === false && array_column($ov['catalog'], null, 'key')['panel-finder']['available'] === true);
+throws('bridge missing: switching it says so', 503, fn () => access_set_tool($pdo, $you, $pa['id'], 'client-portal', true));
+$r = access_add($pdo, null, $you, ['email' => 'nb@x.com', 'name' => 'Nb', 'type' => 'admin', 'tools' => ['client-portal', 'team']]);
+check('bridge missing: person is still added, ticks kept', $r['portal'] === 'failed' && tools_of($pdo, 'nb@x.com') === ['team']);
+putenv('E3_PORTAL_BRIDGE=' . $bridgeDir . '/team-bridge.php');
 
 echo "\nPause (suspend)\n";
 [$pdo, $you] = setup();
@@ -230,4 +278,5 @@ check('gate: super admin -> in everywhere', gate_decide($pdo, $you, $ev)['ok'] &
 $inactive = $cm; $inactive['is_active'] = 0;
 check('gate: removed person -> blocked even with ticks', !gate_decide($pdo, $inactive, $mr)['ok']);
 exec('rm -rf ' . escapeshellarg($dir));
+exec('rm -rf ' . escapeshellarg($bridgeDir));
 finish();

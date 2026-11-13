@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/members.php';
+require_once __DIR__ . '/portal.php';
 
 /**
  * The one list of toolkit tools and who may use them.
@@ -10,7 +11,7 @@ require_once __DIR__ . '/members.php';
  *  group   heading on the toolkit page (same order as the page)
  *  dir     folder under /members/ that the gate protects ('' = none: external link)
  *  locked  true = super admin only, can never be ticked for anyone else
- *  always  true = not controlled by a tick (Client Portal has its own switch on the Team page)
+ *  bridge  true = the on/off lives in the Client Portal's own record (private bridge), not in tool_access
  *  basic   true = ticked by default for a new Team member
  *
  * Super admin automatically has every tool. Everyone else has exactly the tools ticked for them.
@@ -20,11 +21,11 @@ const TOOL_GROUPS = ['Servicing', 'Sales', 'Recruitment', 'Leader', 'Admin', 'Co
 function tool_catalog(): array
 {
     $t = static fn (string $key, string $name, string $group, string $dir, array $x = []): array =>
-        $x + ['key' => $key, 'name' => $name, 'group' => $group, 'dir' => $dir, 'locked' => false, 'always' => false, 'basic' => false, 'link_only' => false];
+        $x + ['key' => $key, 'name' => $name, 'group' => $group, 'dir' => $dir, 'locked' => false, 'bridge' => false, 'basic' => false, 'link_only' => false];
     return [
         $t('panel-finder', 'GE Panel Finder', 'Servicing', 'panel-finder', ['basic' => true]),
         $t('great-journey-finder', 'Great Journey Finder', 'Servicing', 'great-journey-finder', ['basic' => true]),
-        $t('client-portal', 'Client Portal', 'Servicing', '', ['always' => true]),
+        $t('client-portal', 'Client Portal', 'Servicing', '', ['bridge' => true]),
         $t('protection-needs', 'Protection Needs Calculator', 'Sales', 'protection-needs', ['basic' => true]),
         $t('sum-assured', 'Sum Assured Calculator', 'Sales', 'sum-assured', ['basic' => true]),
         $t('legacy-planner', 'Legacy Planner', 'Sales', 'legacy-planner', ['basic' => true]),
@@ -59,10 +60,21 @@ function tool_by_key(string $key): ?array
     return null;
 }
 
-/** Tools that can be ticked for someone (everything except the locked Site Admin tools and "always" ones). */
+/** Tools whose tick is stored in tool_access (everything except the locked Site Admin tools and the Client Portal). */
 function grantable_keys(): array
 {
-    return array_values(array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => !$t['locked'] && !$t['always'])));
+    return array_values(array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => !$t['locked'] && !$t['bridge'])));
+}
+
+/** Every tool that can be switched for someone: the stored ones plus the Client Portal. */
+function switchable_keys(): array
+{
+    return array_values(array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => !$t['locked'])));
+}
+
+function bridge_keys(): array
+{
+    return array_values(array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => $t['bridge'])));
 }
 
 function basic_keys(): array
@@ -91,14 +103,23 @@ function ticked_tools(PDO $pdo, int $memberId): array
     return array_values(array_intersect(grantable_keys(), $st->fetchAll(PDO::FETCH_COLUMN)));
 }
 
+/** Ticked tools plus the Client Portal when it is switched on for them. */
+function member_tool_keys(PDO $pdo, array $member): array
+{
+    $keys = ticked_tools($pdo, (int)$member['id']);
+    if (portal_enabled((string)$member['email'])) {
+        $keys[] = 'client-portal';
+    }
+    return $keys;
+}
+
 /** Every tool key this member may open (what the toolkit page shows). */
 function allowed_tools(PDO $pdo, array $member): array
 {
     if (tool_is_super($member)) {
         return array_map(static fn (array $t): string => $t['key'], tool_catalog());
     }
-    $always = array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => $t['always']));
-    return array_values(array_unique(array_merge($always, ticked_tools($pdo, (int)$member['id']))));
+    return array_values(array_unique(member_tool_keys($pdo, $member)));
 }
 
 function can_use_tool(PDO $pdo, array $member, string $key): bool
@@ -128,7 +149,7 @@ function set_ticked_tools(PDO $pdo, int $memberId, array $keys): array
         $pdo->beginTransaction();
     }
     try {
-        $pdo->prepare('DELETE FROM tool_access WHERE member_id = ?')->execute([$memberId]);
+        $pdo->prepare("DELETE FROM tool_access WHERE member_id = ? AND tool_key <> 'portal-was-on'")->execute([$memberId]);   // keep the pause bookmark
         $ins = $pdo->prepare('INSERT INTO tool_access (member_id, tool_key) VALUES (?, ?)');
         foreach ($keys as $k) {
             $ins->execute([$memberId, $k]);

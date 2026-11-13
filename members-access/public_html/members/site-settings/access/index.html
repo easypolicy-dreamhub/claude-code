@@ -179,7 +179,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
   function take(d) { D = d; return d; }
 
   /* ---------- helpers ---------- */
-  var grantable = function () { return D.catalog.filter(function (t) { return !t.locked && !t.always; }); };
+  var grantable = function () { return D.catalog.filter(function (t) { return !t.locked; }); };   // every tool that can be switched, Client Portal included
   var typeName = function (t) { return (D.types && D.types[t]) || t; };
   var displayName = function (p) { return p.name || ''; };
   var initials = function (p) { var s = (p.name || p.email || '?').trim(); var w = s.split(/\s+/); return ((w[0][0] || '?') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); };
@@ -279,7 +279,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     var sel = el('select', { id: 'toolSel', 'aria-label': 'Choose a tool' });
     catByGroup().forEach(function (g) {
       var og = el('optgroup', { label: g.group });
-      g.tools.filter(function (t) { return !t.locked && !t.always; }).forEach(function (t) {
+      g.tools.filter(function (t) { return !t.locked; }).forEach(function (t) {
         var n = D.people.filter(function (p) { return !p.super && p.tools.indexOf(t.key) >= 0; }).length;
         og.appendChild(el('option', { value: t.key, selected: t.key === toolSel, text: t.name + ' (' + n + ')' }));
       });
@@ -387,13 +387,13 @@ input[readonly]{background:var(--tile);color:var(--muted)}
         gr.forEach(function (t) {
           var cur = byEmail(p.email);
           var kid;
-          if (t.always) {
-            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, el('small', { text: 'Switched on or off per person on the Team page' })]), el('span', { 'class': 'lock', text: 'Team page' })]);
+          if (t.available === false) {
+            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, el('small', { text: 'The Client Portal link is not installed on the server' })]), el('span', { 'class': 'lock', text: 'Unavailable' })]);
           } else {
             var sw = el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(cur.tools.indexOf(t.key) >= 0), 'aria-label': t.name });
             sw.addEventListener('click', function () { flip(cur, t.key, sw, upd); });
             switches.push({ sw: sw, key: t.key });
-            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, t.link_only ? el('small', { text: 'Opens in Gemini: hides the card only' }) : null]), sw]);
+            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, t.link_only ? el('small', { text: 'Opens in Gemini: hides the card only' }) : (t.bridge ? el('small', { text: 'Same switch as on the Team page' }) : null)]), sw]);
           }
           grp.appendChild(kid);
         });
@@ -417,7 +417,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
         pauseBtn.disabled = true;
         req('POST', { action: 'suspend', id: p.id, on: !p.suspended }).then(function (d) { take(d); toast(p.suspended ? (p.name || p.email) + ' can use their tools again.' : (p.name || p.email) + ' is paused: blocked everywhere.'); personDialog(p.email); }).catch(function (e) { pauseBtn.disabled = false; toast(e.message, true); });
       } });
-      body.appendChild(el('div', { 'class': 'sec' }, [el('h3', { text: 'Pause' }), el('p', { 'class': p.suspended ? 'banner warn' : 'hint', text: p.suspended ? 'Paused. They can still sign in to Cloudflare but every page and every bit of data is blocked. Their record, team place and candidates are kept.' : 'Blocks them from every tool page and all data at once, without removing them or deleting anything. Switch it back whenever you like.' }), el('div', { style: 'margin-top:8px' }, [pauseBtn]), el('p', { 'class': 'hint', text: 'The Client Portal has its own login. Switch it off on the Team page too.' })]));
+      body.appendChild(el('div', { 'class': 'sec' }, [el('h3', { text: 'Pause' }), el('p', { 'class': p.suspended ? 'banner warn' : 'hint', text: p.suspended ? 'Paused. They can still sign in to Cloudflare but every page and every bit of data is blocked. Their record, team place and candidates are kept.' : 'Blocks them from every tool page and all data at once, without removing them or deleting anything. Switch it back whenever you like.' }), el('div', { style: 'margin-top:8px' }, [pauseBtn]), el('p', { 'class': 'hint', text: 'Pausing also switches the Client Portal off (it has its own login). Resuming switches it back on if it was on.' })]));
 
       // remove
       var rm = el('div', { 'class': 'sec' }, [el('h3', { text: 'Remove' })]);

@@ -4,7 +4,7 @@ One screen, **Site Settings › Members & Access** (`/members/site-settings/acce
 
 - sees **every email on the Cloudflare "Email Access" policy**, and gives each a **name** and a **type** (Team member, Admin, Tester)
 - **adds / removes** people, which updates Cloudflare for you (removal also signs them out at once)
-- switches **each tool on or off per person** (by person, or by tool)
+- switches **each tool on or off per person** (by person, or by tool), **Client Portal included**
 - **pauses** anyone with one switch: blocked from every page and all data at once, nothing deleted, resume any time
 
 The super admin always has every tool. Testimonials, Events, Site Settings and Members & Access are super admin only and can never be given to anyone.
@@ -15,7 +15,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 | File | New / replaces |
 |---|---|
 | `private/schema_phase10.sql` | new: run in phpMyAdmin (step 2) |
-| `private/lib/tools.php`, `access.php`, `cf_policy.php`, `gate.php` | new |
+| `private/lib/tools.php`, `access.php`, `cf_policy.php`, `gate.php`, `portal.php` | new |
 | `private/lib/auth.php` | replace: the login check that refuses paused people |
 | `private/lib/team.php`, `activity.php` | replace: Admins and Testers stay out of the team tree and Team Activity |
 | `public_html/members/.htaccess` | new: sends tool pages through the gate |
@@ -66,8 +66,9 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 
 ## Good to know
 
-- **Pause** blocks the person at the login check every page and data call uses, so it stops everything on this site at once (they can still pass Cloudflare). The Client Portal has its own login, so also switch it off on the Team page for them. To remove someone completely, use Remove.
-- **Client Portal** keeps its own switch on the Team page and always shows its card; its own Cloudflare app protects it.
+- **Pause** blocks the person at the login check every page and data call uses, so it stops everything on this site at once (they can still pass Cloudflare). It also switches their Client Portal off, and Resume switches it back on if it was on. To remove someone completely, use Remove.
+- **Client Portal** is now a normal switch here. It uses the same record as the Team page switch (through `e3-client-portal/team-bridge.php`), so the two always agree and you can use either. Its card shows only for people it is switched on for. Nobody's current Client Portal setting is changed by this update. Presets: "None" and Pause switch it off, "All tools" and "Copy from" include it, "Basic set" does not.
+- If the bridge file ever goes missing, only the Client Portal switch shows "Unavailable"; everything else keeps working.
 - **HNW Coach** opens in Gemini: switching it off only hides the card. Gemini's own sharing is what really blocks it.
 - **Team members** are still removed on the Team page (it looks after their team and candidates). It now also removes them from Cloudflare and signs them out.
 - The gate protects tool **pages**. Tools that save data keep their own server checks as before.
