@@ -24,6 +24,7 @@ function fake_cf(array $emails, ?array &$log = null, bool $failPut = false): CfP
     $log = [];
     $state = ['policy' => [
         'id' => 'pid', 'uid' => 'u', 'created_at' => 'x', 'updated_at' => 'y', 'reusable' => true, 'app_count' => 2, 'version' => 3,
+        'purpose_justification_prompt' => null, 'weird_new_field' => 'x', 'connection_rules' => new stdClass(), 'approval_groups' => [],
         'name' => 'Email Access', 'decision' => 'allow', 'session_duration' => '24h', 'exclude' => [['email_domain' => ['domain' => 'bad.com']]], 'require' => [],
         'include' => array_map(fn ($e) => ['email' => ['email' => $e]], $emails),
     ]];
@@ -33,7 +34,7 @@ function fake_cf(array $emails, ?array &$log = null, bool $failPut = false): CfP
         if ($method === 'GET') { return ['success' => true, 'result' => $state['policy']]; }
         if ($method === 'PUT') {
             if ($failPut) { return ['success' => false, 'errors' => [['message' => 'permission denied']]]; }
-            foreach (['id', 'uid', 'created_at', 'updated_at', 'reusable', 'app_count', 'version'] as $k) { if (array_key_exists($k, (array)$body)) { return ['success' => false, 'errors' => [['message' => "read-only key $k sent"]]]; } }
+            foreach (['id', 'uid', 'created_at', 'updated_at', 'reusable', 'app_count', 'version', 'weird_new_field'] as $k) { if (array_key_exists($k, (array)$body)) { return ['success' => false, 'errors' => [['message' => "read-only key $k sent"]]]; } }
             $state['policy'] = $body + ['id' => 'pid'];
             return ['success' => true, 'result' => $state['policy']];
         }
@@ -185,6 +186,8 @@ $r = access_add($pdo, $cf, $you, ['email' => 'New@X.com', 'name' => 'New', 'type
 $put = array_values(array_filter($log, fn ($c) => $c[0] === 'PUT'));
 check('add -> one PUT with the new email on the end', count($put) === 1 && array_column(array_column($put[0][2]['include'], 'email'), 'email') === ['you@x.com', 'old@x.com', 'new@x.com']);
 check('add keeps exclude rule, name, decision, session', $put[0][2]['exclude'] === [['email_domain' => ['domain' => 'bad.com']]] && $put[0][2]['name'] === 'Email Access' && $put[0][2]['decision'] === 'allow' && $put[0][2]['session_duration'] === '24h');
+check('add sends no null fields and no unknown fields', !array_key_exists('purpose_justification_prompt', $put[0][2]) && !array_key_exists('weird_new_field', $put[0][2]));
+check('an empty {} setting stays an object (not turned into [])', json_encode($put[0][2]['connection_rules']) === '{}' && json_encode(['x' => $put[0][2]['approval_groups']]) === '{"x":[]}');
 check('add sends no read-only fields', !array_intersect(array_keys($put[0][2]), ['id', 'uid', 'created_at', 'updated_at', 'reusable', 'app_count', 'version']));
 check('result says Cloudflare ok', $r['cloudflare'] === 'ok');
 check('emails() lists them lowercase', $cf->emails() === ['you@x.com', 'old@x.com', 'new@x.com']);
@@ -264,9 +267,18 @@ check('cannot list policies -> account id suspected', !$d[2]['ok'] && str_contai
 $d = access_diagnose($cfgOk, $mk(['list' => ['success' => true, 'result' => [['id' => '11111111-2222-3333-4444-555555555555', 'name' => 'Email Access']]]]));
 check('policy id not in the account -> lists the real ones', !$d[3]['ok'] && str_contains($d[3]['detail'], 'Email Access (11111111-2222-3333-4444-555555555555)'));
 $d = access_diagnose($cfgOk, $mk([]));
-check('everything fine -> all steps OK', count($d) === 5 && !array_filter($d, fn ($x) => !$x['ok']));
+check('everything fine -> all steps OK', count($d) === 6 && !array_filter($d, fn ($x) => !$x['ok']));
 $d = access_diagnose($cfgOk, $mk(['get' => ['success' => false, 'errors' => [['message' => 'access.api.error.not_found']]]]));
 check('policy readable by list but not by id is reported on the last step', !end($d)['ok']);
+
+$d = access_diagnose($cfgOk, function (string $m, string $u, ?array $b, string $t): array {
+    if (str_ends_with($u, '/user/tokens/verify')) { return ['success' => true, 'result' => ['status' => 'active']]; }
+    if ($m === 'PUT') { return ['success' => false, 'errors' => [['code' => 12130, 'message' => 'access.api.error.invalid_request', 'source' => ['pointer' => '/include/0'], 'error_chain' => [['message' => 'bad rule']]]]]; }
+    if (str_ends_with($u, '/access/policies')) { return ['success' => true, 'result' => [['id' => 'bd462e1a-ff22-4a75-8662-fc3c8801ac26', 'name' => 'Email Access']]]; }
+    return ['success' => true, 'result' => ['include' => [['email' => ['email' => 'a@x.com']]]]];
+});
+check('a refused save is reported with Cloudflare\'s full detail', !end($d)['ok'] && str_contains(end($d)['detail'], 'invalid_request') && str_contains(end($d)['detail'], 'code 12130') && str_contains(end($d)['detail'], '/include/0') && str_contains(end($d)['detail'], 'bad rule'));
+check('decode keeps {} and []', json_encode(CfPolicy::decode('{"a":{},"b":[],"c":[{"everyone":{}}],"d":null}')) === '{"a":{},"b":[],"c":[{"everyone":{}}],"d":null}');
 
 echo "\nReturning person\n";
 [$pdo, $you] = setup();

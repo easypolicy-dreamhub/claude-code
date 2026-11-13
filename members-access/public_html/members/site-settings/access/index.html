@@ -210,7 +210,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     } else {
       var n = D.people.filter(function (p) { return p.in_cloudflare; }).length;
       var attn = D.people.filter(needsAttention).length;
-      b.appendChild(el('div', { 'class': 'banner ' + (attn ? 'warn' : 'ok') }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare connected. ' }), n + ' email' + (n === 1 ? '' : 's') + ' on the list' + (attn ? ', ' + attn + ' need' + (attn === 1 ? 's' : '') + ' your attention (see “Needs setup”).' : ', all matched.')])]));
+      b.appendChild(el('div', { 'class': 'banner ' + (attn ? 'warn' : 'ok') }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare connected. ' }), n + ' email' + (n === 1 ? '' : 's') + ' on the list' + (attn ? ', ' + attn + ' need' + (attn === 1 ? 's' : '') + ' your attention (see “Needs setup”).' : ', all matched.'), ' ', el('button', { type: 'button', 'class': 'btn small', style: 'margin-left:6px;min-height:34px;padding:0 10px;font-size:13px', text: 'Run Cloudflare check', onclick: runCheck })])]));
       if (c.other_rules) b.appendChild(el('div', { 'class': 'banner warn', style: 'margin-top:8px' }, [el('span', { 'class': 'dot' }), el('div', { text: 'The Cloudflare policy also has rules that are not plain emails (a list or a domain). Those are left exactly as they are.' })]));
     }
   }

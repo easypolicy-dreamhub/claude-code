@@ -17,8 +17,9 @@ require_once __DIR__ . '/http.php';
 final class CfPolicy
 {
     private const BASE = 'https://api.cloudflare.com/client/v4';
-    /** keys Cloudflare returns but does not accept back */
-    private const READ_ONLY = ['id', 'uid', 'created_at', 'updated_at', 'reusable', 'app_count', 'version'];
+    /** the only fields Cloudflare's "update policy" call accepts (everything else it returns is read-only) */
+    private const WRITABLE = ['name', 'decision', 'include', 'exclude', 'require', 'session_duration', 'approval_required', 'approval_groups',
+        'isolation_required', 'purpose_justification_required', 'purpose_justification_prompt', 'mfa_config', 'connection_rules'];
 
     /** @var callable(string,string,?array,string):array  (method, url, body, token) => decoded JSON */
     private $http;
@@ -56,8 +57,7 @@ final class CfPolicy
         }
         if (self::$trace) { (self::$trace)('cf ' . $method . ' answered in ' . round(microtime(true) - $t0, 2) . 's, success=' . (is_array($res) && !empty($res['success']) ? 'yes' : 'no')); }
         if (!is_array($res) || empty($res['success'])) {
-            $msg = is_array($res) ? (string)($res['errors'][0]['message'] ?? 'unknown error') : 'no answer';
-            throw new HttpError(424, 'Cloudflare said: ' . $msg);
+            throw new HttpError(424, 'Cloudflare said: ' . self::errorText($res));
         }
         return $res;
     }
@@ -125,8 +125,7 @@ final class CfPolicy
         foreach ($add as $e) {
             $include[] = ['email' => ['email' => $e]];
         }
-        $body = array_diff_key($policy, array_flip(self::READ_ONLY));
-        $body['include'] = $include;
+        $body = $this->writableBody($policy, $include);
         $this->call('PUT', $this->policyUrl(), $body);
         return ['added' => $add, 'removed' => $removeNow];
     }
@@ -155,10 +154,86 @@ final class CfPolicy
         }
     }
 
+    /** What we send back: only documented writable fields, no nulls (Cloudflare rejects them), with the new include list. */
+    private function writableBody(array $policy, array $include): array
+    {
+        $body = [];
+        foreach (self::WRITABLE as $k) {
+            if (array_key_exists($k, $policy) && $policy[$k] !== null) {
+                $body[$k] = $policy[$k];
+            }
+        }
+        $body['include'] = $include;
+        return $body;
+    }
+
+    /** Save the policy exactly as it is (changes nothing): proves the token may write and that our request is accepted. */
+    public function saveUnchanged(): array
+    {
+        try {
+            $policy = $this->policy();
+            $this->call('PUT', $this->policyUrl(), $this->writableBody($policy, (array)($policy['include'] ?? [])));
+            return ['ok' => true, 'detail' => 'Saved the list unchanged: Cloudflare accepts our update.'];
+        } catch (HttpError $e) {
+            return ['ok' => false, 'detail' => $e->getMessage()];
+        }
+    }
+
     /** Sign the person out everywhere right now (their Cloudflare sessions end). */
     public function revoke(string $email): void
     {
         $this->call('POST', self::BASE . '/accounts/' . rawurlencode((string)$this->cfg['account_id']) . '/access/organizations/revoke_user', ['email' => strtolower(trim($email))]);
+    }
+
+    /** First error with its code and any detail Cloudflare adds (error_chain, source.pointer). */
+    public static function errorText($res): string
+    {
+        if (!is_array($res) || empty($res['errors'][0])) {
+            return is_array($res) ? 'unknown error' : 'no answer';
+        }
+        $e = $res['errors'][0];
+        $out = (string)($e['message'] ?? 'unknown error');
+        $more = [];
+        if (isset($e['code'])) {
+            $more[] = 'code ' . $e['code'];
+        }
+        if (!empty($e['source']['pointer'])) {
+            $more[] = 'at ' . $e['source']['pointer'];
+        }
+        foreach ((array)($e['error_chain'] ?? []) as $c) {
+            if (!empty($c['message'])) {
+                $more[] = (string)$c['message'];
+            }
+        }
+        foreach (array_slice((array)($res['errors'] ?? []), 1, 2) as $x) {
+            if (!empty($x['message'])) {
+                $more[] = (string)$x['message'];
+            }
+        }
+        return $out . ($more ? ' (' . implode('; ', $more) . ')' : '');
+    }
+
+    /** JSON -> arrays, but an empty object {} stays an object so it is sent back as {} (not []). */
+    public static function decode(string $raw)
+    {
+        $o = json_decode($raw);
+        if ($o === null && trim($raw) !== 'null') {
+            return null;
+        }
+        $conv = static function ($v) use (&$conv) {
+            if (is_object($v)) {
+                $a = get_object_vars($v);
+                if (!$a) {
+                    return new stdClass();
+                }
+                return array_map($conv, $a);
+            }
+            if (is_array($v)) {
+                return array_map($conv, $v);
+            }
+            return $v;
+        };
+        return $conv($o);
     }
 
     public static function curl(string $method, string $url, ?array $body, string $token): array
@@ -182,7 +257,7 @@ final class CfPolicy
             throw new HttpError(424, 'Could not reach Cloudflare (' . $err . ').');
         }
         curl_close($ch);
-        $d = json_decode((string)$raw, true);
+        $d = self::decode((string)$raw);
         return is_array($d) ? $d : ['success' => false, 'errors' => [['message' => 'unreadable answer']]];
     }
 }

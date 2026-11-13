@@ -437,6 +437,9 @@ function access_diagnose(array $config, ?callable $http = null): array
         $add(true, 'Can it read the email list?', count($emails) . ' email' . (count($emails) === 1 ? '' : 's') . ' on the policy.');
     } catch (Throwable $e) {
         $add(false, 'Can it read the email list?', $e->getMessage());
+        return $steps;
     }
+    $w = $cf->saveUnchanged();
+    $add($w['ok'], 'Can it save changes? (sends the same list back, changes nothing)', $w['detail']);
     return $steps;
 }
