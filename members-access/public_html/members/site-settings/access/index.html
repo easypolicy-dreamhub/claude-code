@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>Members &amp; Access | DreamHub E3</title>
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/members/e3-toolkit.css">
+<style>
+:root{--slate:#24333A;--taupe:#B9AFA7;--brown:#6E625A;--bg:#F4F2EF;--line:#E2DDD8;--muted:#5C6870;--tile:#F4F2EF;--hover:#EFEAE5;--green:#17563A;--greenbg:#E8F3EC;--red:#8A1C14;--redbg:#FDECEA;--amber:#6B4600;--amberbg:#FFF4E0;--amberline:#F0D9A8}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--slate);font:400 16px/1.5 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background-image:radial-gradient(rgba(36,51,58,.06) 1px,transparent 1px);background-size:22px 22px}
+:focus-visible{outline:3px solid var(--taupe);outline-offset:2px;border-radius:8px}
+main{max-width:56rem;margin:0 auto;padding:16px 16px 64px;display:flex;flex-direction:column;gap:14px}
+[hidden]{display:none !important}
+.sr{position:absolute;left:-9999px}
+button{font:inherit;color:inherit}
+
+/* banners */
+.banner{padding:12px 14px;border-radius:12px;font-size:.93rem;display:flex;gap:10px;align-items:flex-start}
+.banner b{font-weight:700}
+.banner.ok{background:var(--greenbg);color:var(--green)}
+.banner.warn{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberline)}
+.banner.bad{background:var(--redbg);color:var(--red)}
+.dot{flex:none;width:9px;height:9px;border-radius:50%;background:currentColor;margin-top:7px}
+
+/* toolbar */
+.bar2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search{flex:1 1 14rem;min-height:48px;padding:0 14px 0 42px;border:1px solid #CFC8C1;border-radius:12px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235C6870' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px center;font:inherit}
+.search:focus{outline:none;border-color:var(--taupe);box-shadow:0 0 0 3px rgba(185,175,167,.45)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 18px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--slate);border-color:var(--slate);color:#fff}.btn.primary:hover{background:#33464F}
+.btn.danger{background:#fff;border-color:#E3B9B5;color:var(--red)}.btn.danger:hover{background:var(--redbg)}
+.btn.small{min-height:40px;padding:0 12px;font-size:14px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{min-height:42px;padding:0 16px;border:0;border-radius:9px;background:transparent;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--slate);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:500;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--slate);border-color:var(--slate);color:#fff}
+.chip .n{opacity:.65;margin-left:4px}
+
+/* people list */
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:14px;cursor:pointer;box-shadow:0 2px 10px rgba(36,51,58,.04)}
+.row:hover{border-color:var(--taupe);background:#FCFBFA}
+.av{width:44px;height:44px;border-radius:50%;background:var(--tile);display:grid;place-items:center;font:600 16px Poppins,sans-serif;color:var(--brown)}
+.row.me .av{background:var(--slate);color:#fff}
+.nm{font:600 16px/1.25 Poppins,"DM Sans",sans-serif;overflow-wrap:anywhere}
+.nm.none{font-style:italic;color:var(--muted);font-weight:500}
+.em{font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;letter-spacing:.01em}
+.badge.team{background:#E3EAEE;color:#24475A}.badge.admin{background:#EFE3DA;color:#7A4A24}.badge.tester{background:#E9E4F1;color:#523B7A}.badge.super{background:var(--slate);color:#fff}
+.cnt{font-size:13px;color:var(--muted)}
+.flag{display:inline-block;margin-top:4px;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:8px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberline)}
+.empty{text-align:center;color:var(--muted);padding:34px 12px;background:#fff;border:1px dashed var(--line);border-radius:14px}
+.empty b{display:block;font:600 1.05rem Poppins,sans-serif;color:var(--slate);margin-bottom:4px}
+
+/* dialog */
+dialog{border:0;padding:0;background:#fff;color:var(--slate);border-radius:18px;width:min(36rem,calc(100% - 24px));max-height:calc(100dvh - 24px);box-shadow:0 24px 60px rgba(36,51,58,.35)}
+dialog::backdrop{background:rgba(36,51,58,.5)}
+.dh{display:flex;gap:12px;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2;border-radius:18px 18px 0 0}
+.dh .t{flex:1;min-width:0}
+.dh h2{margin:0;font:700 1.1rem/1.2 Poppins,sans-serif;overflow-wrap:anywhere}
+.x{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:20px;line-height:1}
+.db{padding:16px 18px 22px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+.sec h3{margin:0 0 8px;font:600 .95rem Poppins,sans-serif}
+label.f{display:block;font-weight:600;font-size:.9rem;margin-bottom:5px}
+input[type=text],input[type=email],select{width:100%;min-height:48px;padding:0 13px;border:1px solid #CFC8C1;border-radius:12px;background:#fff;font:inherit;color:var(--slate)}
+input:focus,select:focus{outline:none;border-color:var(--taupe);box-shadow:0 0 0 3px rgba(185,175,167,.45)}
+input[readonly]{background:var(--tile);color:var(--muted)}
+.hint{margin:6px 0 0;font-size:.86rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.two{grid-template-columns:1fr}}
+.presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.types{display:grid;gap:8px}
+.type{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:left;width:100%}
+.type[aria-pressed="true"]{border-color:var(--slate);box-shadow:0 0 0 2px var(--slate) inset}
+.type b{display:block}.type span{font-size:.86rem;color:var(--muted)}
+
+/* tool switches */
+.grp{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.gh{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--tile);font:600 .92rem Poppins,sans-serif}
+.gh .n{font:500 .8rem "DM Sans",sans-serif;color:var(--muted)}
+.gh .sp{flex:1}
+.gh button{border:0;background:none;color:var(--brown);font-weight:700;font-size:.85rem;cursor:pointer;min-height:36px;padding:0 6px;text-decoration:underline}
+.tr{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);min-height:56px}
+.tr .ic{font-size:20px;width:28px;text-align:center}
+.tr .tn{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
+.tr .tn small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.sw{flex:none;position:relative;width:52px;height:32px;border-radius:999px;border:0;background:#CFC8C1;cursor:pointer;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--green)}.sw[aria-checked="true"]::after{transform:translateX(20px)}
+.sw[disabled]{opacity:.45;cursor:not-allowed}
+.lock{font-size:.82rem;color:var(--muted);white-space:nowrap}
+.tsel{display:flex;flex-direction:column;gap:10px}
+.sum{font-size:.92rem;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(92vw,30rem);padding:12px 18px;border-radius:12px;background:var(--slate);color:#fff;font-weight:500;font-size:.95rem;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.bad{background:var(--red)}
+.err{margin:0;padding:10px 12px;border-radius:10px;background:var(--redbg);color:var(--red);font-size:.92rem}
+.confirm{padding:12px;border-radius:12px;background:var(--redbg);color:var(--red);display:flex;flex-direction:column;gap:10px}
+.confirm .r{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:640px){
+  dialog{width:100%;max-width:none;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:92dvh}
+  .meta{display:none}.row{grid-template-columns:44px 1fr}
+  .row .cnt-m{display:inline}
+}
+.cnt-m{display:none;font-size:13px;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.sw,.sw::after{transition:none}}
+</style>
+</head>
+<body>
+<div class="e3-bar">
+  <a href="/members/site-settings/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Site Settings</a>
+  <span class="e3-brand">Dream<span>Hub</span> E3</span>
+</div>
+<div class="topbar">
+  <h1>Members &amp; Access<small>Who can log in, what to call them, and which tools each person can use.</small></h1>
+  <div class="who" id="who"></div>
+</div>
+
+<main>
+  <p class="sr" id="status" role="status" aria-live="polite"></p>
+  <div id="banners"></div>
+  <div id="app"><p class="sum">Loading&hellip;</p></div>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="dlg" aria-labelledby="dlgTitle"></dialog>
+
+<script src="/members/apps.js"></script>
+<script>
+(function(){
+  'use strict';
+  var API = '/members/api/access.php';
+  var D = null;                       // everything the server last told us
+  var view = 'person', filter = 'all', query = '', toolSel = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var dlg = $('dlg');
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'text') n.textContent = v;
+      else if (k === 'class') n.className = v;
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function toast(msg, bad) {
+    var t = $('toast'); t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : ''); t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 4200);
+    $('status').textContent = ''; setTimeout(function () { $('status').textContent = msg; }, 30);
+  }
+  function req(method, body) {
+    var h = { 'Accept': 'application/json' };
+    if (method !== 'GET') { h['Content-Type'] = 'application/json'; h['X-Requested-With'] = 'fetch'; }
+    return fetch(API, { method: method, headers: h, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return null; }).then(function (d) { return { r: r, d: d }; }); },
+            function () { throw new Error('Could not reach the server. Check your connection and try again.'); })
+      .then(function (x) {
+        if (!x.d) throw new Error('Could not reach the server. Reload the page and try again.');
+        if (!x.r.ok) { var e = new Error(x.d.error || 'Something went wrong.'); e.status = x.r.status; throw e; }
+        return x.d;
+      });
+  }
+  function take(d) { D = d; return d; }
+
+  /* ---------- helpers ---------- */
+  var grantable = function () { return D.catalog.filter(function (t) { return !t.locked && !t.always; }); };
+  var typeName = function (t) { return (D.types && D.types[t]) || t; };
+  var displayName = function (p) { return p.name || ''; };
+  var initials = function (p) { var s = (p.name || p.email || '?').trim(); var w = s.split(/\s+/); return ((w[0][0] || '?') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); };
+  var byId = function (id) { return D.people.filter(function (p) { return p.id === id; })[0]; };
+  var byEmail = function (e) { return D.people.filter(function (p) { return p.email === e; })[0]; };
+  var needsAttention = function (p) { return p.status !== 'ok'; };
+  var flagText = { 'new': 'New on Cloudflare: not set up yet', 'not_in_cloudflare': 'Not on Cloudflare: cannot log in', 'removed_still_in_cloudflare': 'Removed, but still on Cloudflare' };
+  var catByGroup = function () {
+    return D.groups.map(function (g) { return { group: g, tools: D.catalog.filter(function (t) { return t.group === g; }) }; }).filter(function (x) { return x.tools.length; });
+  };
+  var toolIcon = function (key) {
+    var a = (typeof APPS !== 'undefined' ? APPS : []).filter(function (x) { return x.key === key; })[0];
+    return a ? a.icon : '•';
+  };
+
+  /* ---------- banners ---------- */
+  function renderBanners() {
+    var b = $('banners'); b.innerHTML = '';
+    var c = D.cloudflare;
+    if (!c.configured) {
+      b.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare is not connected yet. ' }), 'You can name people and tick tools, but adding or removing someone here will not change Zero Trust. Follow the “Connect Cloudflare” steps in the guide, then reload this page.'])]));
+    } else if (!c.connected) {
+      b.appendChild(el('div', { 'class': 'banner bad' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Could not read the Cloudflare list. ' }), c.error || '', ' Check the token and policy settings in config.php.'])]));
+    } else {
+      var n = D.people.filter(function (p) { return p.in_cloudflare; }).length;
+      var attn = D.people.filter(needsAttention).length;
+      b.appendChild(el('div', { 'class': 'banner ' + (attn ? 'warn' : 'ok') }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Cloudflare connected. ' }), n + ' email' + (n === 1 ? '' : 's') + ' on the list' + (attn ? ', ' + attn + ' need' + (attn === 1 ? 's' : '') + ' your attention (see “Needs setup”).' : ', all matched.')])]));
+      if (c.other_rules) b.appendChild(el('div', { 'class': 'banner warn', style: 'margin-top:8px' }, [el('span', { 'class': 'dot' }), el('div', { text: 'The Cloudflare policy also has rules that are not plain emails (a list or a domain). Those are left exactly as they are.' })]));
+    }
+  }
+
+  /* ---------- main screen ---------- */
+  function visiblePeople() {
+    var q = query.trim().toLowerCase();
+    return D.people.filter(function (p) {
+      if (filter === 'attention' && !needsAttention(p)) return false;
+      if (['team', 'admin', 'tester'].indexOf(filter) >= 0 && p.type !== filter) return false;
+      return !q || (p.name + ' ' + p.email).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function render() {
+    renderBanners();
+    var app = $('app'); app.innerHTML = '';
+    var counts = { all: D.people.length, attention: D.people.filter(needsAttention).length };
+    ['team', 'admin', 'tester'].forEach(function (t) { counts[t] = D.people.filter(function (p) { return p.type === t; }).length; });
+
+    var search = el('input', { 'class': 'search', type: 'search', placeholder: 'Search name or email', 'aria-label': 'Search name or email', autocomplete: 'off', value: query });
+    search.addEventListener('input', function () { query = search.value; renderBody(); });
+    var seg = el('div', { 'class': 'seg', role: 'group', 'aria-label': 'View' }, [
+      el('button', { type: 'button', 'aria-pressed': String(view === 'person'), text: 'By person', onclick: function () { view = 'person'; render(); } }),
+      el('button', { type: 'button', 'aria-pressed': String(view === 'tool'), text: 'By tool', onclick: function () { view = 'tool'; render(); } })
+    ]);
+    var bar = el('div', { 'class': 'bar2' }, [search, seg, el('button', { type: 'button', 'class': 'btn primary', text: '+ Add person', onclick: function () { addDialog(''); } })]);
+    app.appendChild(bar);
+
+    if (view === 'person') {
+      var chips = el('div', { 'class': 'chips', role: 'group', 'aria-label': 'Filter people', style: 'margin-top:12px' });
+      [['all', 'Everyone'], ['team', 'Team'], ['admin', 'Admin'], ['tester', 'Tester'], ['attention', 'Needs setup']].forEach(function (f) {
+        if (f[0] === 'attention' && !counts.attention && filter !== 'attention') return;
+        chips.appendChild(el('button', { type: 'button', 'class': 'chip', 'aria-pressed': String(filter === f[0]), onclick: function () { filter = f[0]; render(); } }, [f[1], el('span', { 'class': 'n', text: String(counts[f[0]]) })]));
+      });
+      app.appendChild(chips);
+    }
+    app.appendChild(el('div', { id: 'body', style: 'margin-top:12px' }));
+    renderBody();
+  }
+  function renderBody() {
+    var body = $('body'); body.innerHTML = '';
+    if (view === 'tool') return renderByTool(body);
+    var list = visiblePeople();
+    if (!list.length) {
+      body.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: D.people.length ? 'Nobody matches that' : 'Nobody here yet' }), D.people.length ? 'Clear the search or choose Everyone.' : 'Press “+ Add person” to start.']));
+      return;
+    }
+    var ul = el('div', { 'class': 'list' });
+    var total = grantable().length;
+    list.forEach(function (p) {
+      var title = p.name ? el('div', { 'class': 'nm', text: p.name }) : el('div', { 'class': 'nm none', text: 'Not named yet' });
+      var main = el('div', {}, [title, el('div', { 'class': 'em', text: p.email })]);
+      if (p.status !== 'ok') main.appendChild(el('span', { 'class': 'flag', text: flagText[p.status] }));
+      var count = p.super ? 'All tools' : (p.status === 'new' ? 'No tools' : p.tools.length + ' of ' + total + ' tools');
+      main.appendChild(el('div', { 'class': 'cnt-m', text: (p.type ? typeName(p.type) + ' · ' : '') + count }));
+      var meta = el('div', { 'class': 'meta' }, [
+        p.super ? el('span', { 'class': 'badge super', text: 'Super admin' }) : (p.type ? el('span', { 'class': 'badge ' + p.type, text: typeName(p.type) }) : null),
+        el('span', { 'class': 'cnt', text: count })
+      ]);
+      ul.appendChild(el('button', { type: 'button', 'class': 'row' + (p.super ? ' me' : ''), onclick: function () { personDialog(p.email); } }, [el('div', { 'class': 'av', 'aria-hidden': 'true', text: initials(p) }), main, meta]));
+    });
+    body.appendChild(ul);
+  }
+
+  /* ---------- by tool ---------- */
+  function renderByTool(body) {
+    var tools = grantable();
+    if (!toolSel || !tools.some(function (t) { return t.key === toolSel; })) toolSel = tools[0].key;
+    var sel = el('select', { id: 'toolSel', 'aria-label': 'Choose a tool' });
+    catByGroup().forEach(function (g) {
+      var og = el('optgroup', { label: g.group });
+      g.tools.filter(function (t) { return !t.locked && !t.always; }).forEach(function (t) {
+        var n = D.people.filter(function (p) { return !p.super && p.tools.indexOf(t.key) >= 0; }).length;
+        og.appendChild(el('option', { value: t.key, selected: t.key === toolSel, text: t.name + ' (' + n + ')' }));
+      });
+      if (og.children.length) sel.appendChild(og);
+    });
+    sel.addEventListener('change', function () { toolSel = sel.value; renderBody(); });
+    var t = tools.filter(function (x) { return x.key === toolSel; })[0];
+    var box = el('div', { 'class': 'tsel' }, [sel]);
+    if (t.link_only) box.appendChild(el('p', { 'class': 'hint', text: 'Opens in Gemini, outside this website. Switching it off hides the card, but cannot stop someone who already has the link.' }));
+    body.appendChild(box);
+    var grp = el('div', { 'class': 'grp', style: 'margin-top:12px' });
+    var anyone = false;
+    D.people.filter(function (p) { return p.status !== 'new' && p.status !== 'removed_still_in_cloudflare'; }).forEach(function (p) {
+      anyone = true;
+      var on = p.super || p.tools.indexOf(t.key) >= 0;
+      var sw = el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(on), 'aria-label': (p.name || p.email) + ': ' + t.name, disabled: p.super });
+      if (!p.super) sw.addEventListener('click', function () { flip(p, t.key, sw); });
+      grp.appendChild(el('div', { 'class': 'tr' }, [
+        el('div', { 'class': 'av', style: 'width:36px;height:36px;font-size:13px', 'aria-hidden': 'true', text: initials(p) }),
+        el('div', { 'class': 'tn' }, [p.name || p.email, el('small', { text: p.super ? 'Super admin: always on' : (p.type ? typeName(p.type) : '') })]),
+        sw
+      ]));
+    });
+    if (!anyone) grp.appendChild(el('div', { 'class': 'tr', text: 'Nobody to show yet.' }));
+    body.appendChild(grp);
+  }
+
+  /* switch one tool for one person (instant, with undo on failure) */
+  function flip(p, key, sw, after) {
+    var want = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', String(want)); sw.disabled = true;
+    req('POST', { action: 'tool', id: p.id, tool: key, on: want }).then(function (d) {
+      take(d); sw.disabled = false; if (after) after(); softRefresh();
+    }).catch(function (e) { sw.setAttribute('aria-checked', String(!want)); sw.disabled = false; toast(e.message, true); });
+  }
+  function softRefresh() {   // update the lists behind an open dialog without losing the place
+    renderBanners();
+    var q = $('app').querySelector('.search');
+    if (q) { var keep = q.value; renderBody(); q.value = keep; }
+  }
+
+  /* ---------- person dialog ---------- */
+  function openDlg(title, sub, build) {
+    dlg.innerHTML = '';
+    var head = el('div', { 'class': 'dh' }, [el('div', { 'class': 't' }, [el('h2', { id: 'dlgTitle', text: title }), sub ? el('div', { 'class': 'em', text: sub }) : null]), el('button', { type: 'button', 'class': 'x', 'aria-label': 'Close', text: '×', onclick: function () { dlg.close(); } })]);
+    var body = el('div', { 'class': 'db' });
+    dlg.appendChild(head); dlg.appendChild(body);
+    build(body);
+    if (!dlg.open) dlg.showModal();
+    return body;
+  }
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('close', function () { if (D) render(); });
+
+  function personDialog(email) {
+    var p = byEmail(email);
+    if (!p) return;
+    if (p.status === 'new' || p.status === 'removed_still_in_cloudflare') return setupDialog(p);
+    var total = grantable().length;
+    openDlg(p.name || p.email, p.name ? p.email : '', function (body) {
+      if (p.super) {
+        body.appendChild(el('div', { 'class': 'banner ok' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'You are the super admin. ' }), 'You always have every tool, and nobody else can be given the Site Admin tools. This row is locked.'])]));
+        return;
+      }
+      var err = el('p', { 'class': 'err', role: 'alert', hidden: true });
+      if (p.status === 'not_in_cloudflare') {
+        body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Not on the Cloudflare list, so they cannot log in. ' }),
+          el('button', { type: 'button', 'class': 'btn small', style: 'margin-top:8px', text: 'Add to Cloudflare', onclick: function (ev) {
+            ev.target.disabled = true;
+            req('POST', { action: 'cf_add', email: p.email }).then(function (d) { take(d); toast('Added to Cloudflare. They can log in now.'); personDialog(p.email); }).catch(function (e) { ev.target.disabled = false; toast(e.message, true); });
+          } })])]));
+      }
+      // details
+      var nameIn = el('input', { type: 'text', id: 'pName', value: p.name, maxlength: '120', autocomplete: 'off' });
+      var typeSel = null;
+      var detailKids = [el('div', {}, [el('label', { 'class': 'f', 'for': 'pName', text: 'Name' }), nameIn])];
+      typeSel = el('select', { id: 'pType' }, ['team', 'admin', 'tester'].map(function (t) { return el('option', { value: t, selected: p.type === t, text: typeName(t) }); }));
+      detailKids.push(el('div', {}, [el('label', { 'class': 'f', 'for': 'pType', text: 'Type' }), typeSel]));
+      var save = el('button', { type: 'button', 'class': 'btn small', text: 'Save', onclick: function () {
+        save.disabled = true;
+        var payload = { action: 'update', id: p.id, name: nameIn.value }; if (typeSel) payload.type = typeSel.value;
+        req('POST', payload).then(function (d) { take(d); toast('Saved.'); personDialog(p.email); }).catch(function (e) { save.disabled = false; err.textContent = e.message; err.hidden = false; });
+      } });
+      body.appendChild(el('div', { 'class': 'sec' }, [el('div', { 'class': 'two' }, detailKids), el('p', { 'class': 'hint', text: 'Team member: in your team tree (rank and upline are on the Team page). Admin or Tester: outside the tree, only see their own data.' }), el('div', { style: 'margin-top:10px' }, [save]), err]));
+
+      // tools
+      var sum = el('div', { 'class': 'sum' });
+      var upd = function () { var q = byEmail(p.email); sum.textContent = q.tools.length + ' of ' + total + ' tools switched on'; };
+      var tools = el('div', { 'class': 'sec' }, [el('h3', { text: 'Tools' }), sum]);
+      var presetRow = el('div', { 'class': 'presets', style: 'margin:10px 0' });
+      var apply = function (keys, msg) { req('POST', { action: 'tools', id: p.id, tools: keys }).then(function (d) { take(d); toast(msg); personDialog(p.email); }).catch(function (e) { toast(e.message, true); }); };
+      presetRow.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Basic set', onclick: function () { apply(D.basic, 'Basic set applied.'); } }));
+      presetRow.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'All tools', onclick: function () { apply(grantable().map(function (t) { return t.key; }), 'All tools switched on.'); } }));
+      presetRow.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'None', onclick: function () { apply([], 'All tools switched off.'); } }));
+      var copySel = el('select', { 'aria-label': 'Copy tools from', style: 'width:auto;min-height:40px;font-size:14px' }, [el('option', { value: '', text: 'Copy from…' })].concat(D.people.filter(function (o) { return o.id && o.id !== p.id && o.status === 'ok' && !o.super; }).map(function (o) { return el('option', { value: String(o.id), text: o.name || o.email }); })));
+      copySel.addEventListener('change', function () { var o = byId(+copySel.value); if (o) apply(o.tools, 'Copied from ' + (o.name || o.email) + '.'); });
+      presetRow.appendChild(copySel);
+      tools.appendChild(presetRow);
+      catByGroup().forEach(function (g) {
+        var gr = g.tools.filter(function (t) { return !t.locked; });
+        if (!gr.length) return;
+        var head = el('div', { 'class': 'gh' }, [el('span', { text: g.group }), el('span', { 'class': 'sp' })]);
+        var grp = el('div', { 'class': 'grp', style: 'margin-bottom:10px' }, [head]);
+        var switches = [];
+        gr.forEach(function (t) {
+          var cur = byEmail(p.email);
+          var kid;
+          if (t.always) {
+            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, el('small', { text: 'Switched on or off per person on the Team page' })]), el('span', { 'class': 'lock', text: 'Team page' })]);
+          } else {
+            var sw = el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(cur.tools.indexOf(t.key) >= 0), 'aria-label': t.name });
+            sw.addEventListener('click', function () { flip(cur, t.key, sw, upd); });
+            switches.push({ sw: sw, key: t.key });
+            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, t.link_only ? el('small', { text: 'Opens in Gemini: hides the card only' }) : null]), sw]);
+          }
+          grp.appendChild(kid);
+        });
+        if (switches.length > 1) {
+          var allOn = function () { var c = byEmail(p.email); return switches.every(function (s) { return c.tools.indexOf(s.key) >= 0; }); };
+          var tog = el('button', { type: 'button', text: allOn() ? 'Turn all off' : 'Turn all on' });
+          tog.addEventListener('click', function () {
+            var c = byEmail(p.email), on = !allOn(), keys = c.tools.slice();
+            switches.forEach(function (s) { var i = keys.indexOf(s.key); if (on && i < 0) keys.push(s.key); if (!on && i >= 0) keys.splice(i, 1); });
+            apply(keys, g.group + (on ? ' switched on.' : ' switched off.'));
+          });
+          head.appendChild(tog);
+        }
+        tools.appendChild(grp);
+      });
+      tools.appendChild(el('p', { 'class': 'hint', text: 'Testimonials, Events, Site Settings and Members & Access are always super admin only. Every tool page is checked on the server, so a ticked-off tool cannot be opened even with its direct link.' }));
+      body.appendChild(tools); upd();
+
+      // remove
+      var rm = el('div', { 'class': 'sec' }, [el('h3', { text: 'Remove' })]);
+      if (p.type === 'team') {
+        rm.appendChild(el('p', { 'class': 'hint', text: 'Team members are removed on the Team page, so their team and candidates are looked after. That also takes them off Cloudflare and signs them out.' }));
+        rm.appendChild(el('a', { 'class': 'btn small', href: '/members/team/', text: 'Open the Team page' }));
+      } else {
+        var holder = el('div', {});
+        var ask = el('button', { type: 'button', 'class': 'btn danger small', text: 'Remove ' + (p.name || p.email), onclick: function () {
+          holder.innerHTML = '';
+          var yes = el('button', { type: 'button', 'class': 'btn danger small', text: 'Yes, remove' });
+          holder.appendChild(el('div', { 'class': 'confirm' }, [el('div', { text: 'Take ' + (p.name || p.email) + ' off the Cloudflare list and sign them out now?' }), el('div', { 'class': 'r' }, [yes, el('button', { type: 'button', 'class': 'btn small', text: 'Cancel', onclick: function () { holder.innerHTML = ''; holder.appendChild(ask); } })])]));
+          yes.addEventListener('click', function () {
+            yes.disabled = true;
+            req('POST', { action: 'remove', email: p.email }).then(function (d) { take(d); dlg.close(); toast((p.name || p.email) + ' removed' + (d.result.cloudflare === 'ok' ? ' and signed out.' : '. Cloudflare is not connected, so remove the email in Zero Trust yourself.')); })
+              .catch(function (e) { yes.disabled = false; toast(e.message, true); take0(); });
+          });
+        } });
+        holder.appendChild(ask);
+        rm.appendChild(holder);
+      }
+      body.appendChild(rm);
+    });
+  }
+  function take0() { return req('GET').then(take).then(function () { render(); }); }
+
+  /* ---------- set up / add dialog ---------- */
+  function setupDialog(p) { addDialog(p.email, p); }
+  function addDialog(prefill, existing) {
+    var title = existing ? (existing.status === 'new' ? 'Set up ' + existing.email : 'Bring back ' + (existing.name || existing.email)) : 'Add a person';
+    var type = existing && existing.type && existing.type !== 'team' ? existing.type : (existing ? 'admin' : 'team');
+    var start = type === 'team' ? 'basic' : 'none';
+    openDlg(title, '', function (body) {
+      var err = el('p', { 'class': 'err', role: 'alert', hidden: true });
+      if (existing && existing.status === 'new') body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', { text: 'This email is on the Cloudflare list but has no name or tools yet. Until you set it up they get nothing.' })]));
+      if (existing && existing.status === 'removed_still_in_cloudflare') {
+        body.appendChild(el('div', { 'class': 'banner warn' }, [el('span', { 'class': 'dot' }), el('div', {}, [el('b', { text: 'Removed on this site, but the email is still on Cloudflare. ' }), el('button', { type: 'button', 'class': 'btn danger small', style: 'margin-top:8px', text: 'Finish removing from Cloudflare', onclick: function (ev) {
+          ev.target.disabled = true;
+          req('POST', { action: 'remove', email: existing.email }).then(function (d) { take(d); dlg.close(); toast('Taken off Cloudflare and signed out.'); }).catch(function (e) { ev.target.disabled = false; toast(e.message, true); });
+        } })])]));
+      }
+      var emailIn = el('input', { type: 'email', id: 'aEmail', value: prefill, readonly: !!existing, autocomplete: 'off', inputmode: 'email', placeholder: 'name@example.com' });
+      var nameIn = el('input', { type: 'text', id: 'aName', value: existing ? existing.name : '', maxlength: '120', autocomplete: 'off', placeholder: 'e.g. David' });
+      body.appendChild(el('div', {}, [el('label', { 'class': 'f', 'for': 'aEmail', text: 'Login email' }), emailIn, el('p', { 'class': 'hint', text: 'Must be the email they sign in with. It is added to the Cloudflare list for you.' })]));
+      body.appendChild(el('div', {}, [el('label', { 'class': 'f', 'for': 'aName', text: 'Name' }), nameIn]));
+
+      var typeBox = el('div', { 'class': 'types', role: 'group', 'aria-label': 'Type' });
+      var startBox = el('div', {});
+      var types = [['team', 'Team member', 'Your agents and leaders. Appears in the Team tree. Rank and upline are set on the Team page.'], ['admin', 'Admin', 'Staff with their own job, such as the agency report or monthly report. Not in your team tree.'], ['tester', 'Tester', 'Helping you test the system. Not in your team tree.']];
+      var drawTypes = function () {
+        typeBox.innerHTML = '';
+        types.forEach(function (t) {
+          typeBox.appendChild(el('button', { type: 'button', 'class': 'type', 'aria-pressed': String(type === t[0]), onclick: function () { type = t[0]; start = type === 'team' ? 'basic' : 'none'; drawTypes(); drawStart(); } }, [el('div', {}, [el('b', { text: t[1] }), el('span', { text: t[2] })])]));
+        });
+      };
+      var copySel = el('select', { 'aria-label': 'Copy tools from' }, D.people.filter(function (o) { return o.id && o.status === 'ok' && !o.super; }).map(function (o) { return el('option', { value: String(o.id), text: o.name || o.email }); }));
+      var drawStart = function () {
+        startBox.innerHTML = '';
+        var opts = [['basic', 'Basic set', 'Servicing, Sales and Recruitment tools'], ['none', 'Nothing', 'Switch tools on afterwards']];
+        if (copySel.children.length) opts.push(['copy', 'Copy from someone', '']);
+        startBox.appendChild(el('label', { 'class': 'f', text: 'Start with' }));
+        var row = el('div', { 'class': 'types' });
+        opts.forEach(function (o) {
+          row.appendChild(el('button', { type: 'button', 'class': 'type', 'aria-pressed': String(start === o[0]), onclick: function () { start = o[0]; drawStart(); } }, [el('div', {}, [el('b', { text: o[1] }), o[2] ? el('span', { text: o[2] }) : null])]));
+        });
+        startBox.appendChild(row);
+        if (start === 'copy') startBox.appendChild(el('div', { style: 'margin-top:8px' }, [copySel]));
+      };
+      body.appendChild(el('div', {}, [el('label', { 'class': 'f', text: 'Type' }), typeBox]));
+      body.appendChild(startBox);
+      drawTypes(); drawStart();
+      body.appendChild(err);
+      var go = el('button', { type: 'button', 'class': 'btn primary', text: existing ? 'Save and switch on' : 'Add person' });
+      go.addEventListener('click', function () {
+        go.disabled = true; err.hidden = true;
+        var payload = { action: 'add', email: emailIn.value, name: nameIn.value, type: type };
+        if (start === 'basic') payload.tools = D.basic; else if (start === 'none') payload.tools = []; else payload.copy_from = +copySel.value;
+        req('POST', payload).then(function (d) {
+          take(d); dlg.close();
+          var cf = d.result && d.result.cloudflare;
+          toast((nameIn.value.trim() || emailIn.value.trim()) + ' added.' + (cf === 'ok' ? ' Cloudflare updated, they can log in now.' : ' Cloudflare is not connected, so add the email in Zero Trust yourself.'));
+        }).catch(function (e) { go.disabled = false; err.textContent = e.message; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); });
+      });
+      body.appendChild(el('div', {}, [go]));
+    });
+    setTimeout(function () { var f = $(prefill ? 'aName' : 'aEmail'); if (f) f.focus(); }, 50);
+  }
+
+  /* ---------- start ---------- */
+  req('GET').then(function (d) {
+    take(d); $('who').textContent = 'Signed in as ' + d.me.name + ' (super admin)';
+    $('app').innerHTML = ''; render();
+  }).catch(function (e) {
+    $('banners').innerHTML = '';
+    var app = $('app'); app.innerHTML = '';
+    if (e.status === 403) {
+      app.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'This page is for the super admin only' }), 'Go back to the toolkit to use your own tools.']));
+    } else {
+      app.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'Could not load' }), e.message, el('div', { style: 'margin-top:12px' }, [el('button', { type: 'button', 'class': 'btn', text: 'Try again', onclick: function () { location.reload(); } })])]));
+    }
+  });
+})();
+</script>
+</body>
+</html>
