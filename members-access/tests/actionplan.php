@@ -384,6 +384,8 @@ $pd1 = $plan('dave');
 check('DISC picked up from the Career Code test (matched by email), marked as such', $pd1['disc']['style'] === 'DI' && $pd1['disc']['source'] === 'Career Code' && str_contains($pd1['disc']['hint'], 'targets'));
 check('...also on the overview chip', array_column(ap_get($pdo, $you['id'], ['view' => 'overview'], $T)['plans'], 'disc', 'name')['Dave'] === 'DI');
 ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $dave, 'disc' => 'S'], $T);
+check('the check shows the DISC style found in Career Code', str_contains(implode(' ', ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '02/03/2026'], $T)['check']['lines']), 'DISC style from Career Code: DI'));
+check('...and says so plainly when there is none', str_contains(implode(' ', ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Cindy'], 'since' => '02/03/2026'], $T)['check']['lines']), 'DISC style from Career Code: none found'));
 check('a style you set by hand wins over Career Code', $plan('dave')['disc']['style'] === 'S' && $plan('dave')['disc']['source'] === null);
 check('nothing found for someone who never did the test', $plan('cindy')['disc'] === null);
 

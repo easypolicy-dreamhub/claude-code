@@ -317,5 +317,7 @@ function ap_auto_diagnose(PDO $pdo, array $plan, string $today): array
     }
     $cr = ap_career_counts($pdo, (int)$plan['member_id'], (string)$plan['start_date']);
     $out['lines'][] = 'Career Code candidates added since the start date: ' . ($cr === null ? 'not available' : $cr['added'] . ' (' . $cr['tests'] . ' tests completed)');
+    $disc = ap_disc_from_career_code($pdo, (string)$m['email'], ['D', 'I', 'S', 'C', 'DI', 'DS', 'DC', 'ID', 'IS', 'IC', 'SD', 'SI', 'SC', 'CD', 'CI', 'CS']);
+    $out['lines'][] = 'DISC style from Career Code: ' . ($disc ?? 'none found (they have not taken the DISC test under this email)');
     return $out;
 }
