@@ -350,6 +350,20 @@ check('the check shows plain counts on top (Open / Present / Recruit / closed ca
 check('...and keeps the technical lines (note types, closes columns) apart', str_contains(implode(' ', $chk['tech']), 'present = ') && str_contains(implode(' ', $chk['tech']), 'close_date') && !str_contains(implode(' ', $chk['lines']), 'close_date'));
 throws('only the super admin can run the check', 403, fn () => ap_get($pdo, $ids['Gm'], ['view' => 'autocheck', 'plan' => $dave], $T));
 
+echo "\nShortcut buttons only for tools the person can open\n";
+$pk = fn () => ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $dave], $T)['plan'];
+$mine = fn () => ap_get($pdo, $ids['Dave'], ['view' => 'me'], $T)['plan'];
+$prodK = fn (array $p) => ap_find($p, 'Product knowledge: Medical, CI, Life');
+check('tool not switched on for the agent: no shortcut for them', $prodK($mine())['tool'] === null);
+check('...and the leader is told why', $prodK($pk())['tool_denied'] === 'Sum Assured Calculator');
+check('...the agent is not told anything about it', !array_key_exists('tool_denied', $prodK($mine())));
+set_ticked_tools($pdo, $ids['Dave'], array_merge(ticked_tools($pdo, $ids['Dave']), ['sum-assured']));
+check('switch the tool on: the shortcut appears for the agent', $prodK($mine())['tool']['url'] === '/members/sum-assured/' && $prodK($pk())['tool_denied'] === null);
+check('Client Portal shortcut: shown when their portal is on', ap_find($mine(), 'Prospect list (100)')['tool']['url'] === '/client-portal/');
+e3pb_toggle('dave@x.com', 'Dave', false);
+check('...hidden when their portal is off', ap_find($mine(), 'Prospect list (100)')['tool'] === null && ap_find($pk(), 'Prospect list (100)')['tool_denied'] === 'Client Portal');
+e3pb_toggle('dave@x.com', 'Dave', true);
+
 echo "\nTry the automatic counts (no plan needed)\n";
 $plansBefore = (int)$pdo->query('SELECT COUNT(*) FROM ap_plans')->fetchColumn();
 $try = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '02/03/2026'], $T)['check'];

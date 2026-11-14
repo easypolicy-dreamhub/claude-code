@@ -530,6 +530,11 @@ function ap_plan_items(PDO $pdo, array $plan, string $today): array
         $ovr[(int)$r['item_id']] = $r;
     }
 
+    // What this person can actually open: a shortcut to a tool they cannot open would only lead to a "no access" page.
+    $mrow = $pdo->prepare('SELECT * FROM members WHERE id = ?');
+    $mrow->execute([(int)$plan['member_id']]);
+    $mrow = $mrow->fetch();
+    $canOpen = $mrow ? allowed_tools($pdo, $mrow) : [];
     $ctx = null;   // the automatic counts, worked out once and only if some item uses them
     $out = [];
     foreach ($rows->fetchAll() as $i) {
@@ -612,11 +617,21 @@ function ap_plan_items(PDO $pdo, array $plan, string $today): array
             'from' => $sf, 'to' => $st, 'window' => $window, 'overdue' => $overdue, 'pace_behind' => $paceBehind, 'expected' => $expected,
             'skipped' => $skipped, 'skip_note' => (string)($o['skip_note'] ?? ''),
             'base' => ['from' => $from, 'to' => $to, 'target' => $i['target'] === null ? null : (int)$i['target']],
-            'has_override' => (bool)$o, 'tool' => ap_tool_url($i['tool_key']), 'auto' => $auto,
-        ];
+            'has_override' => (bool)$o, 'auto' => $auto,
+        ] + ap_item_tool($i['tool_key'], $canOpen);
     }
     usort($out, static fn (array $a, array $b): int => [$a['s_sort'], $a['sort'], $a['id']] <=> [$b['s_sort'], $b['sort'], $b['id']]);
     return $out;
+}
+
+/** The shortcut button of an item: shown only if this person can open that tool; otherwise the leader is told why it is missing. */
+function ap_item_tool(?string $key, array $canOpen): array
+{
+    $t = ap_tool_url($key);
+    if ($t === null) {
+        return ['tool' => null, 'tool_denied' => null];
+    }
+    return in_array($key, $canOpen, true) ? ['tool' => $t, 'tool_denied' => null] : ['tool' => null, 'tool_denied' => $t['name']];
 }
 
 /** Counts, percent and the On track / Behind label (the label is for approvers only). */
@@ -856,7 +871,7 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
             continue;
         }
         if (!$approver) {
-            unset($it['overdue'], $it['pace_behind'], $it['expected'], $it['base'], $it['has_override'], $it['skip_note']);
+            unset($it['overdue'], $it['pace_behind'], $it['expected'], $it['base'], $it['has_override'], $it['skip_note'], $it['tool_denied']);
         }
         $outItems[] = $it;
     }

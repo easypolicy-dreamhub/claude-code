@@ -411,6 +411,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (approver && it.overdue) mm.appendChild(el('span', { 'class': 'late', text: 'Overdue' }));
     if (approver && it.pace_behind) mm.appendChild(el('span', { 'class': 'late', text: 'Behind the pace' + (it.expected !== null ? ' (about ' + it.expected + ' expected)' : '') }));
     if (it.status === 'waiting') mm.appendChild(el('span', { 'class': 'chip waiting', text: 'Waiting for approval' }));
+    if (approver && it.tool_denied) mm.appendChild(el('span', { 'class': 'chip soft', title: 'Switch it on in Members & Access so the shortcut appears for them', text: 'Shortcut hidden: ' + it.tool_denied + ' is not switched on for ' + p.member.name.split(' ')[0] }));
     if (it.status === 'done') mm.appendChild(el('span', { 'class': 'chip done', text: 'Approved' + (it.approved_at ? ' ' + fmtDate(String(it.approved_at).slice(0, 10)) : '') }));
     if (it.extra) mm.appendChild(el('span', { 'class': 'chip soft', text: 'Extra' }));
     if (it.skipped) mm.appendChild(el('span', { 'class': 'chip soft', text: 'Not needed' + (it.skip_note ? ': ' + it.skip_note : '') }));
