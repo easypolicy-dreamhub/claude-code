@@ -470,6 +470,10 @@ check('Cindy cannot open the Action Plan yet', !in_array('action-plan', ticked_t
 $dp = ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $dave, 'buddy_id' => $ids['Cindy']], $T)['plan'];
 check('buddy set: the plan shows who it is, the Action Plan card is switched on for the buddy', $dp['buddy']['name'] === 'Cindy' && in_array('action-plan', ticked_tools($pdo, $ids['Cindy']), true));
 check('...and the agent sees who their buddy is', ap_get($pdo, $ids['Dave'], ['view' => 'me'], $T)['plan']['buddy']['name'] === 'Cindy');
+check('buddy with no WhatsApp number: the agent gets no number', ap_get($pdo, $ids['Dave'], ['view' => 'me'], $T)['plan']['buddy']['whatsapp'] === null);
+$pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['+60 19-876 5432', $ids['Cindy']]);
+check('buddy number reaches the agent as digits, on their own plan', ap_get($pdo, $ids['Dave'], ['view' => 'me'], $T)['plan']['buddy']['whatsapp'] === '60198765432');
+check('...but not in the leader\'s or the buddy\'s view of that plan', !array_key_exists('whatsapp', ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $dave], $T)['plan']['buddy']) && !str_contains(json_encode(ap_get($pdo, $ids['Cindy'], ['view' => 'buddy_plan', 'plan' => $dave], $T)), '60198765432'));
 $bl = ap_get($pdo, $ids['Cindy'], ['view' => 'buddy'], $T)['people'];
 check('the buddy sees the person in their list', count($bl) === 1 && $bl[0]['name'] === 'Dave' && isset($bl[0]['percent']) && ap_get($pdo, $ids['Cindy'], ['view' => 'init'], $T)['buddy_count'] === 1);
 $bv = ap_get($pdo, $ids['Cindy'], ['view' => 'buddy_plan', 'plan' => $dave], $T)['plan'];

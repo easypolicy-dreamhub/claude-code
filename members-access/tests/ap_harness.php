@@ -23,6 +23,7 @@ function ap_h_seed(string $file): void
     $dave = ap_assign($pdo, $you, $ids['Dave'], '2026-03-02', 90);
     $cindy = ap_assign($pdo, $you, $ids['Cindy'], '2026-03-09', 120);
     $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60123456789', $ids['Dave']]);
+    $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60198765432', $ids['Cindy']]);
     ap_plan_update($pdo, $you, $dave, ['buddy_id' => $ids['Cindy']]);
     $items = ap_plan_items($pdo, ap_plan_row($pdo, $dave), $today);
     foreach ($items as $it) {
