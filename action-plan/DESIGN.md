@@ -86,7 +86,11 @@ Count items show progress all the time (e.g. 18/50) and go to **Waiting for you*
 
 ---
 
-## 5. On track or behind
+## 5. On track or behind — weeks are a guide, not a rule
+- **Agents see gentle wording:** "Suggested by week 5", never "overdue". Only you (and approvers) see the **Behind** / **A little behind** labels.
+- **Plan length per person.** Default 90 days. For someone who needs longer (or shorter) you set e.g. 120 or 150 days, and every target week stretches in proportion.
+- **One-off changes on a person's page:** move a single item to a different week for them, skip an item, add an extra item, or change a count target for them only (e.g. presentations 40 instead of 50 for a part-timer).
+- **A grace margin** — someone shows as behind only when well under the expected pace.
 - **Week** is counted from each agent's **start date** ("Week 5 of 13").
 - **Tick items** are overdue once their target week has passed.
 - **Count items** are compared with the expected pace (presentations over weeks 3–12: by week 7, about 25 expected). Under about 80% of the pace → **Behind**.
@@ -174,14 +178,12 @@ Moving the current associates across: after step 1, set up their plans and mark 
 ---
 
 ## 11. Decisions so far (your answers)
-1. **Target weeks** — still to confirm (see the open items below).
+1. **Target weeks** — a shared guide that bends per person (section 5); pacing in section 2 still to be confirmed.
 2. **The ➕ items** — kept: product knowledge, objection handling, policy delivery, policy summary sheet, ePolicy folder (5), plus the Day-90 review. Any can be turned off later.
 3. **Note types** — **Open** counts as a market survey; **Recruit** counts for Career Introduction.
-4. **Approvals** — you **and** Group Managers (for their own team only).
-5. **Counts** — counted from the Client Portal wherever it can be; the rest are counts the agent enters and an approver confirms.
+4. **Approvals** — you **and team admins** (Group Managers you have switched on as team admins on the Team page), for their own team only. Today nobody is a Group Manager or team admin, so you are the only approver; it widens automatically when you promote someone and switch the flag on.
+5. **Counts** — counted from the Client Portal wherever it can be; the rest are counts the agent enters and an approver confirms. The **point system** is not needed: it stays a plain tick item.
 6. **Who gets a plan** — Team members only, by the **Assign** button.
 
 ### Still open
-- **Target weeks:** is the pacing in section 2 right? Change any item you'd move earlier or later.
-- **Point system:** what is it, in a few words? If it is something the portal already records (visits, appointments, cases), it can be counted. If not, it stays a tick or a count the agent enters.
-- **Which Group Managers approve:** every Group Manager for their own team, or only those you've switched on as **team admins** on the Team page? (I'd suggest team admins only, because you already control that switch.)
+- **Target weeks:** is the pacing in section 2 right as a shared guide? Move any item you would put earlier or later.
