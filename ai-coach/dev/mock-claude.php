@@ -1,6 +1,10 @@
 <?php
 // LOCAL TESTING ONLY. A fake Claude Messages API that records every request.
 $log = getenv('MOCK_LOG');
+if (str_starts_with($_SERVER['REQUEST_URI'], '/cdn-cgi/access/certs')) { // stand-in for Cloudflare's public keys
+    header('Content-Type: application/json');
+    exit((string) @file_get_contents((string) getenv('CF_CERTS_FILE')));
+}
 $raw = file_get_contents('php://input');
 $body = json_decode($raw, true);
 $hdr = [

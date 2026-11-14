@@ -4,12 +4,41 @@ $base = getenv('APP_BASE');
 $mockLog = getenv('MOCK_LOG');
 $pass = 0; $fail = 0; $allBodies = '';
 
+// ---- Cloudflare Access stand-in: a throwaway key pair; the mock serves the certificate ----
+function make_key(): array
+{
+    $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    $csr = openssl_csr_new(['commonName' => 'test-team.cloudflareaccess.com'], $key, ['digest_alg' => 'sha256']);
+    openssl_x509_export(openssl_csr_sign($csr, null, $key, 2, ['digest_alg' => 'sha256']), $cert);
+    return [$key, $cert, 'kid-' . bin2hex(random_bytes(6))];
+}
+[$cfKey, $cfCert, $cfKid] = make_key();
+file_put_contents(getenv('CF_CERTS_FILE'), json_encode(['keys' => [], 'public_cert' => ['kid' => $cfKid, 'cert' => $cfCert], 'public_certs' => [['kid' => $cfKid, 'cert' => $cfCert]]]));
+function b64u(string $s): string { return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+function jwt(string $email, array $over = [], $key = null, ?string $kid = null, string $alg = 'RS256'): string
+{
+    global $cfKey, $cfKid;
+    $claims = array_merge(['aud' => ['test-aud-123'], 'email' => $email, 'exp' => time() + 3600, 'iat' => time(), 'nbf' => time(),
+        'iss' => 'https://test-team.cloudflareaccess.com', 'type' => 'app', 'sub' => md5($email)], $over);
+    $in = b64u(json_encode(['alg' => $alg, 'kid' => $kid ?? $cfKid, 'typ' => 'JWT'])) . '.' . b64u(json_encode($claims));
+    if ($alg === 'none') return $in . '.';
+    openssl_sign($in, $sig, $key ?? $cfKey, OPENSSL_ALGO_SHA256);
+    return $in . '.' . b64u($sig);
+}
+function token(string $user): string { return jwt("$user@e3.test"); }
+function hit(string $path, array $headers): int
+{
+    global $base;
+    $ch = curl_init("$base/$path"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true]); curl_exec($ch);
+    return curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+}
+
 function req(string $user, string $method, string $action, string $query = '', $body = null, array $opt = []): array
 {
     global $base, $allBodies;
     $ch = curl_init("$base/api.php?action=$action$query");
     $h = [];
-    if ($user !== '') $h[] = "X-Dev-User: $user";
+    if ($user !== '') $h[] = 'Cf-Access-Jwt-Assertion: ' . token($user);
     if (!isset($opt['nocsrf'])) $h[] = 'X-Coach-Request: 1';
     if (isset($opt['origin'])) $h[] = 'Origin: ' . $opt['origin'];
     if (isset($opt['file'])) {
@@ -55,7 +84,7 @@ $adminCalls = [
     ['GET', 'settings', '', null], ['GET', 'usage', '&range=7', null], ['GET', 'usage_member', '&m=' . str_repeat('a', 32), null],
     ['POST', 'save_instructions', '', ['text' => 'x']], ['POST', 'restore_instructions', '', ['version' => 1]], ['POST', 'delete_pdf', '', ['name' => 'a.pdf']],
 ];
-foreach (['alan' => 'plain agent', 'teamadmin' => 'team admin (not super)'] as $u => $label) {
+foreach (['alan' => 'plain agent', 'teamadmin' => 'another member (not the super admin)'] as $u => $label) {
     $bad = [];
     foreach ($adminCalls as [$m, $a, $q, $b]) { [$c] = req($u, $m, $a, $q, $b); if ($c !== 403) $bad[] = "$a=$c"; }
     [$c] = req($u, 'POST', 'upload_pdf', '', null, ['file' => "$tmp/a-products.pdf", 'filename' => 'a-products.pdf']); if ($c !== 403) $bad[] = "upload=$c";
@@ -64,6 +93,26 @@ foreach (['alan' => 'plain agent', 'teamadmin' => 'team admin (not super)'] as $
 [$c] = req('boss', 'POST', 'save_instructions', '', ['text' => 'hi'], ['nocsrf' => 1]);                    ok($c === 403, 'POST without the request header is refused');
 [$c] = req('boss', 'POST', 'save_instructions', '', ['text' => 'hi'], ['origin' => 'https://evil.example']); ok($c === 403, 'POST from another website is refused');
 [$c] = req('boss', 'POST', 'save_instructions', '', ['text' => '   ']);                                      ok($c === 422, 'empty instructions are refused');
+
+echo "\n== Cloudflare Access token is checked on the server ==\n";
+[$otherKey] = make_key();
+$bad = [
+    'forged signature (signed with another key)' => jwt('boss@e3.test', [], $otherKey),
+    'token for another Access app (wrong AUD)' => jwt('boss@e3.test', ['aud' => ['some-other-app']]),
+    'token from another Cloudflare team' => jwt('boss@e3.test', ['iss' => 'https://evil.cloudflareaccess.com']),
+    'expired token' => jwt('boss@e3.test', ['exp' => time() - 600]),
+    'token not valid yet' => jwt('boss@e3.test', ['nbf' => time() + 600]),
+    'unsigned token (alg none)' => jwt('boss@e3.test', [], null, null, 'none'),
+    'unknown key id' => jwt('boss@e3.test', [], null, 'kid-nope'),
+    'token with no email' => jwt('', []),
+    'garbage' => 'abc.def.ghi',
+];
+foreach ($bad as $label => $tok) ok(hit('api.php?action=me', ["Cf-Access-Jwt-Assertion: $tok"]) === 401, "$label is refused");
+ok(hit('api.php?action=me', ['X-Dev-User: boss', 'Cf-Access-Authenticated-User-Email: boss@e3.test']) === 401, 'plain email header without a signed token is refused');
+ok(hit('api.php?action=me', ['Cookie: CF_Authorization=' . token('alan')]) === 200, 'Cloudflare sign-in cookie is accepted too');
+[$c, $d] = req('boss', 'GET', 'me'); ok(($d['name'] ?? '') === 'Boss' && $d['is_admin'] === true, 'name comes from COACH_MEMBER_NAMES; admin email matches ignoring case', json_encode($d));
+$ch = curl_init("$base/api.php?action=me"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['Cf-Access-Jwt-Assertion: ' . jwt('eve.lim@e3.test')], CURLOPT_RETURNTRANSFER => true]);
+$d = json_decode((string) curl_exec($ch), true); ok(($d['name'] ?? '') === 'Eve Lim' && $d['is_admin'] === false, 'unlisted member gets a name made from the email', json_encode($d));
 
 echo "\n== Coach not set up yet ==\n";
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'hello']); ok($c === 409, 'agent cannot chat before instructions exist', "got $c");
@@ -153,6 +202,7 @@ echo "\n== Usage (questions only) ==\n";
 [$c, $d] = req('boss', 'GET', 'usage', '&range=7');
 $names = array_column($d['people'], 'name');
 ok(in_array('Alan', $names) && in_array('Brenda', $names), 'people table lists agents who asked');
+ok(in_array('Dave', array_column($d['needs_nudge'] ?? [], 'name'), true), 'member who never used the coach shows in "needs a nudge"');
 ok($d['tiles']['handoffs'] === 1 && $d['tiles']['questions'] >= 5 && $d['tiles']['agents_using'] >= 3, 'tiles: questions, agents using, handoffs', json_encode($d['tiles']));
 $alan = array_values(array_filter($d['people'], fn($p) => $p['name'] === 'Alan'))[0];
 [$c, $d, $raw] = req('boss', 'GET', 'usage_member', '&m=' . $alan['mid'], null);
@@ -162,7 +212,7 @@ ok(count(array_filter($d['questions'], fn($q) => $q['handoff'])) === 1, 'handoff
 [$c, $d, $raw] = req('boss', 'GET', 'usage_member', '&m=../etc'); ok($c === 422, 'bad agent id refused');
 
 echo "\n== Page and secrets ==\n";
-$h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $html = curl_exec($h); $c = curl_getinfo($h, CURLINFO_RESPONSE_CODE);
+$h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['Cf-Access-Jwt-Assertion: ' . token('alan')], CURLOPT_RETURNTRANSFER => true]); $html = curl_exec($h); $c = curl_getinfo($h, CURLINFO_RESPONSE_CODE);
 ok($c === 200 && str_contains($html, 'AI Coach'), 'page loads for a signed-in agent');
 ok(!str_contains($html, 'test-key-123') && !str_contains($html, 'sk-ant'), 'API key is not in the page');
 $h = curl_init("$base/index.php"); curl_setopt($h, CURLOPT_RETURNTRANSFER, true); curl_exec($h); ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 401, 'page refuses a signed-out visitor');
@@ -173,7 +223,7 @@ ok(!glob("$docRoot/*.pdf") && !glob("$docRoot/**/*.pdf"), 'no PDFs stored in the
 
 echo "\n== Data folder inside the web folder is refused ==\n";
 $base2 = getenv('APP_BASE_BADDIR');
-$ch = curl_init("$base2/api.php?action=me"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $raw = curl_exec($ch);
+$ch = curl_init("$base2/api.php?action=me"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['Cf-Access-Jwt-Assertion: ' . token('alan')], CURLOPT_RETURNTRANSFER => true]); $raw = curl_exec($ch);
 ok(curl_getinfo($ch, CURLINFO_RESPONSE_CODE) === 500 && str_contains((string) $raw, 'outside public_html'), 'coach refuses to run if its data folder is under public_html');
 
 echo "\nResult: $pass passed, $fail failed\n";

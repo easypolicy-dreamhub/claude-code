@@ -6,6 +6,7 @@ APP="$(dirname "$HERE")"
 WORK="$(mktemp -d)"
 export MOCK_LOG="$WORK/mock.jsonl"; : > "$MOCK_LOG"
 export TEST_DATA_DIR="$WORK/private"
+export CF_CERTS_FILE="$WORK/cf-certs.json"   # written by test.php, served by the mock
 export MOCK_BASE="http://127.0.0.1:18099"
 export APP_BASE="http://127.0.0.1:18098"
 export APP_BASE_BADDIR="http://127.0.0.1:18097"

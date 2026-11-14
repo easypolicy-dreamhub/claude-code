@@ -9,6 +9,23 @@ define('ANTHROPIC_API_KEY', 'sk-ant-...paste-your-key-here...');
 // Country code first, digits only (e.g. 60123456789).
 define('COACH_WHATSAPP_NUMBER', '60123456789');
 
+// Sign-in: Cloudflare Zero Trust (Access), the same app that protects /members/*.
+// Copy the team domain and AUD tag from agency-report/photos.php, or from
+// Cloudflare Zero Trust > Access > Applications > (your members app) > Overview.
+define('COACH_CF_TEAM_DOMAIN', 'YOUR-TEAM.cloudflareaccess.com');
+define('COACH_CF_AUD', 'paste-the-application-audience-AUD-tag-here');
+
+// The team leader: only these emails see the Settings and Usage tabs.
+define('COACH_SUPER_ADMIN_EMAILS', ['leader@example.com']);
+
+// Optional. Members' display names (email => name). Anyone not listed gets a
+// name made from their email (alan.tan@... -> "Alan Tan"). Members listed here
+// who have never used the coach show up under "needs a nudge" in the Usage tab.
+// define('COACH_MEMBER_NAMES', [
+//     'alan.tan@example.com' => 'Alan Tan',
+//     'brenda@example.com'   => 'Brenda',
+// ]);
+
 // Optional. Where instructions, PDFs and chats are stored. MUST be outside
 // public_html. If left out, the coach uses a folder called e3-ai-coach next to
 // public_html (the same place as e3-agency-photos).

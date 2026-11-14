@@ -1,7 +1,8 @@
 <?php
 // LOCAL TESTING ONLY. Never upload the dev/ folder to your server.
-// Used as auto_prepend_file by run-tests.sh to stand in for the real members site
-// (boot_member_request / require_admin / config.php) so the coach can be tested alone.
+// Used as auto_prepend_file by run-tests.sh to stand in for the real site's config.php.
+// Sign-in is real code: test.php signs Cloudflare-style tokens with a throwaway key,
+// and the mock server (mock-claude.php) serves the matching public certificate.
 
 if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
     http_response_code(403);
@@ -15,35 +16,16 @@ define('COACH_DATA_DIR', (string) getenv('TEST_DATA_DIR'));
 define('COACH_HISTORY_MSGS', (int) (getenv('TEST_HISTORY') ?: 4));
 define('COACH_RATE_PER_HOUR', (int) (getenv('TEST_RATE') ?: 20));
 
-function dev_users(): array
-{
-    return [
-        'alan' => ['id' => 'u-alan', 'name' => 'Alan', 'role' => 'agent'],
-        'brenda' => ['id' => 'u-brenda', 'name' => 'Brenda', 'role' => 'agent'],
-        'carol' => ['id' => 'u-carol', 'name' => 'Carol', 'role' => 'agent'],
-        'teamadmin' => ['id' => 'u-ta', 'name' => 'Team Admin', 'role' => 'admin'], // passes require_admin, is NOT super admin
-        'boss' => ['id' => 'u-boss', 'name' => 'Boss', 'role' => 'super_admin'],
-    ];
-}
-
-function boot_member_request()
-{
-    $u = dev_users()[strtolower($_SERVER['HTTP_X_DEV_USER'] ?? '')] ?? null;
-    if (!$u) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        exit('{"error":"sign in"}');
-    }
-    $GLOBALS['dev_user'] = $u;
-    return $u;
-}
-
-function require_admin()
-{
-    $u = $GLOBALS['dev_user'] ?? null;
-    if (!$u || !in_array($u['role'], ['admin', 'super_admin'], true)) {
-        http_response_code(403);
-        header('Content-Type: application/json');
-        exit('{"error":"admin only"}');
-    }
-}
+define('COACH_CF_TEAM_DOMAIN', 'test-team.cloudflareaccess.com');
+define('COACH_CF_AUD', 'test-aud-123');
+define('COACH_CF_CERTS_URL', getenv('MOCK_BASE') . '/cdn-cgi/access/certs');
+define('COACH_CF_CACHE_FILE', dirname((string) getenv('CF_CERTS_FILE')) . '/cf-cert-cache.json');
+define('COACH_SUPER_ADMIN_EMAILS', ['Boss@E3.test']); // mixed case on purpose: matching ignores case
+define('COACH_MEMBER_NAMES', [
+    'alan@e3.test' => 'Alan',
+    'brenda@e3.test' => 'Brenda',
+    'carol@e3.test' => 'Carol',
+    'teamadmin@e3.test' => 'Team Admin',
+    'boss@e3.test' => 'Boss',
+    'dave@e3.test' => 'Dave', // never uses the coach: should show as "needs a nudge"
+]);

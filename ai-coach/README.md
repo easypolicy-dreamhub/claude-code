@@ -8,7 +8,7 @@ A Gem-style coach for the E3 Advisor Toolkit: **instructions** + **PDF knowledge
 |---|---|
 | `index.php` | The coach page. Agents see **Chat**. The super admin also sees **Settings** and **Usage**. |
 | `api.php` | All actions. Every admin action is checked on the server. |
-| `site-bridge.php` | The only link to the rest of the site: `boot_member_request()`, `require_admin`, `config.php`. |
+| `site-bridge.php` | The only link to the rest of the site: checks the Cloudflare Access sign-in and loads `config.php`. |
 | `lib/` | Storage, Claude calls. Not meant to be opened from the web. |
 | `config.sample.php` | Lines to add to your existing `config.php`. |
 | `dev/` | Local tests. **Do not upload.** |
@@ -16,8 +16,8 @@ A Gem-style coach for the E3 Advisor Toolkit: **instructions** + **PDF knowledge
 ## Install on cPanel
 
 1. **Upload** this folder (without `dev/`) to `public_html/members/ai-coach/`, next to the other tools.
-2. **config.php:** add the lines from `config.sample.php` to your existing `config.php`: `ANTHROPIC_API_KEY` and `COACH_WHATSAPP_NUMBER` (country code first, digits only).
-3. **site-bridge.php:** check the three spots marked `ADJUST` (see below).
+2. **config.php:** add the lines from `config.sample.php` to your existing `config.php`: `ANTHROPIC_API_KEY`, `COACH_WHATSAPP_NUMBER` (country code first, digits only), and the Cloudflare sign-in settings (see below). If your `config.php` is not in `public_html/members/`, change the one path at the top of `site-bridge.php`.
+3. **Cloudflare:** check that your Zero Trust Access application covers `/members/*`, so `/members/ai-coach/` is protected like the other toolkits. Nothing new to set up in Cloudflare.
 4. **PHP version:** cPanel > Select PHP Version. Use 8.0 or newer and tick the `curl` extension.
 5. **Upload limits:** cPanel > MultiPHP INI Editor. Set `upload_max_filesize` to at least 25M and `post_max_size` to at least 30M. Each PDF is uploaded as its own request, so a bad file never blocks the others.
 6. **Replace the HNW Coach card** on the `/members/` page: point its link to `/members/ai-coach/`. Suggested text:
@@ -26,15 +26,20 @@ A Gem-style coach for the E3 Advisor Toolkit: **instructions** + **PDF knowledge
    - Grey note: `Your chats are private to you. Your team leader can see the questions you ask.`
 7. **Open the coach page as the super admin.** Settings > paste the instructions > Save. Upload the PDFs (select all at once). Test in the Chat tab. Agents see "The coach is being set up" until you save instructions.
 
-## The three `ADJUST` spots in `site-bridge.php`
+## Sign-in: Cloudflare Zero Trust
 
-The toolkit's own PHP was not available when this was built, so these were written as safe guesses that **fail closed** (if wrong, nobody gets in, nothing leaks):
+Members sign in through Cloudflare Access, like the other toolkits. Cloudflare adds a signed token to every request it lets through. The coach checks that token itself (signature against your team's public keys, the application's AUD tag, issuer and expiry), the same way `agency-report/photos.php` does. So a request that skips Cloudflare, or carries a forged or expired token, gets nothing.
 
-1. **Which files to load:** the path to `config.php`, plus the file that defines `boot_member_request()` and `require_admin()`. Until `boot_member_request()` exists the API answers "Sign-in is not connected yet".
-2. **What `boot_member_request()` returns:** the code reads an `id` (or `member_id` / `email`) and a `name` (or `full_name` / `display_name`) from it.
-3. **Who is the super admin:** `coach_is_super_admin()` looks for `is_super_admin` or `role === 'super_admin'`. Team admins must not pass. If the Settings and Usage tabs do not appear for you, this is the one to change.
+Add to `config.php`:
 
-`require_admin()` is called with no arguments, and the coach adds its own super-admin check on top.
+| Setting | What to put |
+|---|---|
+| `COACH_CF_TEAM_DOMAIN` | Your team domain, e.g. `yourteam.cloudflareaccess.com`. Copy it from `photos.php`. |
+| `COACH_CF_AUD` | The members app's AUD tag. Copy it from `photos.php`, or Zero Trust > Access > Applications > your app > Overview. |
+| `COACH_SUPER_ADMIN_EMAILS` | The team leader's sign-in email(s). Only they see Settings and Usage. |
+| `COACH_MEMBER_NAMES` | Optional. `email => name`. Unlisted members get a name from their email. Listed members who never used the coach show as "needs a nudge". |
+
+Each member's chats are keyed by their sign-in email. If the settings are missing, the coach says "Sign-in is not connected yet" and nobody gets in.
 
 ## How it works
 
@@ -75,4 +80,4 @@ Limits: Claude takes up to 600 PDF pages and 32 MB per request, so the library i
 ./dev/run-tests.sh
 ```
 
-Starts a fake Claude and a stand-in login, then runs 64 checks: the admin gate (agents and team admins get 403 when calling admin actions directly), 5-version history, same-name replace, per-agent privacy, questions-only usage, request shape sent to Claude, and that the API key never reaches the browser.
+Starts a fake Claude and a stand-in Cloudflare key server, then runs 78 checks: forged, expired or wrong-app sign-in tokens are refused, the admin gate (agents and team admins get 403 when calling admin actions directly), 5-version history, same-name replace, per-agent privacy, questions-only usage, request shape sent to Claude, and that the API key never reaches the browser.
