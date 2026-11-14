@@ -284,21 +284,33 @@ function ap_auto_diagnose(PDO $pdo, array $plan, string $today): array
     $m = $member->fetch() ?: ['email' => '', 'name' => ''];
     $pf = ap_portal_file((string)$m['email']);
     $out = ['member' => $m['name'], 'since' => $plan['start_date'], 'until' => $today, 'portal' => ['found' => $pf['file'] !== null, 'why' => $pf['why']], 'lines' => []];
+    $out['tech'] = [];
     if ($pf['file'] !== null) {
         $c = ap_portal_counts($pf['file'], (string)$plan['start_date'], $today);
-        $out['lines'][] = 'Prospects on the list now: ' . ($c['prospects'] ?? 'not available');
-        $out['lines'][] = 'Notes since the start date by type: ' . ($c['kinds'] ? implode(', ', array_map(static fn ($k, $n) => "$k = $n", array_keys($c['kinds']), $c['kinds'])) : 'none');
-        $out['lines'][] = 'Counted as Open: ' . ($c['open'] ?? 'not available') . ' · Present: ' . ($c['present'] ?? 'not available') . ' · Recruit: ' . ($c['recruit'] ?? 'not available');
+        $n = static fn (?int $v): string => $v === null ? 'not available' : (string)$v;
+        $out['lines'][] = 'Prospects on the list now: ' . $n($c['prospects']);
+        $out['lines'][] = 'Market surveys (notes of type Open): ' . $n($c['open']);
+        $out['lines'][] = 'Presentations (notes of type Present): ' . $n($c['present']);
+        $out['lines'][] = 'Recruit notes: ' . $n($c['recruit']);
+        if ($c['closes'] === null) {
+            $out['lines'][] = 'Closed cases: not available (see the note below)';
+        } elseif ($c['closes'] === 0) {
+            $out['lines'][] = 'Closed cases since the start date: 0 (none logged in the portal yet)';
+        } else {
+            $out['lines'][] = 'Closed cases since the start date: ' . $c['closes'] . ($c['anp'] !== null ? ' (RM ' . number_format($c['anp']) . ' ANP)' : '');
+        }
         $other = array_values(array_filter($c['unmatched'], static fn (string $k): bool => in_array(strtolower(trim($k)), AP_NOTE_KINDS_OTHER, true)));
         $unknown = array_values(array_diff($c['unmatched'], $other));
-        if ($other) {
-            $out['lines'][] = 'Other note types (real types, not used for the plan): ' . implode(', ', $other);
-        }
         if ($unknown) {
             $out['lines'][] = 'Note types I do not recognise (not counted): ' . implode(', ', $unknown);
         }
-        $out['lines'][] = 'Closed cases since the start date: ' . ($c['closes'] ?? 'not available') . ($c['anp'] !== null ? ' (RM ' . number_format($c['anp']) . ' ANP)' : '');
-        $out['lines'][] = 'Closes table columns: ' . ($c['closes_cols'] ? implode(', ', $c['closes_cols']) : 'table not found') . ($c['sample'] ? ' · ' . (($c['sample']['closes_date'] ?? null) === null ? 'no cases are logged there yet' : 'latest date looks like ' . $c['sample']['closes_date']) : '');
+        // for troubleshooting only (folded on the screen)
+        $out['tech'][] = 'Notes since the start date by type: ' . ($c['kinds'] ? implode(', ', array_map(static fn ($k, $v) => "$k = $v", array_keys($c['kinds']), $c['kinds'])) : 'none');
+        if ($other) {
+            $out['tech'][] = 'Other note types (real types, not used for the plan): ' . implode(', ', $other);
+        }
+        $out['tech'][] = 'Closed-cases table columns: ' . ($c['closes_cols'] ? implode(', ', $c['closes_cols']) : 'table not found')
+            . ($c['closes_cols'] ? ' · ' . (($c['sample']['closes_date'] ?? null) === null ? 'no cases are logged there yet' : 'latest date looks like ' . $c['sample']['closes_date']) : '');
         $out['problems'] = $c['problems'];
     } else {
         $out['problems'] = [];   // the reason is already in ['portal']['why']

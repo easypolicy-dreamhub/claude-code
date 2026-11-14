@@ -344,15 +344,16 @@ check('dates that are not year-month-day are not guessed at', ap_portal_counts($
 check('a sqlite file with none of the tables gives problems, not an error', (function () use ($tmp) { @mkdir($tmp . 'E', 0777, true); new PDO('sqlite:' . $tmp . 'E/clients.sqlite'); $c = ap_portal_counts($tmp . 'E/clients.sqlite', '2026-03-02', '2026-03-23'); return $c['open'] === null && $c['prospects'] === null && count($c['problems']) >= 2; })());
 check('note types are matched without case', ap_note_group(' Present ') === 'present' && ap_note_group('OPEN') === 'open' && ap_note_group('Recruit') === 'recruit' && ap_note_group('servicing') === null);
 $chk = ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $dave], $T)['check'];
-check('the check lists the note types it found and the closes columns', str_contains(implode(' ', $chk['lines']), 'present = ') && str_contains(implode(' ', $chk['lines']), 'weird-kind') && str_contains(implode(' ', $chk['lines']), 'close_date'));
+check('the check shows plain counts on top (Open / Present / Recruit / closed cases) and flags a type it does not know', str_contains(implode(' ', $chk['lines']), 'Market surveys (notes of type Open): 10') && str_contains(implode(' ', $chk['lines']), 'Presentations (notes of type Present): 52') && str_contains(implode(' ', $chk['lines']), 'weird-kind'));
+check('...and keeps the technical lines (note types, closes columns) apart', str_contains(implode(' ', $chk['tech']), 'present = ') && str_contains(implode(' ', $chk['tech']), 'close_date') && !str_contains(implode(' ', $chk['lines']), 'close_date'));
 throws('only the super admin can run the check', 403, fn () => ap_get($pdo, $ids['Gm'], ['view' => 'autocheck', 'plan' => $dave], $T));
 
 echo "\nTry the automatic counts (no plan needed)\n";
 $plansBefore = (int)$pdo->query('SELECT COUNT(*) FROM ap_plans')->fetchColumn();
 $try = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '02/03/2026'], $T)['check'];
-check('works for anyone, from a date you choose, and shows the same lines as the plan check', str_contains(implode(' ', $try['lines']), 'Counted as Open: 10') && $try['since'] === '2026-03-02' && $try['until'] === $T);
+check('works for anyone, from a date you choose, and shows the same lines as the plan check', str_contains(implode(' ', $try['lines']), 'Market surveys (notes of type Open): 10') && $try['since'] === '2026-03-02' && $try['until'] === $T);
 $try2 = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '2026-03-15'], $T)['check'];
-check('a later start date counts fewer notes (none are dated after 15 March)', str_contains(implode(' ', $try2['lines']), 'Counted as Open: 0'));
+check('a later start date counts fewer notes (none are dated after 15 March)', str_contains(implode(' ', $try2['lines']), 'Market surveys (notes of type Open): 0'));
 $noPlan = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Eve'], 'since' => '02/03/2026'], $T)['check'];
 check('someone with no plan and no portal: a plain reason', $noPlan['portal']['found'] === false);
 $own = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Ben'], 'since' => '02/03/2026'], $T)['check'];

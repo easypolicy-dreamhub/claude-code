@@ -360,6 +360,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     b.appendChild(el('div', { 'class': 'banner ' + (c.portal.found ? 'good' : 'warn') }, [c.portal.found ? 'Client Portal data found.' : 'Client Portal: ' + (c.portal.why || 'not found') + ' Its counts stay manual.']));
     c.lines.forEach(function (l) { b.appendChild(el('div', { 'class': 'dd', text: l })); });
     (c.problems || []).filter(Boolean).forEach(function (pr) { b.appendChild(el('div', { 'class': 'banner warn', text: pr })); });
+    if (c.tech && c.tech.length) b.appendChild(el('details', {}, [el('summary', { style: 'cursor:pointer;color:var(--muted);min-height:40px;font-size:.9rem', text: 'Technical details (for troubleshooting)' })].concat(c.tech.map(function (l) { return el('div', { 'class': 'dd', text: l }); }))));
     b.appendChild(el('p', { 'class': 'hint', text: 'If a number looks wrong, send me this screen and I will adjust how it is counted.' }));
   }
   function autoCheckDialog(p) {
