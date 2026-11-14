@@ -51,6 +51,9 @@ function ap_auto_options(): array
     return $out;
 }
 
+/** Real portal note types that are simply not used for the plan (so they are not "unrecognised"). */
+const AP_NOTE_KINDS_OTHER = ['follow', 'follow-up', 'followup', 'follow up', 'servicing', 'service'];
+
 function ap_note_group(string $kind): ?string
 {
     $k = strtolower(trim($kind));
@@ -286,11 +289,16 @@ function ap_auto_diagnose(PDO $pdo, array $plan, string $today): array
         $out['lines'][] = 'Prospects on the list now: ' . ($c['prospects'] ?? 'not available');
         $out['lines'][] = 'Notes since the start date by type: ' . ($c['kinds'] ? implode(', ', array_map(static fn ($k, $n) => "$k = $n", array_keys($c['kinds']), $c['kinds'])) : 'none');
         $out['lines'][] = 'Counted as Open: ' . ($c['open'] ?? 'not available') . ' · Present: ' . ($c['present'] ?? 'not available') . ' · Recruit: ' . ($c['recruit'] ?? 'not available');
-        if ($c['unmatched']) {
-            $out['lines'][] = 'Note types I do not recognise (not counted): ' . implode(', ', $c['unmatched']);
+        $other = array_values(array_filter($c['unmatched'], static fn (string $k): bool => in_array(strtolower(trim($k)), AP_NOTE_KINDS_OTHER, true)));
+        $unknown = array_values(array_diff($c['unmatched'], $other));
+        if ($other) {
+            $out['lines'][] = 'Other note types (real types, not used for the plan): ' . implode(', ', $other);
+        }
+        if ($unknown) {
+            $out['lines'][] = 'Note types I do not recognise (not counted): ' . implode(', ', $unknown);
         }
         $out['lines'][] = 'Closed cases since the start date: ' . ($c['closes'] ?? 'not available') . ($c['anp'] !== null ? ' (RM ' . number_format($c['anp']) . ' ANP)' : '');
-        $out['lines'][] = 'Closes table columns: ' . ($c['closes_cols'] ? implode(', ', $c['closes_cols']) : 'table not found') . ($c['sample'] ? ' · latest date looks like ' . ($c['sample']['closes_date'] ?? '?') : '');
+        $out['lines'][] = 'Closes table columns: ' . ($c['closes_cols'] ? implode(', ', $c['closes_cols']) : 'table not found') . ($c['sample'] ? ' · ' . (($c['sample']['closes_date'] ?? null) === null ? 'no cases are logged there yet' : 'latest date looks like ' . $c['sample']['closes_date']) : '');
         $out['problems'] = $c['problems'];
     } else {
         $out['problems'] = [];   // the reason is already in ['portal']['why']
