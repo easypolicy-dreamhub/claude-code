@@ -81,7 +81,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 
 # Action Plan (phase 11, step 1: the core)
 
-A new **Action Plan** card (group "Training"): one template, a plan per new associate, tick / count / approve, and an overview.
+A new **Action Plan** card (in the **Coaching** group, next to HNW Coach): one template, a plan per new associate, tick / count / approve, and an overview.
 Design: `action-plan/DESIGN.md`. This is **step 1 only**: auto-counts from the Client Portal / Career Code, DISC from Career Code, WhatsApp nudges and the printable Day-90 review come later.
 
 ## What it does

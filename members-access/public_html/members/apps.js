@@ -116,15 +116,6 @@ const APPS = [
     note:  "You see your own invitees and your team's."
   },
   {
-    key:   "action-plan",
-    name:  "Action Plan",
-    url:   "/members/action-plan/",
-    icon:  "🗺️",
-    about: "Your first 90 days step by step: what to do each week, your progress, and what your leader has approved",
-    group: "Training",
-    note:  "Your leader assigns it. Suggested weeks are a guide, not a deadline."
-  },
-  {
     key:   "activity",
     name:  "Team Activity",
     url:   "/members/activity/",
@@ -157,6 +148,15 @@ const APPS = [
     about: "Practise high-net-worth client conversations and objection handling",
     group: "Coaching",
     note:  "Opens in Gemini. Sign in with a Google account the Gem is shared with."
+  },
+  {
+    key:   "action-plan",
+    name:  "Action Plan",
+    url:   "/members/action-plan/",
+    icon:  "🗺️",
+    about: "Your first 90 days step by step: what to do each week, your progress, and what your leader has approved",
+    group: "Coaching",
+    note:  "Your leader assigns it. Suggested weeks are a guide, not a deadline."
   },
   {
     key:   "team",

@@ -16,7 +16,7 @@ require_once __DIR__ . '/portal.php';
  *
  * Super admin automatically has every tool. Everyone else has exactly the tools ticked for them.
  */
-const TOOL_GROUPS = ['Servicing', 'Sales', 'Recruitment', 'Training', 'Leader', 'Admin', 'Coaching', 'Site Admin'];
+const TOOL_GROUPS = ['Servicing', 'Sales', 'Recruitment', 'Leader', 'Admin', 'Coaching', 'Site Admin'];
 
 function tool_catalog(): array
 {
@@ -36,7 +36,7 @@ function tool_catalog(): array
         $t('event-links', 'Event Invite Links', 'Recruitment', 'event-links', ['basic' => true]),
         $t('event-invitees', 'My Event Invitees', 'Recruitment', 'event-invitees', ['basic' => true]),
         $t('million-income', 'Million Income Calculator', 'Recruitment', 'million-income', ['basic' => true]),
-        $t('action-plan', 'Action Plan', 'Training', 'action-plan'),
+        $t('action-plan', 'Action Plan', 'Coaching', 'action-plan'),
         $t('activity', 'Team Activity', 'Leader', 'activity'),
         $t('team', 'Team', 'Leader', 'team'),
         $t('agency-report', 'Agency Report Generator', 'Leader', 'agency-report'),
