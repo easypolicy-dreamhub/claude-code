@@ -130,7 +130,7 @@ Numbers that fill themselves in, so agents do not type them and you do not have 
 ## Install
 1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase12.sql` > Go, **once**. No new tables; it only switches the automatic count on for the five items above in your existing template.
 2. **Extract the zip in your home folder** (overwrites the same-named files).
-3. Open someone's plan > **Plan settings > Check the automatic counts**. It lists what it found (note types and their counts, the closes table's columns, ANP). If a number looks wrong, send me that screen.
+3. Open someone's plan > **Plan settings > Check the automatic counts**, or, with no plan needed, **Everyone > Try the automatic counts** (you only): pick a person (yourself included) and a start date. It lists what it found (note types and their counts, the closes table's columns, ANP) and saves nothing. If a number looks wrong, send me that screen.
 
 ## What I could not check
 I have not seen the Client Portal's database, only how its pages use it. Counting notes by type and prospects follows the portal's own code. The **closes** table (cases closed) is the least certain: its columns are found by name, and the check screen shows what was found. If it cannot recognise the date, it says so and that item stays manual.

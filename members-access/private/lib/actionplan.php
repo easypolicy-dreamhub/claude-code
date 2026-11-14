@@ -388,6 +388,19 @@ function ap_plan_of_member(PDO $pdo, int $memberId): ?array
     return $s->fetch() ?: null;
 }
 
+/** Everyone active, for the "Try the automatic counts" picker. */
+function ap_try_members(array $map): array
+{
+    $out = [];
+    foreach ($map as $m) {
+        if ($m['is_active']) {
+            $out[] = ['id' => (int)$m['id'], 'name' => $m['name']];
+        }
+    }
+    usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+    return $out;
+}
+
 /** Team members who can still be given a plan. */
 function ap_assignable(PDO $pdo, array $map): array
 {
@@ -950,6 +963,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                     'waiting' => $role === 'agent' ? 0 : count(ap_approvals($pdo, $map, $viewer, $today)),
                     'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [],
                     'disc_options' => AP_DISC, 'tools' => ap_tool_options(), 'default_days' => AP_BASE_DAYS,
+                    'try_members' => $role === 'super' ? ap_try_members($map) : [],
                 ];
             case 'me':
                 return ['plan' => $mine ? $payload($mine, true) : null];
@@ -971,6 +985,18 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
             case 'autocheck':
                 $needSuper();
                 return ['check' => ap_auto_diagnose($pdo, ap_plan_row($pdo, (int)($q['plan'] ?? 0)), $today)];
+            case 'autotry':   // try the automatic counts for anyone, with no plan needed; nothing is saved
+                $needSuper();
+                $mid = (int)($q['member'] ?? 0);
+                if (!isset($map[$mid]) || !$map[$mid]['is_active']) {
+                    throw new HttpError(404, 'Person not found.');
+                }
+                $since = trim((string)($q['since'] ?? ''));
+                $since = $since === '' ? date('Y-m-d', strtotime($today . ' -30 days')) : ap_date($since);
+                if ($since > $today) {
+                    throw new HttpError(422, 'The start date cannot be in the future.');
+                }
+                return ['check' => ap_auto_diagnose($pdo, ['member_id' => $mid, 'start_date' => $since], $today)];
         }
         throw new HttpError(400, 'Unknown view.');
     }

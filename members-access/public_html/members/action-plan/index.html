@@ -354,18 +354,33 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
         el('div', { 'class': 'two' }, [field('DISC style', disc), field('Your private number', num, 'Only you see this.')]),
         err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, check, close])])]);
   }
+  function renderCheck(b, c) {
+    b.innerHTML = '';
+    b.appendChild(el('p', { 'class': 'hint', text: 'Counted from ' + fmtDate(c.since) + ' to ' + fmtDate(c.until) + '. Only numbers are read: nothing about clients or candidates.' }));
+    b.appendChild(el('div', { 'class': 'banner ' + (c.portal.found ? 'good' : 'warn') }, [c.portal.found ? 'Client Portal data found.' : 'Client Portal: ' + (c.portal.why || 'not found') + ' Its counts stay manual.']));
+    c.lines.forEach(function (l) { b.appendChild(el('div', { 'class': 'dd', text: l })); });
+    (c.problems || []).filter(Boolean).forEach(function (pr) { b.appendChild(el('div', { 'class': 'banner warn', text: pr })); });
+    b.appendChild(el('p', { 'class': 'hint', text: 'If a number looks wrong, send me this screen and I will adjust how it is counted.' }));
+  }
   function autoCheckDialog(p) {
     openDlg('Automatic counts for ' + p.member.name, function (b) {
       b.appendChild(el('p', { 'class': 'hint', text: 'Checking…' }));
-      get('autocheck', '&plan=' + p.id).then(function (d) {
-        b.innerHTML = '';
-        var c = d.check;
-        b.appendChild(el('p', { 'class': 'hint', text: 'Counted from ' + fmtDate(c.since) + ' to ' + fmtDate(c.until) + '. Only numbers are read: nothing about clients or candidates.' }));
-        b.appendChild(el('div', { 'class': 'banner ' + (c.portal.found ? 'good' : 'warn') }, [c.portal.found ? 'Client Portal data found.' : 'Client Portal: ' + (c.portal.why || 'not found') + ' Its counts stay manual.']));
-        c.lines.forEach(function (l) { b.appendChild(el('div', { 'class': 'dd', text: l })); });
-        (c.problems || []).filter(Boolean).forEach(function (pr) { b.appendChild(el('div', { 'class': 'banner warn', text: pr })); });
-        b.appendChild(el('p', { 'class': 'hint', text: 'If a number looks wrong, send me this screen and I will adjust how it is counted.' }));
-      }).catch(function (e) { b.innerHTML = ''; b.appendChild(el('p', { 'class': 'err', text: e.message })); });
+      get('autocheck', '&plan=' + p.id).then(function (d) { renderCheck(b, d.check); }).catch(function (e) { b.innerHTML = ''; b.appendChild(el('p', { 'class': 'err', text: e.message })); });
+    });
+  }
+  /* Try the counts for anyone (yourself included), from any date, with no plan: nothing is saved. */
+  function tryDialog() {
+    openDlg('Try the automatic counts', function (b) {
+      b.appendChild(el('p', { 'class': 'hint', text: 'See what would be counted for someone, from a start date you choose. No plan is needed and nothing is saved.' }));
+      var who = el('select', {}, S.init.try_members.map(function (m) { return el('option', { value: String(m.id), selected: m.id === S.init.me.id, text: m.name + (m.id === S.init.me.id ? ' (you)' : '') }); }));
+      var d = new Date(Date.now() - 30 * 86400000);
+      var since = el('input', { type: 'text', inputmode: 'numeric', placeholder: 'dd/mm/yyyy', value: ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() });
+      var out = el('div', { style: 'display:flex;flex-direction:column;gap:10px' });
+      var go2 = el('button', { type: 'button', 'class': 'btn primary', text: 'Check', onclick: function () {
+        go2.disabled = true; out.innerHTML = ''; out.appendChild(el('p', { 'class': 'hint', text: 'Checking…' }));
+        get('autotry', '&member=' + who.value + '&since=' + encodeURIComponent(since.value)).then(function (r) { go2.disabled = false; renderCheck(out, r.check); }).catch(function (e) { go2.disabled = false; out.innerHTML = ''; out.appendChild(el('p', { 'class': 'err', text: e.message })); });
+      } });
+      b.appendChild(field('Person', who)); b.appendChild(field('Count from', since, 'Notes and closed cases dated from this day up to today.')); b.appendChild(el('div', {}, [go2])); b.appendChild(out);
     });
   }
 
@@ -502,7 +517,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     var sort = el('select', { 'aria-label': 'Sort' }, [['attention', 'Needs attention first'], ['name', 'Name'], ['progress', 'Least progress first'], ['week', 'Newest first']].map(function (o) { return el('option', { value: o[0], selected: S.sort === o[0], text: o[1] }); }));
     sort.addEventListener('change', function () { S.sort = sort.value; render(); });
     var bar = el('div', { 'class': 'toolbar' }, [sort]);
-    if (S.init.role === 'super') bar.appendChild(el('button', { type: 'button', 'class': 'btn primary', text: '+ Assign a plan', onclick: assignDialog }));
+    if (S.init.role === 'super') {
+      bar.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [el('button', { type: 'button', 'class': 'btn', text: 'Try the automatic counts', onclick: tryDialog }), el('button', { type: 'button', 'class': 'btn primary', text: '+ Assign a plan', onclick: assignDialog })]));
+    }
     box.appendChild(bar);
     var plans = d.plans.slice();
     if (S.sort === 'name') plans.sort(function (a, b) { return a.name.localeCompare(b.name); });

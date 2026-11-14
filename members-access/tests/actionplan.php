@@ -313,7 +313,7 @@ check('no portal: the count stays manual, with a hint', ap_find($c, 'Presentatio
 ap_post($pdo, $ids['Cindy'], ['action' => 'count', 'item' => $pres['id'], 'n' => 4], $T);
 check('...and she can enter it by hand', ap_find($plan('cindy'), 'Presentations (50)')['count'] === 4);
 $chk = ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $cindy], $T)['check'];
-check('the check says why: no Client Portal yet', $chk['portal']['found'] === false && str_contains(implode(' ', $chk['problems']), 'no Client Portal'));
+check('the check says why: no Client Portal yet (once, not twice)', $chk['portal']['found'] === false && str_contains($chk['portal']['why'], 'no Client Portal') && $chk['problems'] === []);
 // portal switched off -> manual again
 e3pb_toggle('dave@x.com', 'Dave', false); ap_auto_reset();
 check('portal switched off for someone: back to manual', ap_find($plan('dave'), 'Natural market survey (70)')['auto']['value'] === null);
@@ -346,6 +346,24 @@ check('note types are matched without case', ap_note_group(' Present ') === 'pre
 $chk = ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $dave], $T)['check'];
 check('the check lists the note types it found and the closes columns', str_contains(implode(' ', $chk['lines']), 'present = ') && str_contains(implode(' ', $chk['lines']), 'weird-kind') && str_contains(implode(' ', $chk['lines']), 'close_date'));
 throws('only the super admin can run the check', 403, fn () => ap_get($pdo, $ids['Gm'], ['view' => 'autocheck', 'plan' => $dave], $T));
+
+echo "\nTry the automatic counts (no plan needed)\n";
+$plansBefore = (int)$pdo->query('SELECT COUNT(*) FROM ap_plans')->fetchColumn();
+$try = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '02/03/2026'], $T)['check'];
+check('works for anyone, from a date you choose, and shows the same lines as the plan check', str_contains(implode(' ', $try['lines']), 'Counted as Open: 10') && $try['since'] === '2026-03-02' && $try['until'] === $T);
+$try2 = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '2026-03-15'], $T)['check'];
+check('a later start date counts fewer notes (none are dated after 15 March)', str_contains(implode(' ', $try2['lines']), 'Counted as Open: 0'));
+$noPlan = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Eve'], 'since' => '02/03/2026'], $T)['check'];
+check('someone with no plan and no portal: a plain reason', $noPlan['portal']['found'] === false);
+$own = ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Ben'], 'since' => '02/03/2026'], $T)['check'];
+check('the portal owner\'s own data can be tried (Ben is the owner here: 2 prospects)', str_contains(implode(' ', $own['lines']), 'Prospects on the list now: 2'));
+check('the default is the last 30 days', ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave']], $T)['check']['since'] === '2026-02-21');
+throws('a date in the future is refused', 422, fn () => ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '01/01/2030'], $T));
+throws('a nonsense date is refused', 422, fn () => ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => 'last week'], $T));
+throws('an unknown person is refused', 404, fn () => ap_get($pdo, $you['id'], ['view' => 'autotry', 'member' => 9999, 'since' => '02/03/2026'], $T));
+throws('only the super admin can try it', 403, fn () => ap_get($pdo, $ids['Gm'], ['view' => 'autotry', 'member' => $ids['Dave'], 'since' => '02/03/2026'], $T));
+check('nothing is saved: no plan was created', (int)$pdo->query('SELECT COUNT(*) FROM ap_plans')->fetchColumn() === $plansBefore);
+check('the picker lists everyone who is active', count(ap_get($pdo, $you['id'], ['view' => 'init'], $T)['try_members']) === 6 && ap_get($pdo, $ids['Dave'], ['view' => 'init'], $T)['try_members'] === []);
 
 echo "\nCareer Code\n";
 $ins = $pdo->prepare("INSERT INTO candidates (owner_member_id, referred_by_member_id, source, name, mobile, email, consent_version, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)");

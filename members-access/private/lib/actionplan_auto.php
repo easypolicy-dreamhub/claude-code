@@ -293,7 +293,7 @@ function ap_auto_diagnose(PDO $pdo, array $plan, string $today): array
         $out['lines'][] = 'Closes table columns: ' . ($c['closes_cols'] ? implode(', ', $c['closes_cols']) : 'table not found') . ($c['sample'] ? ' · latest date looks like ' . ($c['sample']['closes_date'] ?? '?') : '');
         $out['problems'] = $c['problems'];
     } else {
-        $out['problems'] = [$pf['why']];
+        $out['problems'] = [];   // the reason is already in ['portal']['why']
     }
     $cr = ap_career_counts($pdo, (int)$plan['member_id'], (string)$plan['start_date']);
     $out['lines'][] = 'Career Code candidates added since the start date: ' . ($cr === null ? 'not available' : $cr['added'] . ' (' . $cr['tests'] . ' tests completed)');
