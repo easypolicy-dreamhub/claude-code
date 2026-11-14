@@ -11,7 +11,8 @@ Nothing here is built yet. Everything can change.
 
 - **Agents** see only their own plan.
 - **You (super admin)** see every plan, approve, and edit the template.
-- The card is switched on per person in **Members & Access** (on by default for new Team members).
+- **Group Managers (team admins)** approve and send back for the people **below them in the team**, nothing else.
+- Only **Team members** get a plan, and **you choose who** with an **Assign** button (see section 6). The card itself is switched on per person in **Members & Access**.
 
 ---
 
@@ -96,7 +97,8 @@ Count items show progress all the time (e.g. 18/50) and go to **Waiting for you*
 ## 6. Screens
 
 - **A. My Action Plan (agent)** — "Week 5 of 13", overall progress, label; items by section with **Tick** or **+ / −** (or Auto); your notes; **This week** at the top; shortcut buttons to tools.
-- **B. Overview (you)** — one row per associate: name, DISC letter, your private number, week, % done, label, **waiting for you**, **follow-ups**. Sort by most behind / most waiting.
+- **Assign plan (you)** — a button on the Overview: choose a Team member, set their start date, press **Assign**. That creates their plan from the current template. Anyone not assigned has no plan.
+- **B. Overview (you, and Group Managers for their own team)** — one row per associate: name, DISC letter, your private number, week, % done, label, **waiting for you**, **follow-ups**. Sort by most behind / most waiting.
 - **C. Approvals (you)** — everything ticked by everyone: **Approve** (one tap) or **Send back** with a note.
 - **D. Person page (you)** — their full plan plus: start date, assign early, approve / send back, notes, **Not needed for this person**, **Extra item**, and a **WhatsApp nudge** with a ready message.
 - **E. Template editor (you)** — add, edit, turn off, remove, reorder items and sections.
@@ -152,7 +154,7 @@ Business card, iPad, COP, Family Visit, Dream Board, mission and values, PEP / T
 |---|---|---|
 | See own plan | ✓ | ✓ (everyone's) |
 | Tick / count | ✓ (own) | ✓ |
-| Approve / send back | ✗ | ✓ |
+| Approve / send back | ✗ (Group Manager: only people below them) | ✓ |
 | Start date, assign early | ✗ | ✓ |
 | Edit template, turn off, remove, skip, extra item | ✗ | ✓ |
 | See DISC | own | ✓ |
@@ -171,10 +173,15 @@ Moving the current associates across: after step 1, set up their plans and mark 
 
 ---
 
-## 11. Open questions
-1. Target weeks in section 2 — right pace? Change any.
-2. The ➕ items — keep or drop?
-3. Does note type **Open** mean "market survey" the way your agents use it? Should **Recruit** count for Career Introduction?
-4. Approvals — only you, or also team admins (Group Managers) for their own people?
-5. Point system and 3V report — tick items, or count the 3V report from the portal's daily visits?
-6. Who gets a plan — only new Team members, or also existing ones you choose?
+## 11. Decisions so far (your answers)
+1. **Target weeks** — still to confirm (see the open items below).
+2. **The ➕ items** — kept: product knowledge, objection handling, policy delivery, policy summary sheet, ePolicy folder (5), plus the Day-90 review. Any can be turned off later.
+3. **Note types** — **Open** counts as a market survey; **Recruit** counts for Career Introduction.
+4. **Approvals** — you **and** Group Managers (for their own team only).
+5. **Counts** — counted from the Client Portal wherever it can be; the rest are counts the agent enters and an approver confirms.
+6. **Who gets a plan** — Team members only, by the **Assign** button.
+
+### Still open
+- **Target weeks:** is the pacing in section 2 right? Change any item you'd move earlier or later.
+- **Point system:** what is it, in a few words? If it is something the portal already records (visits, appointments, cases), it can be counted. If not, it stays a tick or a count the agent enters.
+- **Which Group Managers approve:** every Group Manager for their own team, or only those you've switched on as **team admins** on the Team page? (I'd suggest team admins only, because you already control that switch.)
