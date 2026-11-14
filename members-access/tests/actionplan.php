@@ -46,6 +46,8 @@ check('seeding twice adds nothing', array_sum(array_map(fn ($s) => count($s['ite
 $counts = [];
 foreach ($tpl as $s) { foreach ($s['items'] as $i) { if ($i['kind'] === 'count') { $counts[$i['title']] = $i['target']; } } }
 check('your count targets: 100 / 30 / 70 / 50 / 3 / 30 / 20', $counts === ['Prospect list (100)' => 100, 'Customer fact finding forms (30)' => 30, 'Natural market survey (70)' => 70, 'Presentations (50)' => 50, 'New business (3)' => 3, 'Cold market (30)' => 30, 'Referrals (20)' => 20]);
+check('the four portal-counted items open the Client Portal', (function () use ($tpl) { $n = 0; foreach ($tpl as $s) { foreach ($s['items'] as $i) { if (in_array($i['auto_key'], ['prospects', 'open', 'present', 'closes'], true) && $i['tool_key'] === 'client-portal') { $n++; } } } return $n === 4; })());
+check('the Client Portal shortcut has an address', ap_tool_url('client-portal')['url'] === '/client-portal/');
 check('shortcuts point at real tools', ap_tool_url('million-income')['url'] === '/members/million-income/' && ap_tool_url('nope') === null);
 check('Action Plan is a tool that can be ticked', in_array('action-plan', grantable_keys(), true));
 

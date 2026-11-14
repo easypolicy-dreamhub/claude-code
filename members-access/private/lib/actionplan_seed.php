@@ -36,7 +36,7 @@ function ap_seed_data(): array
             ['Product knowledge: Medical, CI, Life', null, 2, 6, 'tick', null, 'sum-assured'],
         ],
         'Kick Start' => [
-            ['Prospect list (100)', 'Name, relationship, location, age, occupation, category.', 1, 2, 'count', 100, null, 'prospects'],
+            ['Prospect list (100)', 'Name, relationship, location, age, occupation, category.', 1, 2, 'count', 100, 'client-portal', 'prospects'],
             ['Categorise the list', 'Trust vs capability, 9宮格, 6同.', 1, 2, 'tick', null, null],
             ['定聯', null, 1, 2, 'tick', null, null],
             ['Join DL2', null, 1, 2, 'tick', null, null],
@@ -47,9 +47,9 @@ function ap_seed_data(): array
         'Practical' => [
             ['Customer fact finding forms (30)', null, 3, 12, 'count', 30, 'protection-needs'],
             ['Questioning technique', null, 3, 6, 'tick', null, null],
-            ['Natural market survey (70)', null, 3, 12, 'count', 70, null, 'open'],
-            ['Presentations (50)', null, 3, 12, 'count', 50, null, 'present'],
-            ['New business (3)', null, 3, 12, 'count', 3, null, 'closes'],
+            ['Natural market survey (70)', null, 3, 12, 'count', 70, 'client-portal', 'open'],
+            ['Presentations (50)', null, 3, 12, 'count', 50, 'client-portal', 'present'],
+            ['New business (3)', null, 3, 12, 'count', 3, 'client-portal', 'closes'],
             ['Sales cycle and presentation training', null, 3, 4, 'tick', null, null],
             ['Fact finding skills enhancement', null, 3, 6, 'tick', null, null],
             ['Objection handling', 'No hurry, no trust, no money, no authority, no needs.', 5, 8, 'tick', null, null],
