@@ -178,7 +178,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   var API = '/members/api/actionplan.php';
   var $ = function (id) { return document.getElementById(id); };
   var dlg = $('dlg');
-  var S = { init: null, tab: null, plan: null, personId: null, overview: null, approvals: null, template: null, sort: 'attention', open: {} };
+  var S = { init: null, tab: null, plan: null, personId: null, overview: null, approvals: null, template: null, sort: 'attention', open: {}, preview: false };
 
   /* ---------- helpers ---------- */
   function el(tag, attrs, kids) {
@@ -247,7 +247,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     });
   }
   function go(tab, id) {
-    S.tab = tab; if (tab === 'person') S.personId = id;
+    S.tab = tab; if (tab === 'person') S.personId = id; S.preview = false;
     buildTabs();
     $('view').innerHTML = ''; $('view').appendChild(el('p', { 'class': 'hint', text: 'Loading…' }));
     var p;
@@ -262,7 +262,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   function render() {
     var v = $('view'); v.innerHTML = '';
     var keep = window.scrollY;
-    if (S.tab === 'plan' || S.tab === 'person') v.appendChild(renderPlan(S.plan, S.tab === 'person'));
+    if (S.tab === 'plan' || S.tab === 'person') v.appendChild(renderPlan(S.plan, S.tab === 'person', S.tab === 'person' && S.preview));
     else if (S.tab === 'overview') v.appendChild(renderOverview());
     else if (S.tab === 'approvals') v.appendChild(renderApprovals());
     else if (S.tab === 'template') v.appendChild(renderTemplate());
@@ -271,8 +271,13 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
 
   /* ---------- a plan ---------- */
   function labelChip(p) { return p.label ? el('span', { 'class': 'chip ' + p.label, text: p.label_text }) : null; }
-  function renderPlan(p, person) {
+  function renderPlan(p, person, preview) {
     var box = el('div', { 'class': 'sec', style: 'gap:14px' });
+    var realPerson = person && !!p;
+    if (preview && p) {   // exactly what the agent sees: their own wording, no approver tools, no skipped items, read-only
+      p = Object.assign({}, p, { own: true, preview: true, label: null, items: p.items.filter(function (i) { return !i.skipped; }) });
+      person = false;
+    }
     if (!p) {
       box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No Action Plan yet' }), 'Your leader will set one up for you. It will appear here.']));
       return box;
@@ -290,7 +295,15 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint' + discFrom + ': ' + p.disc.hint }));
     if (person && S.init.role === 'super') head.appendChild(planSettings(p));
     box.appendChild(head);
-    if (person) box.insertBefore(el('div', {}, [el('button', { type: 'button', 'class': 'btn small', text: '← Everyone', onclick: function () { go('overview'); } })]), head);
+    if (realPerson) {
+      var bar2 = el('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between' }, [
+        el('button', { type: 'button', 'class': 'btn small', text: '← Everyone', onclick: function () { go('overview'); } }),
+        el('div', { 'class': 'seg', role: 'group', 'aria-label': 'Which view' }, [
+          el('button', { type: 'button', 'aria-pressed': String(!preview), text: 'Your view', onclick: function () { S.preview = false; render(); } }),
+          el('button', { type: 'button', 'aria-pressed': String(!!preview), text: 'What ' + (S.plan.member.name.split(' ')[0] || 'they') + ' sees', onclick: function () { S.preview = true; render(); } })])]);
+      box.insertBefore(bar2, head);
+      if (preview) box.insertBefore(el('div', { 'class': 'banner warn' }, ['This is how ' + S.plan.member.name + ' sees their plan. It is read-only here: switch back to "Your view" to approve or adjust.']), head);
+    }
 
     var items = p.items;
     var live = items.filter(function (i) { return !i.skipped; });
@@ -412,7 +425,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       it.kind === 'count' ? el('span', { text: 'from ' + it.auto.label + ' since ' + fmtDate(p.start_date) }) : null, it.auto.extra ? el('span', { text: '· ' + it.auto.extra }) : null]));
     else if (it.auto && it.auto.portal_off && p.own) body.appendChild(el('div', { 'class': 'mm' }, [el('span', { text: 'Switch on your Client Portal and this counts by itself. Until then, enter it by hand.' })]));
     var acts = el('div', { 'class': 'acts' });
-    if (!it.skipped) {
+    if (!it.skipped && !p.preview) {
       if (p.own) {
         if (it.kind === 'count' && it.status !== 'done' && !autoOn) acts.appendChild(stepper(it, p));
         else if (it.kind === 'count' && it.status === 'followup') acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Ask for approval again', onclick: function () { post({ action: 'tick', item: it.id }); } }));
@@ -430,8 +443,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
         }
       }
     }
-    if (it.tool) acts.appendChild(el('a', { 'class': 'btn small', href: it.tool.url, target: 'e3tool-' + it.tool.key, text: 'Open ' + it.tool.name + ' ›' }));
-    if (S.init.role === 'super' && !p.own) {
+    // The shortcut is for the agent. A leader looking at someone else's plan would open their OWN tool, so it is not shown there.
+    if (it.tool && p.own) acts.appendChild(el('a', { 'class': 'btn small', href: it.tool.url, target: 'e3tool-' + it.tool.key, text: 'Open ' + it.tool.name + ' ›' }));
+    if (S.init.role === 'super' && !p.own && !p.preview) {
       if (it.extra) acts.appendChild(el('button', { type: 'button', 'class': 'btn small danger', text: 'Remove', onclick: function () { post({ action: 'extra_remove', plan: p.id, item: it.id }); } }));
       else acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: it.has_override ? 'Adjusted ✎' : 'Adjust', onclick: function () { adjustDialog(p, it); } }));
     }
