@@ -152,6 +152,29 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
 @media(max-width:640px){dialog{width:100%;max-width:none;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:92dvh}}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(92vw,30rem);padding:12px 18px;border-radius:12px;background:var(--slate);color:#fff;font-weight:500;font-size:.95rem;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .toast.bad{background:var(--red)}
+.pbtn{display:flex;gap:8px;flex-wrap:wrap}
+.bd{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.bd:last-child{border-bottom:0}
+.bd .ln{display:flex;gap:10px;align-items:flex-start}
+.bd .ln .t{flex:1;min-width:0}
+.sheet{background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px 30px;display:flex;flex-direction:column;gap:14px;color:#111}
+.sheet h2{font-size:22px}.sheet h3{font-size:15px;margin-top:6px;border-bottom:2px solid #111;padding-bottom:3px}
+.sheet table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+.sheet th:nth-child(2){width:84px}.sheet th:nth-child(3){width:34%}
+.sheet td,.sheet th{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}
+.sheet th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#555}
+.sheet .box{border:1px solid #999;border-radius:6px;min-height:70px;padding:6px}
+.sheet .sig{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:20px}
+.sheet .sig div{border-top:1px solid #111;padding-top:4px;font-size:13px}
+.sheet .meta2{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
+@media print{
+  .e3-bar,.topbar,#tabs,.noprint,#toast,dialog{display:none !important}
+  body{background:#fff !important;background-image:none !important}
+  main{max-width:none;padding:0}
+  .sheet{border:0;padding:0;border-radius:0}
+  .sheet h3,.sheet table,.sheet .box,.sheet .sig{break-inside:avoid}
+  @page{margin:14mm}
+}
 </style>
 </head>
 <body>
@@ -240,14 +263,16 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (S.init.has_plan) tabs.push(['plan', 'My plan', 0]);
     if (isApprover()) { tabs.push(['overview', 'Everyone', 0]); tabs.push(['approvals', 'Approvals', S.init.waiting]); }
     if (S.init.role === 'super') tabs.push(['template', 'Template', 0]);
+    if (S.init.buddy_count > 0) tabs.push(['buddy', 'Buddy', 0]);
     t.hidden = tabs.length < 2;
     tabs.forEach(function (x) {
-      var b = el('button', { type: 'button', 'class': 'tab', 'aria-pressed': String(S.tab === x[0] || (x[0] === 'overview' && S.tab === 'person')), onclick: function () { go(x[0]); } }, [x[1], x[2] > 0 ? el('span', { 'class': 'n', text: String(x[2]) }) : null]);
+      var b = el('button', { type: 'button', 'class': 'tab', 'aria-pressed': String(S.tab === x[0] || (x[0] === 'overview' && (S.tab === 'person' || S.tab === 'review')) || (x[0] === 'buddy' && S.tab === 'buddyplan')), onclick: function () { go(x[0]); } }, [x[1], x[2] > 0 ? el('span', { 'class': 'n', text: String(x[2]) }) : null]);
       t.appendChild(b);
     });
   }
   function go(tab, id) {
     S.tab = tab; if (tab === 'person') S.personId = id; S.preview = false;
+    if (tab === 'review') { render(); window.scrollTo(0, 0); return; }
     buildTabs();
     $('view').innerHTML = ''; $('view').appendChild(el('p', { 'class': 'hint', text: 'Loading…' }));
     var p;
@@ -255,6 +280,8 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     else if (tab === 'person') p = get('person', '&plan=' + id).then(function (d) { S.plan = d.plan; });
     else if (tab === 'overview') p = get('overview').then(function (d) { S.overview = d; });
     else if (tab === 'approvals') p = get('approvals').then(function (d) { S.approvals = d.approvals; });
+    else if (tab === 'buddy') p = get('buddy').then(function (d) { S.buddy = d.people; });
+    else if (tab === 'buddyplan') p = get('buddy_plan', '&plan=' + id).then(function (d) { S.buddyPlan = d.plan; });
     else p = get('template').then(function (d) { S.template = d; });
     p.then(render).catch(function (e) { $('view').innerHTML = ''; $('view').appendChild(el('p', { 'class': 'err', text: e.message })); });
   }
@@ -265,6 +292,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (S.tab === 'plan' || S.tab === 'person') v.appendChild(renderPlan(S.plan, S.tab === 'person', S.tab === 'person' && S.preview));
     else if (S.tab === 'overview') v.appendChild(renderOverview());
     else if (S.tab === 'approvals') v.appendChild(renderApprovals());
+    else if (S.tab === 'buddy') v.appendChild(renderBuddy());
+    else if (S.tab === 'buddyplan') v.appendChild(renderBuddyPlan());
+    else if (S.tab === 'review') v.appendChild(renderReview());
     else if (S.tab === 'template') v.appendChild(renderTemplate());
     window.scrollTo(0, keep);
   }
@@ -293,6 +323,8 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     var discFrom = p.disc && p.disc.source ? ' (from ' + p.disc.source + ')' : '';
     if (!person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Your style (' + p.disc.style + discFrom + '): ' + p.disc.hint }));
     if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint' + discFrom + ': ' + p.disc.hint }));
+    if (person && p.last_nudged_at) head.appendChild(el('p', { 'class': 'hint', text: 'Last nudged on WhatsApp: ' + fmtDate(String(p.last_nudged_at).slice(0, 10)) + '.' }));
+    if (p.buddy && (person || p.own)) head.appendChild(el('p', { 'class': 'hint', text: (person ? 'Buddy: ' : 'Your buddy: ') + p.buddy.name + '.' }));
     if (person && S.init.role === 'super') head.appendChild(planSettings(p));
     box.appendChild(head);
     if (realPerson) {
@@ -301,6 +333,10 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
         el('div', { 'class': 'seg', role: 'group', 'aria-label': 'Which view' }, [
           el('button', { type: 'button', 'aria-pressed': String(!preview), text: 'Your view', onclick: function () { S.preview = false; render(); } }),
           el('button', { type: 'button', 'aria-pressed': String(!!preview), text: 'What ' + (S.plan.member.name.split(' ')[0] || 'they') + ' sees', onclick: function () { S.preview = true; render(); } })])]);
+      var pb = el('div', { 'class': 'pbtn' }, [
+        el('button', { type: 'button', 'class': 'btn small', text: 'Nudge on WhatsApp', onclick: function () { nudgeDialog(S.plan); } }),
+        el('button', { type: 'button', 'class': 'btn small', text: 'Day-' + S.plan.length_days + ' review', onclick: function () { go('review'); } })]);
+      bar2.insertBefore(pb, bar2.lastChild);
       box.insertBefore(bar2, head);
       if (preview) box.insertBefore(el('div', { 'class': 'banner warn' }, ['This is how ' + S.plan.member.name + ' sees their plan. It is read-only here: switch back to "Your view" to approve or adjust.']), head);
     }
@@ -351,10 +387,11 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     var len = el('input', { type: 'number', value: String(p.length_days), min: '30', max: '365', 'aria-label': 'Plan length in days' });
     var disc = el('select', { 'aria-label': 'DISC style' }, [el('option', { value: '', text: 'DISC: not set' })].concat(S.init.disc_options.map(function (d) { return el('option', { value: d, selected: p.disc && p.disc.style === d, text: 'DISC ' + d }); })));
     var num = el('input', { type: 'number', value: p.private_number === null || p.private_number === undefined ? '' : String(p.private_number), min: '1', max: '33', placeholder: 'Private number', 'aria-label': 'Private number (only you see this)' });
+    var buddy = el('select', { 'aria-label': 'Buddy' }, [el('option', { value: '', text: 'Buddy: none' })].concat((S.init.try_members || []).filter(function (m) { return m.id !== p.member.id; }).map(function (m) { return el('option', { value: String(m.id), selected: !!(p.buddy && p.buddy.id === m.id), text: 'Buddy: ' + m.name }); })));
     var err = errBox();
     var save = el('button', { type: 'button', 'class': 'btn small primary', text: 'Save', onclick: function () {
       save.disabled = true;
-      req('POST', { action: 'plan_update', plan: p.id, start_date: start.value, length_days: len.value, disc: disc.value, private_number: num.value }).then(function (d) { S.plan = d.plan; toast('Saved.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      req('POST', { action: 'plan_update', plan: p.id, start_date: start.value, length_days: len.value, disc: disc.value, private_number: num.value, buddy_id: buddy.value }).then(function (d) { S.plan = d.plan; toast('Saved.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
     } });
     var close = el('button', { type: 'button', 'class': 'btn small danger', text: 'Close this plan', onclick: function () {
       if (!window.confirm('Close ' + p.member.name + '\'s plan? It leaves the lists, but nothing is deleted. Assigning them again brings it back with their progress.')) return;
@@ -365,6 +402,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:8px' }, [
         el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Default 90. Every suggested week stretches to fit.')]),
         el('div', { 'class': 'two' }, [field('DISC style', disc), field('Your private number', num, 'Only you see this.')]),
+        field('Buddy', buddy, 'A buddy can see this plan\'s progress (ticks and counts only, no notes). Their Action Plan card is switched on for them.'),
         err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, check, close])])]);
   }
   function renderCheck(b, c) {
@@ -601,6 +639,108 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     });
   }
 
+  /* ---------- WhatsApp nudge ---------- */
+  function nudgeDialog(p) {
+    openDlg('Nudge ' + p.member.name + ' on WhatsApp', function (b) {
+      b.appendChild(el('p', { 'class': 'hint', text: 'Loading…' }));
+      get('nudge', '&plan=' + p.id).then(function (d) {
+        var n = d.nudge; b.innerHTML = '';
+        var ta = el('textarea', { rows: '10', maxlength: '1500', 'aria-label': 'Message' }); ta.value = n.text;
+        var open = el('a', { 'class': 'btn primary', target: '_blank', rel: 'noopener', text: 'Open WhatsApp' });
+        function link() { open.href = n.whatsapp ? 'https://wa.me/' + n.whatsapp + '?text=' + encodeURIComponent(ta.value) : '#'; }
+        ta.addEventListener('input', link); link();
+        open.addEventListener('click', function (e) {
+          if (!n.whatsapp) { e.preventDefault(); return; }
+          req('POST', { action: 'nudge_done', plan: p.id }).then(function (r) { S.plan.last_nudged_at = r.last_nudged_at; }).catch(function () {});
+        });
+        var copy = el('button', { type: 'button', 'class': 'btn', text: 'Copy message', onclick: function () {
+          try { navigator.clipboard.writeText(ta.value).then(function () { toast('Copied.'); }, function () { toast('Could not copy. Select the text and copy it.', true); }); } catch (e) { toast('Could not copy. Select the text and copy it.', true); }
+        } });
+        b.appendChild(el('p', { 'class': 'hint', text: 'This is a draft. Change anything you like. Pressing "Open WhatsApp" opens it in your own WhatsApp, and you press send there. Nothing is sent from this website.' }));
+        if (!n.whatsapp) b.appendChild(el('div', { 'class': 'banner warn' }, ['No WhatsApp number is saved for ' + n.name + '. Add it in Team > their details, then try again. You can still copy the message.']));
+        if (n.last_nudged_at) b.appendChild(el('p', { 'class': 'hint', text: 'Last nudged: ' + fmtDate(String(n.last_nudged_at).slice(0, 10)) + '.' }));
+        b.appendChild(field('Message', ta));
+        b.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [open, copy]));
+      }).catch(function (e) { b.innerHTML = ''; b.appendChild(el('p', { 'class': 'err', text: e.message })); });
+    });
+  }
+
+  /* ---------- Day-90 review (a page made for printing) ---------- */
+  function statusWords(it) {
+    if (it.skipped) return 'Skipped';
+    if (it.status === 'done') return 'Done' + (it.approved_at ? ' ' + fmtDate(String(it.approved_at).slice(0, 10)) : '');
+    if (it.status === 'waiting') return 'Finished, not yet approved';
+    if (it.status === 'followup') return 'To follow up' + (it.note ? ': ' + it.note : '');
+    return 'Not done';
+  }
+  function renderReview() {
+    var p = S.plan, wrap = el('div', { 'class': 'sec', style: 'gap:12px' });
+    wrap.appendChild(el('div', { 'class': 'noprint', style: 'display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between' }, [
+      el('button', { type: 'button', 'class': 'btn small', text: '← Back to ' + p.member.name, onclick: function () { go('person', p.id); } }),
+      el('button', { type: 'button', 'class': 'btn small primary', text: 'Print or save as PDF', onclick: function () { window.print(); } })]));
+    var sheet = el('div', { 'class': 'sheet' });
+    sheet.appendChild(el('h2', { text: 'Day-' + p.length_days + ' review: ' + p.member.name }));
+    sheet.appendChild(el('div', { 'class': 'meta2' }, [
+      el('span', { text: 'Plan period: ' + fmtDate(p.start_date) + ' to ' + fmtDate(p.end_date) }),
+      el('span', { text: 'Printed: ' + fmtDate(S.init.today) }),
+      el('span', { text: 'Leader: ' + S.init.me.name }),
+      p.buddy ? el('span', { text: 'Buddy: ' + p.buddy.name }) : null,
+      p.disc ? el('span', { text: 'DISC: ' + p.disc.style }) : null]));
+    var live = p.items.filter(function (i) { return !i.skipped; });
+    sheet.appendChild(el('p', { style: 'margin:0;font-size:15px' }, [el('b', { text: p.progress.done + ' of ' + p.progress.total + ' steps approved (' + p.progress.percent + '%)' }),
+      ' · Week ' + Math.min(p.week, p.weeks_total) + ' of ' + p.weeks_total + 
+      (p.progress.waiting ? ' · ' + p.progress.waiting + ' finished, waiting for approval' : '') + (p.progress.followup ? ' · ' + p.progress.followup + ' to follow up' : '')]));
+    var order = [], by = {};
+    p.items.forEach(function (i) { if (!by[i.section]) { by[i.section] = []; order.push(i.section); } by[i.section].push(i); });
+    order.forEach(function (name) {
+      var its = by[name], done = its.filter(function (i) { return i.status === 'done' && !i.skipped; }).length, tot = its.filter(function (i) { return !i.skipped; }).length;
+      sheet.appendChild(el('h3', { text: name + ' (' + done + ' of ' + tot + ')' }));
+      var tb = el('table', {}, [el('thead', {}, [el('tr', {}, [el('th', { text: 'Step' }), el('th', { text: 'Count' }), el('th', { text: 'Result' })])]),
+        el('tbody', {}, its.map(function (i) {
+          return el('tr', {}, [el('td', { text: (i.status === 'done' && !i.skipped ? '✓ ' : '') + i.title }), el('td', { text: i.kind === 'count' && i.target ? i.count + ' / ' + i.target : '' }), el('td', { text: statusWords(i) })]);
+        }))]);
+      sheet.appendChild(tb);
+    });
+    ['What went well', 'What to work on', 'Goals for the next 90 days', 'Comments from ' + p.member.name.split(' ')[0]].forEach(function (t) {
+      sheet.appendChild(el('h3', { text: t })); sheet.appendChild(el('div', { 'class': 'box' }));
+    });
+    sheet.appendChild(el('div', { 'class': 'sig' }, [el('div', { text: 'Leader signature and date' }), el('div', { text: p.member.name + ' signature and date' })]));
+    wrap.appendChild(sheet);
+    return wrap;
+  }
+
+  /* ---------- buddy ---------- */
+  function renderBuddy() {
+    var box = el('div', { 'class': 'sec', style: 'gap:12px' });
+    box.appendChild(el('p', { 'class': 'hint', text: 'You are the buddy for these people. You can see their progress here. Only their leader approves and adds notes.' }));
+    if (!S.buddy.length) { box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'Nobody yet' }), 'When your leader makes you someone\'s buddy, they appear here.'])); return box; }
+    S.buddy.forEach(function (x) {
+      box.appendChild(el('button', { type: 'button', 'class': 'row', onclick: function () { go('buddyplan', x.plan_id); } }, [
+        el('div', {}, [el('b', { text: x.name }), el('div', { 'class': 'hint', text: (x.week === 0 ? 'Not started yet' : 'Week ' + Math.min(x.week, x.weeks_total) + ' of ' + x.weeks_total) + ' · ' + x.percent + '% approved' })]),
+        el('div', { 'class': 'rt' }, [el('span', { 'class': 'chip', text: x.done + ' of ' + x.total })]),
+        el('div', { 'class': 'bar' }, [el('i', { style: 'width:' + x.percent + '%' })])]));
+    });
+    return box;
+  }
+  function renderBuddyPlan() {
+    var p = S.buddyPlan, box = el('div', { 'class': 'sec', style: 'gap:12px' });
+    box.appendChild(el('div', {}, [el('button', { type: 'button', 'class': 'btn small', text: '← Buddy', onclick: function () { go('buddy'); } })]));
+    box.appendChild(el('div', { 'class': 'banner warn' }, ['You are looking at ' + p.name + '\'s plan as their buddy. It is read-only.']));
+    box.appendChild(el('div', { 'class': 'card ph' }, [el('h2', { text: p.name }), el('div', { 'class': 'wk', text: (p.week === 0 ? 'Starts ' + fmtDate(p.start_date) : 'Week ' + Math.min(p.week, p.weeks_total) + ' of ' + p.weeks_total) }),
+      el('div', { 'class': 'bar', 'aria-label': p.percent + ' percent approved' }, [el('i', { style: 'width:' + p.percent + '%' })]), el('p', { 'class': 'hint', style: 'margin-top:6px', text: p.done + ' of ' + p.total + ' steps approved (' + p.percent + '%)' })]));
+    p.sections.forEach(function (sec) {
+      var d = el('details', { 'class': 'sec' }, [el('summary', {}, [sec.name, el('span', { 'class': 'cnt', text: sec.done + '/' + sec.items.length })]),
+        el('div', { 'class': 'card', style: 'margin-top:8px;padding:6px 16px' }, sec.items.map(function (i) {
+          var icon = i.state === 'done' ? '✓' : i.state === 'waiting' ? '…' : '';
+          var sub = i.kind === 'count' && i.target ? i.count + ' of ' + i.target : (i.state === 'waiting' ? 'Finished, waiting for their leader' : '');
+          return el('div', { 'class': 'bd' }, [el('div', { 'class': 'ln' }, [el('div', { 'class': 'st ' + i.state, 'aria-hidden': 'true', text: icon }), el('div', { 'class': 't' }, [el('div', { text: i.title }), sub ? el('div', { 'class': 'hint', text: sub }) : null])])]);
+        }))]);
+      if (sec.done < sec.items.length) d.setAttribute('open', '');
+      box.appendChild(d);
+    });
+    return box;
+  }
+
   /* ---------- approvals ---------- */
   function renderApprovals() {
     var box = el('div', { 'class': 'sec', style: 'gap:12px' });
@@ -718,7 +858,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   get('init').then(function (d) {
     S.init = d;
     $('who').textContent = 'Signed in as ' + d.me.name + (d.role === 'super' ? ' (super admin)' : d.role === 'approver' ? ' (team admin)' : '');
-    S.tab = d.has_plan ? 'plan' : (isApprover() ? 'overview' : 'plan');
+    S.tab = d.has_plan ? 'plan' : (isApprover() ? 'overview' : (d.buddy_count > 0 ? 'buddy' : 'plan'));
     go(S.tab);
   }).catch(function (e) {
     $('view').innerHTML = '';

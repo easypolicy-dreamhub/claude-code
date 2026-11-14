@@ -134,3 +134,16 @@ Numbers that fill themselves in, so agents do not type them and you do not have 
 
 ## What I could not check
 I have not seen the Client Portal's database, only how its pages use it. Counting notes by type and prospects follows the portal's own code. The **closes** table (cases closed) is the least certain: its columns are found by name, and the check screen shows what was found. If it cannot recognise the date, it says so and that item stays manual.
+
+# Action Plan, step 3 (WhatsApp nudge, buddy, Day-90 review) and the Assign tool tick-box
+
+## What it does
+- **Assign tool tick-box:** when you assign a plan, the tools the template has shortcuts for are listed and ticked; untick any you do not want them to have.
+- **Nudge on WhatsApp:** on someone's plan, a drafted check-in message you can edit, opened in your own WhatsApp (needs their WhatsApp number in Team > details). Nothing is sent from the website. "Last nudged" is remembered. Team admins can nudge people below them.
+- **Buddy:** Plan settings > Buddy (you only). The buddy gets a **Buddy** tab with a read-only view (titles, ticks, counts; no notes, labels, DISC or private number). Their Action Plan card is switched on for them. The agent sees "Your buddy: name".
+- **Day-90 review:** on someone's plan, **Day-90 review** opens a print-ready page (progress per section, what was skipped or needs follow-up, blank boxes, signature lines). **Print or save as PDF** uses the browser's print dialog. The private number and Behind labels are never printed.
+
+## Install
+1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase14.sql` > Go, **once** (adds two columns to `ap_plans`).
+2. **Extract the zip in your home folder** (overwrites the same-named files).
+3. Reload the Action Plan page.

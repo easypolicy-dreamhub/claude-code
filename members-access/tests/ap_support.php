@@ -20,7 +20,7 @@ function ap_test_db(?string $file = null): PDO
         week_to INTEGER NOT NULL DEFAULT 1, kind TEXT NOT NULL DEFAULT "tick", target INTEGER NULL, auto_key TEXT NULL, tool_key TEXT NULL, sort_order INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1,
         archived INTEGER NOT NULL DEFAULT 0, created_on TEXT NOT NULL)');
     $pdo->exec('CREATE TABLE ap_plans (id INTEGER PRIMARY KEY AUTOINCREMENT, member_id INTEGER NOT NULL UNIQUE, start_date TEXT NOT NULL, length_days INTEGER NOT NULL DEFAULT 90, disc TEXT NULL,
-        private_number INTEGER NULL, assigned_by INTEGER NULL, closed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)');
+        private_number INTEGER NULL, buddy_id INTEGER NULL, last_nudged_at TEXT NULL, assigned_by INTEGER NULL, closed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)');
     $pdo->exec('CREATE TABLE ap_progress (plan_id INTEGER NOT NULL, item_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT "todo", cnt INTEGER NOT NULL DEFAULT 0, note TEXT NULL, submitted_at TEXT NULL,
         approved_by INTEGER NULL, approved_at TEXT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (plan_id, item_id))');
     $pdo->exec('CREATE TABLE ap_overrides (plan_id INTEGER NOT NULL, item_id INTEGER NOT NULL, skip INTEGER NOT NULL DEFAULT 0, skip_note TEXT NULL, week_from INTEGER NULL, week_to INTEGER NULL,

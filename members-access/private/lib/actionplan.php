@@ -521,8 +521,21 @@ function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $da
 
 function ap_plan_update(PDO $pdo, array $actor, int $planId, array $in): void
 {
-    ap_plan_row($pdo, $planId);
+    $plan = ap_plan_row($pdo, $planId);
     $set = [];
+    $newBuddy = null;
+    if (array_key_exists('buddy_id', $in)) {
+        $bv = trim((string)$in['buddy_id']);
+        if ($bv === '') {
+            $set['buddy_id'] = null;
+        } else {
+            $bm = load_member_map($pdo)[(int)$bv] ?? null;
+            if ($bm === null || !$bm['is_active'] || (int)$bv === (int)$plan['member_id']) {
+                throw new HttpError(422, 'Choose another active person as the buddy.');
+            }
+            $set['buddy_id'] = $newBuddy = (int)$bv;
+        }
+    }
     if (array_key_exists('start_date', $in)) {
         $set['start_date'] = ap_date((string)$in['start_date']);
     }
@@ -549,6 +562,113 @@ function ap_plan_update(PDO $pdo, array $actor, int $planId, array $in): void
     $cols = implode(', ', array_map(static fn (string $c): string => "$c = ?", array_keys($set)));
     $pdo->prepare("UPDATE ap_plans SET $cols WHERE id = ?")->execute([...array_values($set), $planId]);
     audit($pdo, (int)$actor['id'], 'ap.plan.update', $planId, array_diff_key($set, ['private_number' => 1]));
+    if ($newBuddy !== null) {   // so the buddy can open the Action Plan card and see their buddy's progress
+        try {
+            $ticked = ticked_tools($pdo, $newBuddy);
+            if (!in_array('action-plan', $ticked, true)) {
+                set_ticked_tools($pdo, $newBuddy, array_merge($ticked, ['action-plan']));
+            }
+        } catch (Throwable $e) {
+            error_log('ap buddy tick: ' . $e->getMessage());
+        }
+    }
+}
+
+/* ---------- WhatsApp nudge (a message the leader opens in their own WhatsApp; nothing is sent from the server) ---------- */
+
+function ap_nudge_draft(PDO $pdo, array $map, array $plan, string $today): array
+{
+    $m = $map[(int)$plan['member_id']] ?? null;
+    if ($m === null) {
+        throw new HttpError(404, 'Person not found.');
+    }
+    $week = ap_week((string)$plan['start_date'], $today);
+    $items = ap_plan_items($pdo, $plan, $today);
+    $sum = ap_summary($items, $week);
+    $label = static fn (array $it): string => $it['title'] . ($it['kind'] === 'count' && $it['target'] ? ': ' . $it['count'] . ' of ' . $it['target'] . ' so far' : '');
+    $follow = $due = [];
+    foreach ($items as $it) {
+        if ($it['skipped']) {
+            continue;
+        }
+        if ($it['status'] === 'followup') {
+            $follow[] = '• ' . $label($it) . ($it['note'] !== '' ? ': ' . $it['note'] : '');
+        } elseif ($it['status'] === 'todo' && ($it['overdue'] || $it['pace_behind'])) {
+            $due[] = '• ' . $label($it);
+        }
+    }
+    $first = trim((string)strtok(trim((string)$m['name']), ' '));
+    $t = 'Hi ' . ($first !== '' ? $first : 'there') . ', a quick check-in on your Action Plan.';
+    $t .= $week >= 1
+        ? ' You are in week ' . min($week, ap_weeks_total((int)$plan['length_days'])) . ' of ' . ap_weeks_total((int)$plan['length_days']) . ' and ' . $sum['percent'] . '% is approved so far.'
+        : ' Your plan starts soon.';
+    if ($follow) {
+        $t .= "\n\nThings I would like you to take another look at:\n" . implode("\n", array_slice($follow, 0, 5)) . (count($follow) > 5 ? "\nand " . (count($follow) - 5) . ' more' : '');
+    }
+    if ($due) {
+        $t .= "\n\nThese are due about now:\n" . implode("\n", array_slice($due, 0, 5)) . (count($due) > 5 ? "\nand " . (count($due) - 5) . ' more' : '');
+    }
+    if (!$follow && !$due) {
+        $t .= "\n\nYou are on track. Keep it up!";
+    }
+    $t .= "\n\nTell me if you would like to go through anything together.";
+    $wa = preg_replace('/\D+/', '', (string)($m['whatsapp'] ?? '')) ?? '';
+    return ['name' => $m['name'], 'whatsapp' => $wa === '' ? null : $wa, 'text' => $t, 'last_nudged_at' => $plan['last_nudged_at'] ?? null];
+}
+
+function ap_nudge_done(PDO $pdo, array $actor, array $plan): string
+{
+    $now = ap_now();
+    $pdo->prepare('UPDATE ap_plans SET last_nudged_at = ? WHERE id = ?')->execute([$now, (int)$plan['id']]);
+    audit($pdo, (int)$actor['id'], 'ap.nudge', (int)$plan['member_id'], ['plan' => (int)$plan['id']]);
+    return $now;
+}
+
+/* ---------- buddy: a read-only look at the progress of the person you are buddy to ---------- */
+
+function ap_buddy_list(PDO $pdo, array $map, int $viewerId, string $today): array
+{
+    $st = $pdo->prepare('SELECT * FROM ap_plans WHERE buddy_id = ? AND closed = 0');
+    $st->execute([$viewerId]);
+    $out = [];
+    foreach ($st->fetchAll() as $plan) {
+        $mid = (int)$plan['member_id'];
+        if (!isset($map[$mid]) || !$map[$mid]['is_active']) {
+            continue;
+        }
+        $week = ap_week((string)$plan['start_date'], $today);
+        $sum = ap_summary(ap_plan_items($pdo, $plan, $today), $week);
+        $out[] = ['plan_id' => (int)$plan['id'], 'name' => $map[$mid]['name'], 'week' => $week, 'weeks_total' => ap_weeks_total((int)$plan['length_days']),
+            'percent' => $sum['percent'], 'done' => $sum['done'], 'total' => $sum['total']];
+    }
+    usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+    return $out;
+}
+
+/** Only titles, ticks and counts: no leader notes, labels, DISC, private number or skipped items. */
+function ap_buddy_view(PDO $pdo, array $map, int $viewerId, int $planId, string $today): array
+{
+    $plan = ap_plan_row($pdo, $planId);
+    if ((int)($plan['buddy_id'] ?? 0) !== $viewerId || (int)$plan['closed']) {
+        throw new HttpError(403, 'You are not the buddy on this plan.');
+    }
+    $week = ap_week((string)$plan['start_date'], $today);
+    $items = ap_plan_items($pdo, $plan, $today);
+    $sum = ap_summary($items, $week);
+    $secs = [];
+    foreach ($items as $it) {
+        if ($it['skipped']) {
+            continue;
+        }
+        $state = $it['status'] === 'done' ? 'done' : ($it['status'] === 'waiting' ? 'waiting' : 'todo');
+        $secs[$it['section']][] = ['title' => $it['title'], 'kind' => $it['kind'], 'count' => $it['count'], 'target' => $it['target'], 'state' => $state];
+    }
+    $sections = [];
+    foreach ($secs as $name => $its) {
+        $sections[] = ['name' => (string)$name, 'done' => count(array_filter($its, static fn (array $i): bool => $i['state'] === 'done')), 'items' => $its];
+    }
+    return ['plan_id' => $planId, 'name' => $map[(int)$plan['member_id']]['name'] ?? 'Unknown', 'week' => $week, 'weeks_total' => ap_weeks_total((int)$plan['length_days']),
+        'start_date' => $plan['start_date'], 'percent' => $sum['percent'], 'done' => $sum['done'], 'total' => $sum['total'], 'sections' => $sections];
 }
 
 /* ---------- items of one plan ---------- */
@@ -936,8 +1056,11 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
         'closed' => (bool)$plan['closed'], 'disc' => ap_disc_info($plan['disc'] ?: ap_disc_from_career_code($pdo, (string)($m['email'] ?? ''), AP_DISC), $plan['disc'] ? null : 'Career Code'),
         'progress' => ['total' => $sum['total'], 'done' => $sum['done'], 'waiting' => $sum['waiting'], 'followup' => $sum['followup'], 'percent' => $sum['percent']],
         'items' => $outItems, 'own' => $own,
+        'end_date' => gmdate('Y-m-d', strtotime((string)$plan['start_date'] . ' +' . ((int)$plan['length_days'] - 1) . ' days')),
+        'buddy' => !empty($plan['buddy_id']) && isset($map[(int)$plan['buddy_id']]) ? ['id' => (int)$plan['buddy_id'], 'name' => $map[(int)$plan['buddy_id']]['name']] : null,
     ];
     if ($approver) {
+        $p['last_nudged_at'] = $plan['last_nudged_at'] ?? null;
         $p['label'] = $sum['label'];
         $p['label_text'] = AP_LABEL_TEXT[$sum['label']];
         $p['behind_items'] = $sum['behind_items'];
@@ -1034,7 +1157,14 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                     'disc_options' => AP_DISC, 'tools' => ap_tool_options(), 'default_days' => AP_BASE_DAYS,
                     'plan_tools' => $role === 'super' ? ap_plan_tools($pdo) : [],
                     'try_members' => $role === 'super' ? ap_try_members($map) : [],
+                    'buddy_count' => count(ap_buddy_list($pdo, $map, (int)$viewer['id'], $today)),
                 ];
+            case 'buddy':
+                return ['people' => ap_buddy_list($pdo, $map, (int)$viewer['id'], $today)];
+            case 'buddy_plan':
+                return ['plan' => ap_buddy_view($pdo, $map, (int)$viewer['id'], (int)($q['plan'] ?? 0), $today)];
+            case 'nudge':
+                return ['nudge' => ap_nudge_draft($pdo, $map, $theirPlan((int)($q['plan'] ?? 0)), $today)];
             case 'me':
                 return ['plan' => $mine ? $payload($mine, true) : null];
             case 'overview':
@@ -1101,6 +1231,9 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
         case 'reopen':
             ap_reopen($pdo, $viewer, $theirPlan($planId), $item, $today);
             return $refresh(ap_plan_row($pdo, $planId));
+
+        case 'nudge_done':
+            return ['last_nudged_at' => ap_nudge_done($pdo, $viewer, $theirPlan($planId))];
 
         /* super admin: plans */
         case 'assign':
