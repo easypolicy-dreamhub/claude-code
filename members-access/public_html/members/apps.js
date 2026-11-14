@@ -208,7 +208,7 @@ const APPS = [
   {
     key:   "access",
     name:  "Members & Access",
-    url:   "/members/site-settings/access/",
+    url:   "/members/access/",
     icon:  "🔑",
     about: "Who can log in, what to call them, and which tools each person can use",
     group: "Site Admin",

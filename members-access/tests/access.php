@@ -304,12 +304,16 @@ check('...with the newly chosen tools', tools_of($pdo, 'back@x.com') === ['agenc
 
 echo "\nThe page gate\n";
 $dir = sys_get_temp_dir() . '/gate_' . getmypid();
-foreach (['team', 'monthly-report', 'career-code/dashboard', 'career-code/live', 'api', 'events', 'php-tool'] as $d) { mkdir("$dir/$d", 0777, true); }
-foreach (['team/index.html', 'monthly-report/index.html', 'career-code/dashboard/index.html', 'career-code/live/index.html', 'events/index.html', 'team/team.js'] as $f) { file_put_contents("$dir/$f", "<p>$f</p>"); }
+foreach (['team', 'monthly-report', 'career-code/dashboard', 'career-code/live', 'api', 'events', 'php-tool', 'site-settings', 'access'] as $d) { mkdir("$dir/$d", 0777, true); }
+foreach (['team/index.html', 'monthly-report/index.html', 'career-code/dashboard/index.html', 'career-code/live/index.html', 'events/index.html', 'team/team.js', 'site-settings/index.html', 'access/index.html'] as $f) { file_put_contents("$dir/$f", "<p>$f</p>"); }
 file_put_contents("$dir/api/x.html", 'secret');
 check('team/ resolves to the Team tool', gate_resolve($dir, 'team/')['tool']['key'] === 'team');
 check('team/index.html resolves too', gate_resolve($dir, 'team/index.html')['tool']['key'] === 'team');
 check('dashboard resolves to Candidates, not Career Code', gate_resolve($dir, 'career-code/dashboard/')['tool']['key'] === 'career-code-candidates');
+check('Site Settings and Members & Access are two separate tools with two separate files',
+    gate_resolve($dir, 'site-settings/')['tool']['key'] === 'site-settings' && gate_resolve($dir, 'access/')['tool']['key'] === 'access'
+    && gate_resolve($dir, 'site-settings/')['file'] !== gate_resolve($dir, 'access/')['file']);
+check('both are locked to the super admin', gate_resolve($dir, 'site-settings/')['tool']['locked'] && gate_resolve($dir, 'access/')['tool']['locked']);
 check('JS files are not served by the gate', gate_resolve($dir, 'team/team.js') === null);
 check('folders that are not tools are not served', gate_resolve($dir, 'api/x.html') === null);
 check('.. is refused', gate_resolve($dir, 'team/../api/x.html') === null && gate_resolve($dir, '../etc/passwd.html') === null);

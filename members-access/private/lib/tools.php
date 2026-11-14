@@ -46,7 +46,7 @@ function tool_catalog(): array
         $t('testimonials', 'Testimonials', 'Site Admin', 'testimonials', ['locked' => true]),
         $t('events', 'Events', 'Site Admin', 'events', ['locked' => true]),
         $t('site-settings', 'Site Settings', 'Site Admin', 'site-settings', ['locked' => true]),
-        $t('access', 'Members & Access', 'Site Admin', 'site-settings/access', ['locked' => true]),
+        $t('access', 'Members & Access', 'Site Admin', 'access', ['locked' => true]),
     ];
 }
 

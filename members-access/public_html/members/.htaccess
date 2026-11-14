@@ -2,4 +2,4 @@
 # before the page is shown. The address in the browser does not change.
 RewriteEngine On
 RewriteCond %{REQUEST_URI} (/|\.html?)$ [NC]
-RewriteRule ^((?:panel-finder|great-journey-finder|protection-needs|sum-assured|legacy-planner|ci-poster-generator|policy-summary|career-code|event-links|event-invitees|million-income|activity|team|agency-report|monthly-report|nominee-form|testimonials|events|site-settings)(?:/.*)?)$ gate.php?path=$1 [L]
+RewriteRule ^((?:panel-finder|great-journey-finder|protection-needs|sum-assured|legacy-planner|ci-poster-generator|policy-summary|career-code|event-links|event-invitees|million-income|activity|team|agency-report|monthly-report|nominee-form|testimonials|events|site-settings|access)(?:/.*)?)$ gate.php?path=$1 [L]

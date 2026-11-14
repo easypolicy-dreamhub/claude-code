@@ -1,6 +1,6 @@
 # Members & Access (phase 10)
 
-One screen, **Site Settings › Members & Access** (`/members/site-settings/access/`), where the super admin:
+One screen, the **Members & Access** card (`/members/access/`, its own folder, separate from Site Settings), where the super admin:
 
 - sees **every email on the Cloudflare "Email Access" policy**, and gives each a **name** and a **type** (Team member, Admin, Tester)
 - **adds / removes** people, which updates Cloudflare for you (removal also signs them out at once)
@@ -24,7 +24,7 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 | `public_html/members/api/access.php` | new |
 | `public_html/members/api/me.php`, `team.php` | replace: `me.php` also says which tools you may use; `team.php` updates Cloudflare when you add / remove / reactivate / change an email |
 | `public_html/members/team/team.js` | replace: messages say Cloudflare was updated |
-| `public_html/members/site-settings/access/index.html` | new: the Members & Access screen |
+| `public_html/members/access/index.html` | new: the Members & Access screen (own folder). If you installed an earlier version, delete the old folder `public_html/members/site-settings/access/` afterwards. |
 
 ## Steps
 
