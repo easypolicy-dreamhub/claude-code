@@ -408,14 +408,58 @@ function ap_assignable(PDO $pdo, array $map): array
     $out = [];
     foreach ($map as $m) {
         if ($m['is_active'] && !tool_is_super($m) && member_type($m) === 'team' && !in_array((int)$m['id'], $have, true)) {
-            $out[] = ['id' => (int)$m['id'], 'name' => $m['name']];
+            $out[] = ['id' => (int)$m['id'], 'name' => $m['name'], 'has' => array_values(array_unique(member_tool_keys($pdo, $m)))];
         }
     }
     usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
     return $out;
 }
 
-function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $days): int
+/** The tools the template's shortcuts point to, with the items that use each (for the Assign tick-box). */
+function ap_plan_tools(PDO $pdo): array
+{
+    $rows = $pdo->query('SELECT tool_key, title FROM ap_items WHERE plan_id IS NULL AND active = 1 AND archived = 0 AND tool_key IS NOT NULL ORDER BY sort_order, id')->fetchAll();
+    $by = [];
+    foreach ($rows as $r) {
+        $by[(string)$r['tool_key']][] = (string)$r['title'];
+    }
+    $out = [];
+    foreach (tool_catalog() as $t) {
+        if (!$t['locked'] && isset($by[$t['key']]) && ap_tool_url($t['key'])) {
+            $out[] = ['key' => $t['key'], 'name' => $t['name'], 'items' => $by[$t['key']]];
+        }
+    }
+    return $out;
+}
+
+/** Switch on the chosen tools (only ones the template really uses) for a person. Returns the names switched on. */
+function ap_switch_on_tools(PDO $pdo, array $m, array $keys): array
+{
+    $allowed = array_column(ap_plan_tools($pdo), 'name', 'key');
+    $done = [];
+    $ticked = ticked_tools($pdo, (int)$m['id']);
+    $newTicked = $ticked;
+    foreach (array_unique(array_map('strval', $keys)) as $k) {
+        if (!isset($allowed[$k])) {
+            continue;
+        }
+        if ($k === 'client-portal') {
+            if (!portal_enabled((string)$m['email'])) {
+                portal_set((string)$m['email'], (string)$m['name'], true);
+                $done[] = $allowed[$k];
+            }
+        } elseif (!in_array($k, $ticked, true)) {
+            $newTicked[] = $k;
+            $done[] = $allowed[$k];
+        }
+    }
+    if ($newTicked !== $ticked) {
+        set_ticked_tools($pdo, (int)$m['id'], $newTicked);
+    }
+    return $done;
+}
+
+function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $days, array $tools = []): int
 {
     $map = load_member_map($pdo);
     $m = $map[$memberId] ?? null;
@@ -461,6 +505,16 @@ function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $da
         }
     } catch (Throwable $e) {
         error_log('ap_assign tick: ' . $e->getMessage());
+    }
+    if ($tools) {
+        try {
+            $done = ap_switch_on_tools($pdo, $m, $tools);
+            if ($done) {
+                audit($pdo, (int)$actor['id'], 'ap.assign_tools', $memberId, ['tools' => $done]);
+            }
+        } catch (Throwable $e) {
+            error_log('ap_assign tools: ' . $e->getMessage());
+        }
     }
     return $id;
 }
@@ -978,6 +1032,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                     'waiting' => $role === 'agent' ? 0 : count(ap_approvals($pdo, $map, $viewer, $today)),
                     'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [],
                     'disc_options' => AP_DISC, 'tools' => ap_tool_options(), 'default_days' => AP_BASE_DAYS,
+                    'plan_tools' => $role === 'super' ? ap_plan_tools($pdo) : [],
                     'try_members' => $role === 'super' ? ap_try_members($map) : [],
                 ];
             case 'me':
@@ -986,7 +1041,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                 if ($role === 'agent') {
                     throw new HttpError(403, 'Not available.');
                 }
-                return ['plans' => ap_overview($pdo, $map, $viewer, $today), 'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : []];
+                return ['plans' => ap_overview($pdo, $map, $viewer, $today), 'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [], 'plan_tools' => $role === 'super' ? ap_plan_tools($pdo) : []];
             case 'approvals':
                 if ($role === 'agent') {
                     throw new HttpError(403, 'Not available.');
@@ -1050,7 +1105,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
         /* super admin: plans */
         case 'assign':
             $needSuper();
-            $id = ap_assign($pdo, $viewer, (int)($in['member_id'] ?? 0), (string)($in['start_date'] ?? ''), (int)($in['length_days'] ?? AP_BASE_DAYS));
+            $id = ap_assign($pdo, $viewer, (int)($in['member_id'] ?? 0), (string)($in['start_date'] ?? ''), (int)($in['length_days'] ?? AP_BASE_DAYS), is_array($in['tools'] ?? null) ? $in['tools'] : []);
             return ['plan_id' => $id, 'assignable' => ap_assignable($pdo, load_member_map($pdo))];
         case 'plan_update':
             $needSuper();

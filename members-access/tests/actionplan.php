@@ -67,6 +67,25 @@ check('...but not for people who are not above them', !in_array('action-plan', t
 throws('a second plan for the same person is refused', 409, fn () => ap_assign($pdo, $you, $ids['Dave'], $T0, 90));
 check('they leave the assignable list', !in_array('Dave', array_column(ap_assignable($pdo, load_member_map($pdo)), 'name'), true));
 
+echo "\nAssign tick-box: tools to switch on\n";
+$pt = ap_plan_tools($pdo);
+check('plan tools: the tools the template links to, each with the items that use it', in_array('million-income', array_column($pt, 'key'), true) && in_array('client-portal', array_column($pt, 'key'), true) && count(array_filter($pt, fn ($t) => $t['items'] === [])) === 0);
+$ben = array_values(array_filter(ap_assignable($pdo, load_member_map($pdo)), fn ($a) => $a['name'] === 'Ben'))[0];
+check('assignable people carry what they already have', isset($ben['has']) && is_array($ben['has']));
+$bid = ap_assign($pdo, $you, $ids['Ben'], '02/03/2026', 90, ['million-income', 'protection-needs', 'not-a-tool', 'legacy-planner']);
+$tk = ticked_tools($pdo, $ids['Ben']);
+check('ticked tools the plan uses are switched on for them', in_array('million-income', $tk, true) && in_array('protection-needs', $tk, true));
+check('a tool the plan does not use, or unknown, is ignored', !in_array('legacy-planner', $tk, true) && !in_array('not-a-tool', $tk, true));
+check('...and the Action Plan card is still on', in_array('action-plan', $tk, true));
+$hasNow = array_values(array_filter(ap_plan_tools($pdo), fn ($t) => $t['key'] === 'million-income'));
+check('assigning with no tools ticked switches nothing extra on', !in_array('million-income', ticked_tools($pdo, $ids['Eve']), true) && !in_array('protection-needs', ticked_tools($pdo, $ids['Eve']), true));
+$ben2 = ap_assign($pdo, $you, $ids['Eve'], '02/03/2026', 90);
+$pdo->prepare('UPDATE ap_items SET active = 0 WHERE plan_id IS NULL AND tool_key = ?')->execute(['million-income']);
+check('a tool whose items are all turned off is no longer offered', !in_array('million-income', array_column(ap_plan_tools($pdo), 'key'), true));
+$pdo->prepare('UPDATE ap_items SET active = 1 WHERE plan_id IS NULL AND tool_key = ?')->execute(['million-income']);
+$pdo->prepare('UPDATE ap_plans SET closed = 1 WHERE id = ?')->execute([$bid]);
+$pdo->prepare('UPDATE ap_plans SET closed = 1 WHERE id = ?')->execute([$ben2]);
+
 echo "\nAgent: tick, count, take back\n";
 $me = ap_get($pdo, $ids['Dave'], ['view' => 'me'], '2026-03-09')['plan'];
 check('week 2 of 13, 0% done', $me['week'] === 2 && $me['weeks_total'] === 13 && $me['progress']['percent'] === 0);
