@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>Action Plan | DreamHub E3</title>
+<meta name="theme-color" content="#24333A">
+<link rel="icon" href="/images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/members/e3-toolkit.css">
+<style>
+:root{--slate:#24333A;--taupe:#B9AFA7;--brown:#6E625A;--bg:#F4F2EF;--line:#E2DDD8;--muted:#5C6870;--tile:#F4F2EF;--hover:#EFEAE5;--green:#17563A;--greenbg:#E8F3EC;--greenline:#A9D4BB;--red:#8A1C14;--redbg:#FDECEA;--amber:#6B4600;--amberbg:#FFF4E0;--amberline:#F0D9A8;--blue:#1d4f7a;--bluebg:#E6F0F8}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--slate);font:400 16px/1.5 "DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background-image:radial-gradient(rgba(36,51,58,.06) 1px,transparent 1px);background-size:22px 22px}
+:focus-visible{outline:3px solid var(--taupe);outline-offset:2px;border-radius:8px}
+main{max-width:60rem;margin:0 auto;padding:16px 16px 72px;display:flex;flex-direction:column;gap:14px}
+[hidden]{display:none !important}
+.sr{position:absolute;left:-9999px}
+button{font:inherit;color:inherit}
+h2,h3{font-family:Poppins,"DM Sans",sans-serif;margin:0}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-height:44px;padding:0 18px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;font-size:15px;cursor:pointer}
+.tab[aria-pressed="true"]{background:var(--slate);border-color:var(--slate);color:#fff}
+.tab .n{display:inline-block;min-width:22px;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--amberbg);color:var(--amber);font-size:13px;line-height:22px;text-align:center}
+.tab[aria-pressed="true"] .n{background:#fff;color:var(--slate)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--slate)}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--slate);border-color:var(--slate);color:#fff}.btn.primary:hover{background:#33464F}
+.btn.good{background:var(--green);border-color:var(--green);color:#fff}.btn.good:hover{background:#1f6b48}
+.btn.warn{background:var(--amberbg);border-color:var(--amberline);color:var(--amber)}
+.btn.danger{border-color:#E3B9B5;color:var(--red)}.btn.danger:hover{background:var(--redbg)}
+.btn.small{min-height:38px;padding:0 12px;font-size:14px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 6px 20px rgba(36,51,58,.05)}
+.banner{padding:12px 14px;border-radius:12px;font-size:.95rem}
+.banner.warn{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberline)}
+.banner.good{background:var(--greenbg);color:var(--green)}
+.empty{text-align:center;color:var(--muted);padding:34px 12px;background:#fff;border:1px dashed var(--line);border-radius:14px}
+.empty b{display:block;font:600 1.05rem Poppins,sans-serif;color:var(--slate);margin-bottom:4px}
+.hint{margin:0;color:var(--muted);font-size:.9rem}
+.err{margin:0;padding:10px 12px;border-radius:10px;background:var(--redbg);color:var(--red);font-size:.92rem}
+
+/* progress */
+.bar{height:10px;border-radius:999px;background:#E9E4DF;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--green);border-radius:999px}
+.bar.amber>i{background:#C48A1A}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.chip.on_track,.chip.complete{background:var(--greenbg);color:var(--green)}
+.chip.slightly_behind{background:var(--amberbg);color:var(--amber)}
+.chip.behind{background:var(--redbg);color:var(--red)}
+.chip.not_started,.chip.none{background:#ECE8E4;color:var(--muted)}
+.chip.disc{background:var(--bluebg);color:var(--blue)}
+.chip.waiting{background:var(--amberbg);color:var(--amber)}
+.chip.follow{background:var(--redbg);color:var(--red)}
+.chip.done{background:var(--greenbg);color:var(--green)}
+.chip.soft{background:#ECE8E4;color:var(--muted)}
+
+/* header of a plan */
+.ph{display:flex;flex-direction:column;gap:12px}
+.ph .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.ph h2{font-size:1.25rem}
+.ph .wk{font:600 1rem Poppins,sans-serif}
+.ph .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.disc-hint{margin:0;font-size:.9rem;color:var(--blue);background:var(--bluebg);border-radius:10px;padding:8px 12px}
+
+/* items */
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec>summary,.sec>.sh{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:14px;font:600 1rem Poppins,sans-serif}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary::before{content:"▸";color:var(--muted);width:14px}
+details[open].sec>summary::before{content:"▾"}
+.sec .cnt{margin-left:auto;font:500 .85rem "DM Sans",sans-serif;color:var(--muted)}
+.items{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.it{display:grid;grid-template-columns:30px 1fr;gap:6px 12px;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.it.done{background:#F7FAF8;border-color:var(--greenline)}
+.it.skipped{opacity:.55}
+.it.skipped .tt{text-decoration:line-through}
+.it.follow{border-color:#E3B9B5}
+.st{width:26px;height:26px;border-radius:50%;border:2px solid #CFC8C1;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;margin-top:1px}
+.st.done{background:var(--green);border-color:var(--green)}
+.st.waiting{border-color:#C48A1A;background:var(--amberbg);color:var(--amber)}
+.st.follow{border-color:var(--red);background:var(--redbg);color:var(--red)}
+.tt{font-weight:700;overflow-wrap:anywhere}
+.dd{font-size:.88rem;color:var(--muted);overflow-wrap:anywhere;white-space:pre-line}
+.mm{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:4px;font-size:.84rem;color:var(--muted)}
+.mm .late{color:var(--red);font-weight:700}
+.note{margin-top:6px;padding:8px 12px;border-radius:10px;background:var(--amberbg);color:var(--amber);font-size:.92rem;border:1px solid var(--amberline)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.prog{display:flex;align-items:center;gap:10px;margin-top:6px}
+.prog .bar{flex:1;min-width:90px}
+.prog b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.step button{width:42px;height:42px;border:0;background:#fff;font-size:20px;cursor:pointer}
+.step button:hover{background:var(--hover)}
+.step input{width:64px;height:42px;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);text-align:center;font:600 16px "DM Sans",sans-serif;-moz-appearance:textfield}
+.step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* lists */
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center;width:100%;text-align:left;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;cursor:pointer;box-shadow:0 2px 10px rgba(36,51,58,.04)}
+.row:hover{border-color:var(--taupe)}
+.row .nm{font:600 1rem Poppins,sans-serif}
+.row .sub{font-size:.88rem;color:var(--muted)}
+.row .rt{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.row .bar{grid-column:1/-1}
+.bar.thin{height:8px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+select,input[type=text],input[type=number],input[type=date],textarea{font:inherit;color:var(--slate);border:1px solid #CFC8C1;border-radius:12px;background:#fff;padding:0 12px;min-height:46px;max-width:100%}
+textarea{padding:10px 12px;min-height:84px;width:100%;resize:vertical}
+select{padding-right:8px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--taupe);box-shadow:0 0 0 3px rgba(185,175,167,.45)}
+label.f{display:block;font-weight:600;font-size:.9rem;margin-bottom:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:560px){.two,.three{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .rt{justify-content:flex-start}}
+.fld input,.fld select{width:100%}
+
+/* template editor */
+.tsec{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+.tsec.off{opacity:.65}
+.tsh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;background:var(--tile);border-bottom:1px solid var(--line)}
+.tsh h3{font-size:1rem;flex:1;min-width:8rem}
+.ti{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:10px 14px;border-top:1px solid var(--line);align-items:center}
+.ti:first-of-type{border-top:0}
+.ti.off{opacity:.55}
+.ti .tt{font-weight:600}
+.ti .ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+@media(max-width:560px){.ti{grid-template-columns:1fr}.ti .ctl{justify-content:flex-start}}
+.ic{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:16px}
+.ic:hover{background:var(--hover)}.ic[disabled]{opacity:.35;cursor:not-allowed}
+.sw{flex:none;position:relative;width:48px;height:30px;border-radius:999px;border:0;background:#CFC8C1;cursor:pointer}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--green)}.sw[aria-checked="true"]::after{transform:translateX(18px)}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{min-height:40px;padding:0 16px;border:0;border-radius:9px;background:transparent;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--slate);color:#fff}
+
+/* dialog */
+dialog{border:0;padding:0;background:#fff;color:var(--slate);border-radius:18px;width:min(34rem,calc(100% - 24px));max-height:calc(100dvh - 24px);box-shadow:0 24px 60px rgba(36,51,58,.35)}
+dialog::backdrop{background:rgba(36,51,58,.5)}
+.dh{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2;border-radius:18px 18px 0 0}
+.dh h2{flex:1;font-size:1.1rem;overflow-wrap:anywhere}
+.x{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:20px;line-height:1}
+.db{padding:16px 18px 22px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+@media(max-width:640px){dialog{width:100%;max-width:none;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:92dvh}}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:min(92vw,30rem);padding:12px 18px;border-radius:12px;background:var(--slate);color:#fff;font-weight:500;font-size:.95rem;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.bad{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="e3-bar">
+  <a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>E3 Toolkit</a>
+  <span class="e3-brand">Dream<span>Hub</span> E3</span>
+</div>
+<div class="topbar">
+  <h1>Action Plan<small>Your first 90 days, step by step.</small></h1>
+  <div class="who" id="who"></div>
+</div>
+
+<main>
+  <p class="sr" id="status" role="status" aria-live="polite"></p>
+  <div id="tabs" class="tabs" role="group" aria-label="Action Plan views" hidden></div>
+  <div id="view"><p class="hint">Loading&hellip;</p></div>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="dlg" aria-labelledby="dlgTitle"></dialog>
+
+<script>
+(function () {
+  'use strict';
+  var API = '/members/api/actionplan.php';
+  var $ = function (id) { return document.getElementById(id); };
+  var dlg = $('dlg');
+  var S = { init: null, tab: null, plan: null, personId: null, overview: null, approvals: null, template: null, sort: 'attention', open: {} };
+
+  /* ---------- helpers ---------- */
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'text') n.textContent = v;
+      else if (k === 'class') n.className = v;
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function toast(msg, bad) {
+    var t = $('toast'); t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : ''); t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 4200);
+    $('status').textContent = ''; setTimeout(function () { $('status').textContent = msg; }, 30);
+  }
+  function req(method, body, query) {
+    var h = { 'Accept': 'application/json' };
+    if (method !== 'GET') { h['Content-Type'] = 'application/json'; h['X-Requested-With'] = 'fetch'; }
+    return fetch(API + (query || ''), { method: method, headers: h, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.text().then(function (t) { var d = null; try { d = JSON.parse(t); } catch (e) {} return { r: r, d: d, t: t }; }); },
+            function () { throw new Error('Could not reach the server. Check your connection and try again.'); })
+      .then(function (x) {
+        if (!x.r.ok) { var e = new Error(((x.d && x.d.error) || 'Something went wrong') + (x.d && x.d.detail ? ' (' + x.d.detail + ')' : '') + (x.d && x.d.error ? '' : ' (HTTP ' + x.r.status + ')')); e.status = x.r.status; throw e; }
+        if (!x.d) throw new Error('The server sent an answer this page could not read.');
+        return x.d;
+      });
+  }
+  function get(view, extra) { return req('GET', null, '?view=' + view + (extra || '')); }
+  function fail(e) { toast(e.message, true); }
+  function fmtDate(iso) { var p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+  function weeksText(it) { return it.from === it.to ? 'week ' + it.to : 'weeks ' + it.from + '–' + it.to; }
+  function initial() { return S.init.role; }
+  function isApprover() { return S.init.role === 'super' || S.init.role === 'approver'; }
+
+  /* ---------- dialogs ---------- */
+  function openDlg(title, build) {
+    dlg.innerHTML = '';
+    var body = el('div', { 'class': 'db' });
+    dlg.appendChild(el('div', { 'class': 'dh' }, [el('h2', { id: 'dlgTitle', text: title }), el('button', { type: 'button', 'class': 'x', 'aria-label': 'Close', text: '×', onclick: function () { dlg.close(); } })]));
+    dlg.appendChild(body);
+    build(body);
+    if (!dlg.open) dlg.showModal();
+    return body;
+  }
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  function field(label, input, hint) { return el('div', { 'class': 'fld' }, [el('label', { 'class': 'f', text: label }), input, hint ? el('p', { 'class': 'hint', style: 'margin-top:4px', text: hint }) : null]); }
+  function errBox() { return el('p', { 'class': 'err', role: 'alert', hidden: true }); }
+  function showErr(box, e) { box.textContent = e.message; box.hidden = false; }
+
+  /* ---------- tabs ---------- */
+  function buildTabs() {
+    var t = $('tabs'); t.innerHTML = '';
+    var tabs = [];
+    if (S.init.has_plan) tabs.push(['plan', 'My plan', 0]);
+    if (isApprover()) { tabs.push(['overview', 'Everyone', 0]); tabs.push(['approvals', 'Approvals', S.init.waiting]); }
+    if (S.init.role === 'super') tabs.push(['template', 'Template', 0]);
+    t.hidden = tabs.length < 2;
+    tabs.forEach(function (x) {
+      var b = el('button', { type: 'button', 'class': 'tab', 'aria-pressed': String(S.tab === x[0] || (x[0] === 'overview' && S.tab === 'person')), onclick: function () { go(x[0]); } }, [x[1], x[2] > 0 ? el('span', { 'class': 'n', text: String(x[2]) }) : null]);
+      t.appendChild(b);
+    });
+  }
+  function go(tab, id) {
+    S.tab = tab; if (tab === 'person') S.personId = id;
+    buildTabs();
+    $('view').innerHTML = ''; $('view').appendChild(el('p', { 'class': 'hint', text: 'Loading…' }));
+    var p;
+    if (tab === 'plan') p = get('me').then(function (d) { S.plan = d.plan; });
+    else if (tab === 'person') p = get('person', '&plan=' + id).then(function (d) { S.plan = d.plan; });
+    else if (tab === 'overview') p = get('overview').then(function (d) { S.overview = d; });
+    else if (tab === 'approvals') p = get('approvals').then(function (d) { S.approvals = d.approvals; });
+    else p = get('template').then(function (d) { S.template = d; });
+    p.then(render).catch(function (e) { $('view').innerHTML = ''; $('view').appendChild(el('p', { 'class': 'err', text: e.message })); });
+  }
+  function refreshInit() { return get('init').then(function (d) { S.init = d; buildTabs(); }); }
+  function render() {
+    var v = $('view'); v.innerHTML = '';
+    var keep = window.scrollY;
+    if (S.tab === 'plan' || S.tab === 'person') v.appendChild(renderPlan(S.plan, S.tab === 'person'));
+    else if (S.tab === 'overview') v.appendChild(renderOverview());
+    else if (S.tab === 'approvals') v.appendChild(renderApprovals());
+    else if (S.tab === 'template') v.appendChild(renderTemplate());
+    window.scrollTo(0, keep);
+  }
+
+  /* ---------- a plan ---------- */
+  function labelChip(p) { return p.label ? el('span', { 'class': 'chip ' + p.label, text: p.label_text }) : null; }
+  function renderPlan(p, person) {
+    var box = el('div', { 'class': 'sec', style: 'gap:14px' });
+    if (!p) {
+      box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No Action Plan yet' }), 'Your leader will set one up for you. It will appear here.']));
+      return box;
+    }
+    var approver = isApprover() && !p.own;
+    var top = el('div', { 'class': 'top' });
+    top.appendChild(el('div', {}, [el('h2', { text: person ? p.member.name : 'Your Action Plan' }), el('div', { 'class': 'wk', text: p.week === 0 ? 'Starts in ' + p.starts_in_days + ' day' + (p.starts_in_days === 1 ? '' : 's') + ' (' + fmtDate(p.start_date) + ')' : 'Week ' + Math.min(p.week, p.weeks_total) + ' of ' + p.weeks_total + (p.week > p.weeks_total ? ' · past the planned ' + p.length_days + ' days' : '') })]));
+    var meta = el('div', { 'class': 'meta' }, [labelChip(p), p.progress.waiting ? el('span', { 'class': 'chip waiting', text: p.progress.waiting + ' waiting for approval' }) : null,
+      p.progress.followup ? el('span', { 'class': 'chip follow', text: p.progress.followup + ' to follow up' }) : null, p.disc ? el('span', { 'class': 'chip disc', title: p.disc.hint, text: 'DISC ' + p.disc.style }) : null]);
+    top.appendChild(meta);
+    var head = el('div', { 'class': 'card ph' }, [top,
+      el('div', {}, [el('div', { 'class': 'bar', 'aria-label': p.progress.percent + ' percent approved' }, [el('i', { style: 'width:' + p.progress.percent + '%' })]), el('p', { 'class': 'hint', style: 'margin-top:6px', text: p.progress.done + ' of ' + p.progress.total + ' steps approved (' + p.progress.percent + '%)' })])]);
+    if (!person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Your style (' + p.disc.style + '): ' + p.disc.hint }));
+    if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint: ' + p.disc.hint }));
+    if (person && S.init.role === 'super') head.appendChild(planSettings(p));
+    box.appendChild(head);
+    if (person) box.insertBefore(el('div', {}, [el('button', { type: 'button', 'class': 'btn small', text: '← Everyone', onclick: function () { go('overview'); } })]), head);
+
+    var items = p.items;
+    var live = items.filter(function (i) { return !i.skipped; });
+    var shown = {};   // items already listed at the top are not repeated in their section
+    if (!person) {
+      var follow = live.filter(function (i) { return i.status === 'followup'; });
+      var dueNow = live.filter(function (i) { return i.status === 'todo' && p.week > 0 && i.to === p.week; });
+      var past = live.filter(function (i) { return i.status === 'todo' && p.week > 0 && i.to < p.week; });
+      if (follow.length) box.appendChild(group('Your leader asked for a follow-up', follow, p, 'follow'));
+      if (dueNow.length) box.appendChild(group('Due this week', dueNow, p));
+      if (past.length) box.appendChild(group('Still to finish', past, p, 'past'));
+      follow.concat(dueNow, past).forEach(function (i) { shown[i.id] = true; });
+    }
+    // all sections
+    var order = [];
+    items.forEach(function (i) { if (order.indexOf(i.section) < 0) order.push(i.section); });
+    order.forEach(function (name) {
+      var all = items.filter(function (i) { return i.section === name; });
+      var its = all.filter(function (i) { return !shown[i.id]; });
+      var done = all.filter(function (i) { return i.status === 'done' && !i.skipped; }).length, tot = all.filter(function (i) { return !i.skipped; }).length;
+      var key = (person ? 'p' : 'm') + name;
+      if (!(key in S.open)) S.open[key] = its.some(function (i) { return i.extra; }) || (person ? its.some(function (i) { return i.status === 'waiting'; }) : its.some(function (i) { return i.window === 'now' && i.status === 'todo'; }));
+      var d = el('details', { 'class': 'sec' }, [el('summary', {}, [name, el('span', { 'class': 'cnt', text: done + ' / ' + tot })]),
+        its.length ? el('ul', { 'class': 'items', style: 'margin-top:8px' }, its.map(function (i) { return el('li', {}, [itemRow(i, p)]); })) : el('p', { 'class': 'hint', style: 'padding:4px 14px', text: 'Everything left in this section is listed above.' })]);
+      if (S.open[key]) d.setAttribute('open', '');
+      d.addEventListener('toggle', function () { S.open[key] = d.open; });
+      box.appendChild(d);
+    });
+    if (person && S.init.role === 'super') box.appendChild(el('div', {}, [el('button', { type: 'button', 'class': 'btn', text: '+ Add an extra item for ' + p.member.name, onclick: function () { extraDialog(p); } })]));
+    return box;
+  }
+  function group(title, items, p, kind) {
+    if (kind === 'past') {   // a long catch-up list starts folded so the page stays short; the count is in its title
+      var d = el('details', { 'class': 'sec' }, [el('summary', {}, [title, el('span', { 'class': 'cnt', text: String(items.length) })]), el('ul', { 'class': 'items', style: 'margin-top:8px' }, items.map(function (i) { return el('li', {}, [itemRow(i, p)]); }))]);
+      if (S.open.past === undefined) S.open.past = items.length <= 8;
+      if (S.open.past) d.setAttribute('open', '');
+      d.addEventListener('toggle', function () { S.open.past = d.open; });
+      return d;
+    }
+    return el('div', { 'class': 'sec' }, [el('div', { 'class': 'sh', style: kind === 'follow' ? 'border-color:#E3B9B5;cursor:default' : 'cursor:default' }, [title, el('span', { 'class': 'cnt', text: String(items.length) })]),
+      el('ul', { 'class': 'items' }, items.map(function (i) { return el('li', {}, [itemRow(i, p)]); }))]);
+  }
+  function planSettings(p) {
+    var start = el('input', { type: 'text', value: fmtDate(p.start_date), inputmode: 'numeric', placeholder: 'dd/mm/yyyy', 'aria-label': 'Start date' });
+    var len = el('input', { type: 'number', value: String(p.length_days), min: '30', max: '365', 'aria-label': 'Plan length in days' });
+    var disc = el('select', { 'aria-label': 'DISC style' }, [el('option', { value: '', text: 'DISC: not set' })].concat(S.init.disc_options.map(function (d) { return el('option', { value: d, selected: p.disc && p.disc.style === d, text: 'DISC ' + d }); })));
+    var num = el('input', { type: 'number', value: p.private_number === null || p.private_number === undefined ? '' : String(p.private_number), min: '1', max: '33', placeholder: 'Private number', 'aria-label': 'Private number (only you see this)' });
+    var err = errBox();
+    var save = el('button', { type: 'button', 'class': 'btn small primary', text: 'Save', onclick: function () {
+      save.disabled = true;
+      req('POST', { action: 'plan_update', plan: p.id, start_date: start.value, length_days: len.value, disc: disc.value, private_number: num.value }).then(function (d) { S.plan = d.plan; toast('Saved.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+    } });
+    var close = el('button', { type: 'button', 'class': 'btn small danger', text: 'Close this plan', onclick: function () {
+      if (!window.confirm('Close ' + p.member.name + '\'s plan? It leaves the lists, but nothing is deleted. Assigning them again brings it back with their progress.')) return;
+      req('POST', { action: 'plan_update', plan: p.id, closed: true }).then(function () { toast('Plan closed.'); return refreshInit(); }).then(function () { go('overview'); }).catch(fail);
+    } });
+    return el('details', {}, [el('summary', { style: 'cursor:pointer;font-weight:600;min-height:40px' }, ['Plan settings']),
+      el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:8px' }, [
+        el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Default 90. Every suggested week stretches to fit.')]),
+        el('div', { 'class': 'two' }, [field('DISC style', disc), field('Your private number', num, 'Only you see this.')]),
+        err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, close])])]);
+  }
+
+  function itemRow(it, p) {
+    var approver = isApprover() && !p.own;
+    var cls = 'it' + (it.status === 'done' ? ' done' : '') + (it.skipped ? ' skipped' : '') + (it.status === 'followup' ? ' follow' : '');
+    var icon = it.status === 'done' ? '✓' : it.status === 'waiting' ? '…' : it.status === 'followup' ? '!' : '';
+    var st = el('div', { 'class': 'st ' + (it.status === 'followup' ? 'follow' : it.status), 'aria-hidden': 'true', text: icon });
+    var body = el('div', {});
+    body.appendChild(el('div', { 'class': 'tt', text: it.title }));
+    if (it.details) body.appendChild(el('div', { 'class': 'dd', text: it.details }));
+    var mm = el('div', { 'class': 'mm' });
+    mm.appendChild(el('span', { text: 'Suggested ' + (approver ? '' : 'by ') + (approver ? weeksText(it) : 'week ' + it.to) }));
+    if (approver && it.overdue) mm.appendChild(el('span', { 'class': 'late', text: 'Overdue' }));
+    if (approver && it.pace_behind) mm.appendChild(el('span', { 'class': 'late', text: 'Behind the pace' + (it.expected !== null ? ' (about ' + it.expected + ' expected)' : '') }));
+    if (it.status === 'waiting') mm.appendChild(el('span', { 'class': 'chip waiting', text: 'Waiting for approval' }));
+    if (it.status === 'done') mm.appendChild(el('span', { 'class': 'chip done', text: 'Approved' + (it.approved_at ? ' ' + fmtDate(String(it.approved_at).slice(0, 10)) : '') }));
+    if (it.extra) mm.appendChild(el('span', { 'class': 'chip soft', text: 'Extra' }));
+    if (it.skipped) mm.appendChild(el('span', { 'class': 'chip soft', text: 'Not needed' + (it.skip_note ? ': ' + it.skip_note : '') }));
+    body.appendChild(mm);
+    if (it.status === 'followup' && it.note) body.appendChild(el('div', { 'class': 'note', text: (p.own ? 'Your leader says: ' : 'You asked: ') + it.note }));
+    if (it.kind === 'count' && it.target) {
+      var pct = Math.min(100, Math.round(it.count * 100 / it.target));
+      body.appendChild(el('div', { 'class': 'prog' }, [el('div', { 'class': 'bar thin' + (approver && it.pace_behind ? ' amber' : '') }, [el('i', { style: 'width:' + pct + '%' })]), el('b', { text: it.count + ' / ' + it.target })]));
+    }
+    var acts = el('div', { 'class': 'acts' });
+    if (!it.skipped) {
+      if (p.own) {
+        if (it.kind === 'count' && it.status !== 'done') acts.appendChild(stepper(it, p));
+        else if (it.status === 'todo' || it.status === 'followup') acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Mark done', onclick: function () { post({ action: 'tick', item: it.id }); } }));
+        if (it.status === 'waiting') acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Undo', onclick: function () { post({ action: 'untick', item: it.id }); } }));
+      } else if (approver) {
+        if (it.status === 'waiting') {
+          acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Approve', onclick: function () { post({ action: 'approve', plan: p.id, item: it.id }); } }));
+          acts.appendChild(el('button', { type: 'button', 'class': 'btn warn small', text: 'Send back', onclick: function () { sendBackDialog(p, it); } }));
+        } else if (it.status === 'done') {
+          acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Reopen', onclick: function () { post({ action: 'reopen', plan: p.id, item: it.id }); } }));
+        } else {
+          acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Mark as approved', onclick: function () { post({ action: 'approve', plan: p.id, item: it.id }); } }));
+          if (it.status === 'todo') acts.appendChild(el('button', { type: 'button', 'class': 'btn warn small', text: 'Follow up', onclick: function () { sendBackDialog(p, it); } }));
+        }
+      }
+    }
+    if (it.tool) acts.appendChild(el('a', { 'class': 'btn small', href: it.tool.url, target: 'e3tool-' + it.tool.key, text: 'Open ' + it.tool.name + ' ›' }));
+    if (S.init.role === 'super' && !p.own) {
+      if (it.extra) acts.appendChild(el('button', { type: 'button', 'class': 'btn small danger', text: 'Remove', onclick: function () { post({ action: 'extra_remove', plan: p.id, item: it.id }); } }));
+      else acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: it.has_override ? 'Adjusted ✎' : 'Adjust', onclick: function () { adjustDialog(p, it); } }));
+    }
+    if (acts.children.length) body.appendChild(acts);
+    return el('div', { 'class': cls }, [st, body]);
+  }
+  function stepper(it, p) {
+    var inp = el('input', { type: 'number', min: '0', value: String(it.count), 'aria-label': 'Number done for ' + it.title });
+    var save = function (n) { n = Math.max(0, Math.floor(Number(n) || 0)); inp.value = String(n); if (n !== it.count) post({ action: 'count', item: it.id, n: n }); };
+    inp.addEventListener('change', function () { save(inp.value); });
+    return el('div', { 'class': 'step' }, [el('button', { type: 'button', 'aria-label': 'One less', text: '−', onclick: function () { save(Number(inp.value) - 1); } }), inp, el('button', { type: 'button', 'aria-label': 'One more', text: '+', onclick: function () { save(Number(inp.value) + 1); } })]);
+  }
+  function post(body) {
+    return req('POST', body).then(function (d) {
+      if (d.plan) {
+        S.plan = d.plan;
+        if (S.tab === 'plan' || S.tab === 'person') render();
+        if (body.action === 'approve' || body.action === 'sendback' || body.action === 'reopen') refreshInit();
+        if (body.action === 'tick' || body.action === 'untick') toast(body.action === 'tick' ? 'Done. Waiting for your leader to approve.' : 'Taken back.');
+        if (body.action === 'approve') toast('Approved.');
+      }
+      return d;
+    }).catch(fail);
+  }
+  function sendBackDialog(p, it) {
+    openDlg('Ask for a follow-up', function (b) {
+      var note = el('textarea', { maxlength: '500', placeholder: 'A short note for them, for example: please add the date you did it' });
+      var err = errBox();
+      var go2 = el('button', { type: 'button', 'class': 'btn primary', text: 'Send back', onclick: function () {
+        go2.disabled = true;
+        req('POST', { action: 'sendback', plan: p.id, item: it.id, note: note.value }).then(function (d) {
+          dlg.close(); S.plan = d.plan; toast('Sent back with your note.');
+          refreshInit().then(function () { if (S.tab === 'approvals') go('approvals'); else render(); });
+        }).catch(function (e) { go2.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(el('p', { 'class': 'hint', text: it.title + (S.tab === 'approvals' ? '' : '') }));
+      b.appendChild(field('Your note', note)); b.appendChild(err); b.appendChild(el('div', {}, [go2]));
+    });
+  }
+  function adjustDialog(p, it) {
+    openDlg('Adjust for ' + p.member.name, function (b) {
+      b.appendChild(el('p', { 'class': 'hint', text: it.title + '. Template: ' + (it.base.from === it.base.to ? 'week ' + it.base.to : 'weeks ' + it.base.from + '–' + it.base.to) + (it.base.target ? ', target ' + it.base.target : '') + '. On this plan: ' + weeksText(it) + (it.kind === 'count' ? ', target ' + it.target : '') + '.' }));
+      var skip = el('input', { type: 'checkbox', id: 'adjSkip' }); skip.checked = it.skipped;
+      var note = el('input', { type: 'text', maxlength: '200', value: it.skip_note || '', placeholder: 'Why (optional), e.g. already done elsewhere' });
+      b.appendChild(el('label', { style: 'display:flex;gap:10px;align-items:center;font-weight:600;min-height:44px' }, [skip, 'Not needed for this person']));
+      b.appendChild(field('Note', note));
+      var wf = el('input', { type: 'number', min: '1', max: '26', placeholder: 'template', value: it.has_override ? String(it.from) : '' });
+      var wt = el('input', { type: 'number', min: '1', max: '26', placeholder: 'template', value: it.has_override ? String(it.to) : '' });
+      b.appendChild(el('div', { 'class': 'two' }, [field('First week (this person)', wf), field('Last week (this person)', wt)]));
+      b.appendChild(el('p', { 'class': 'hint', text: 'Leave both empty to follow the template\'s weeks.' }));
+      var tg = null;
+      if (it.kind === 'count') { tg = el('input', { type: 'number', min: '1', placeholder: String(it.base.target), value: it.target !== it.base.target ? String(it.target) : '' }); b.appendChild(field('Target (this person)', tg, 'Leave empty to use ' + it.base.target + '.')); }
+      var err = errBox();
+      var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Save', onclick: function () {
+        save.disabled = true;
+        var body = { action: 'override', plan: p.id, item: it.id, skip: skip.checked, skip_note: note.value };
+        if (wf.value === '' && wt.value === '') body.reset_weeks = true; else { body.week_from = wf.value || wt.value; body.week_to = wt.value || wf.value; }
+        if (tg) body.target = tg.value;
+        req('POST', body).then(function (d) { dlg.close(); S.plan = d.plan; toast('Saved for ' + p.member.name + '.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(err); b.appendChild(el('div', {}, [save]));
+    });
+  }
+  function extraDialog(p) {
+    openDlg('Extra item for ' + p.member.name, function (b) {
+      b.appendChild(el('p', { 'class': 'hint', text: 'This appears on their plan only.' }));
+      var title = el('input', { type: 'text', maxlength: '160', placeholder: 'e.g. Redo the questioning role-play with buddy' });
+      var details = el('textarea', { maxlength: '1000' });
+      var wf = el('input', { type: 'number', min: '1', max: '26', value: String(Math.max(1, p.week)) }), wt = el('input', { type: 'number', min: '1', max: '26', value: String(Math.max(1, p.week) + 1) });
+      var err = errBox();
+      var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Add', onclick: function () {
+        save.disabled = true;
+        req('POST', { action: 'extra_add', plan: p.id, title: title.value, details: details.value, week_from: wf.value, week_to: wt.value, kind: 'tick' }).then(function (d) { dlg.close(); S.plan = d.plan; toast('Added.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(field('Task', title)); b.appendChild(field('Details (optional)', details));
+      b.appendChild(el('div', { 'class': 'two' }, [field('First week', wf), field('Last week', wt)])); b.appendChild(err); b.appendChild(el('div', {}, [save]));
+    });
+  }
+
+  /* ---------- everyone (overview) ---------- */
+  function renderOverview() {
+    var box = el('div', { 'class': 'sec', style: 'gap:12px' });
+    var d = S.overview;
+    var sort = el('select', { 'aria-label': 'Sort' }, [['attention', 'Needs attention first'], ['name', 'Name'], ['progress', 'Least progress first'], ['week', 'Newest first']].map(function (o) { return el('option', { value: o[0], selected: S.sort === o[0], text: o[1] }); }));
+    sort.addEventListener('change', function () { S.sort = sort.value; render(); });
+    var bar = el('div', { 'class': 'toolbar' }, [sort]);
+    if (S.init.role === 'super') bar.appendChild(el('button', { type: 'button', 'class': 'btn primary', text: '+ Assign a plan', onclick: assignDialog }));
+    box.appendChild(bar);
+    var plans = d.plans.slice();
+    if (S.sort === 'name') plans.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    else if (S.sort === 'progress') plans.sort(function (a, b) { return a.percent - b.percent; });
+    else if (S.sort === 'week') plans.sort(function (a, b) { return a.week - b.week; });
+    if (!plans.length) { box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No plans yet' }), S.init.role === 'super' ? 'Press “+ Assign a plan” to start one for a Team member.' : 'Nobody in your team has a plan yet.'])); return box; }
+    var rows = el('div', { 'class': 'rows' });
+    plans.forEach(function (r) {
+      rows.appendChild(el('button', { type: 'button', 'class': 'row', onclick: function () { go('person', r.plan_id); } }, [
+        el('div', {}, [el('div', { 'class': 'nm', text: r.name }), el('div', { 'class': 'sub', text: (r.week === 0 ? 'Starts ' + fmtDate(r.start_date) : 'Week ' + Math.min(r.week, r.weeks_total) + ' of ' + r.weeks_total) + ' · ' + r.percent + '% approved' })]),
+        el('div', { 'class': 'rt' }, [r.disc ? el('span', { 'class': 'chip disc', text: r.disc }) : null, r.waiting ? el('span', { 'class': 'chip waiting', text: r.waiting + ' waiting' }) : null, r.followup ? el('span', { 'class': 'chip follow', text: r.followup + ' follow-up' }) : null, el('span', { 'class': 'chip ' + r.label, text: r.label_text })]),
+        el('div', { 'class': 'bar thin' }, [el('i', { style: 'width:' + r.percent + '%' })])]));
+    });
+    box.appendChild(rows);
+    return box;
+  }
+  function assignDialog() {
+    openDlg('Assign an Action Plan', function (b) {
+      var list = (S.overview && S.overview.assignable) || S.init.assignable;
+      if (!list.length) { b.appendChild(el('p', { 'class': 'hint', text: 'Every active Team member already has a plan. (Admins and Testers do not get one.)' })); return; }
+      var who = el('select', {}, list.map(function (m) { return el('option', { value: String(m.id), text: m.name }); }));
+      var d = new Date(); var today = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+      var start = el('input', { type: 'text', value: today, inputmode: 'numeric', placeholder: 'dd/mm/yyyy' });
+      var len = el('input', { type: 'number', value: String(S.init.default_days), min: '30', max: '365' });
+      var err = errBox();
+      var go2 = el('button', { type: 'button', 'class': 'btn primary', text: 'Assign', onclick: function () {
+        go2.disabled = true;
+        req('POST', { action: 'assign', member_id: Number(who.value), start_date: start.value, length_days: Number(len.value) }).then(function (r) {
+          dlg.close(); toast('Plan assigned. The Action Plan card is switched on for them.'); return refreshInit().then(function () { go('person', r.plan_id); });
+        }).catch(function (e) { go2.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(field('Team member', who)); b.appendChild(el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Usually 90.')]));
+      b.appendChild(el('p', { 'class': 'hint', text: 'They start with the current template. You can change their start date, length and any item afterwards.' }));
+      b.appendChild(err); b.appendChild(el('div', {}, [go2]));
+    });
+  }
+
+  /* ---------- approvals ---------- */
+  function renderApprovals() {
+    var box = el('div', { 'class': 'sec', style: 'gap:12px' });
+    var list = S.approvals;
+    if (!list.length) { box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'Nothing waiting' }), 'When an associate ticks something off, it appears here for you to approve.'])); return box; }
+    var by = {};
+    list.forEach(function (a) { (by[a.member] = by[a.member] || []).push(a); });
+    Object.keys(by).forEach(function (name) {
+      var g = el('div', { 'class': 'sec' }, [el('div', { 'class': 'sh', style: 'cursor:default' }, [name, el('span', { 'class': 'cnt', text: by[name].length + ' waiting' })])]);
+      var ul = el('ul', { 'class': 'items' });
+      by[name].forEach(function (a) {
+        var it = { id: a.item_id, title: a.title };
+        ul.appendChild(el('li', {}, [el('div', { 'class': 'it' }, [el('div', { 'class': 'st waiting', 'aria-hidden': 'true', text: '…' }), el('div', {}, [
+          el('div', { 'class': 'tt', text: a.title }), el('div', { 'class': 'mm' }, [el('span', { text: a.section }), a.kind === 'count' ? el('span', { text: a.count + ' / ' + a.target }) : null]),
+          el('div', { 'class': 'acts' }, [
+            el('button', { type: 'button', 'class': 'btn good small', text: 'Approve', onclick: function () { req('POST', { action: 'approve', plan: a.plan_id, item: a.item_id }).then(function () { toast('Approved.'); return refreshInit(); }).then(function () { go('approvals'); }).catch(fail); } }),
+            el('button', { type: 'button', 'class': 'btn warn small', text: 'Send back', onclick: function () { sendBackDialog({ id: a.plan_id }, it); } }),
+            el('button', { type: 'button', 'class': 'btn small', text: 'Open ' + name + '\'s plan', onclick: function () { go('person', a.plan_id); } })])])])]));
+      });
+      g.appendChild(ul); box.appendChild(g);
+    });
+    return box;
+  }
+
+  /* ---------- template editor ---------- */
+  function renderTemplate() {
+    var box = el('div', { 'class': 'sec', style: 'gap:14px' });
+    box.appendChild(el('div', { 'class': 'toolbar' }, [el('p', { 'class': 'hint', style: 'flex:1;min-width:14rem', text: 'Changes here apply to everyone\'s plan straight away. Turning an item off hides it but keeps everything; removing an item that someone has finished only archives it.' }), el('button', { type: 'button', 'class': 'btn primary', text: '+ Add a section', onclick: sectionDialog })]));
+    var secs = S.template.sections;
+    secs.forEach(function (s, si) {
+      var head = el('div', { 'class': 'tsh' }, [el('h3', { text: s.name }), s.active ? null : el('span', { 'class': 'chip soft', text: 'Off' }),
+        el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move section up', text: '↑', disabled: si === 0, onclick: function () { tpl({ action: 'section_move', section: s.id, dir: -1 }); } }),
+        el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move section down', text: '↓', disabled: si === secs.length - 1, onclick: function () { tpl({ action: 'section_move', section: s.id, dir: 1 }); } }),
+        el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Rename section', text: '✎', onclick: function () { sectionDialog(s); } }),
+        el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(s.active), 'aria-label': 'Section on or off', onclick: function () { tpl({ action: 'section_update', section: s.id, active: !s.active }); } }),
+        s.items.length ? null : el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Delete empty section', text: '🗑', onclick: function () { if (window.confirm('Delete the empty section “' + s.name + '”?')) tpl({ action: 'section_delete', section: s.id }); } }),
+        el('button', { type: 'button', 'class': 'btn small', text: '+ Item', onclick: function () { itemDialog(null, s); } })]);
+      var card = el('div', { 'class': 'tsec' + (s.active ? '' : ' off') }, [head]);
+      if (!s.items.length) card.appendChild(el('p', { 'class': 'hint', style: 'padding:12px 14px', text: 'No items yet.' }));
+      s.items.forEach(function (i, ii) {
+        card.appendChild(el('div', { 'class': 'ti' + (i.active ? '' : ' off') }, [
+          el('div', {}, [el('div', { 'class': 'tt', text: i.title }), el('div', { 'class': 'mm' }, [el('span', { text: i.week_from === i.week_to ? 'Week ' + i.week_to : 'Weeks ' + i.week_from + '–' + i.week_to }), i.kind === 'count' ? el('span', { 'class': 'chip soft', text: 'Count ' + i.target }) : el('span', { 'class': 'chip soft', text: 'Tick' }), i.tool_key ? el('span', { 'class': 'chip disc', text: '→ ' + toolName(i.tool_key) }) : null, i.active ? null : el('span', { 'class': 'chip soft', text: 'Off' })])]),
+          el('div', { 'class': 'ctl' }, [
+            el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move up', text: '↑', disabled: ii === 0, onclick: function () { tpl({ action: 'item_move', item: i.id, dir: -1 }); } }),
+            el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move down', text: '↓', disabled: ii === s.items.length - 1, onclick: function () { tpl({ action: 'item_move', item: i.id, dir: 1 }); } }),
+            el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(i.active), 'aria-label': 'Item on or off', onclick: function () { tpl({ action: 'item_update', item: i.id, active: !i.active }); } }),
+            el('button', { type: 'button', 'class': 'btn small', text: 'Edit', onclick: function () { itemDialog(i, s); } }),
+            el('button', { type: 'button', 'class': 'btn small danger', text: 'Remove', onclick: function () { removeDialog(i); } })])]));
+      });
+      box.appendChild(card);
+    });
+    return box;
+  }
+  function toolName(k) { var t = S.template.tools.filter(function (x) { return x.key === k; })[0]; return t ? t.name : k; }
+  function tpl(body) { return req('POST', body).then(function (d) { S.template = { sections: d.sections, tools: d.tools }; render(); return d; }).catch(fail); }
+  function sectionDialog(s) {
+    openDlg(s && s.id ? 'Rename section' : 'Add a section', function (b) {
+      var name = el('input', { type: 'text', maxlength: '80', value: s && s.name ? s.name : '' });
+      var err = errBox();
+      var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Save', onclick: function () {
+        save.disabled = true;
+        req('POST', s && s.id ? { action: 'section_update', section: s.id, name: name.value } : { action: 'section_add', name: name.value }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(field('Name', name)); b.appendChild(err); b.appendChild(el('div', {}, [save]));
+    });
+  }
+  function itemDialog(i, s) {
+    openDlg(i ? 'Edit item' : 'Add an item to ' + s.name, function (b) {
+      var secs = S.template.sections;
+      var sec = el('select', {}, secs.map(function (x) { return el('option', { value: String(x.id), selected: (i ? i.section_id : s.id) === x.id, text: x.name }); }));
+      var title = el('input', { type: 'text', maxlength: '160', value: i ? i.title : '' });
+      var details = el('textarea', { maxlength: '1000' }); details.value = i ? i.details : '';
+      var kind = i ? i.kind : 'tick';
+      var target = el('input', { type: 'number', min: '1', value: i && i.target ? String(i.target) : '' });
+      var targetBox = field('Target number', target, 'The agent counts up to this number.');
+      var seg = el('div', { 'class': 'seg', role: 'group', 'aria-label': 'Type' });
+      var drawSeg = function () {
+        seg.innerHTML = '';
+        [['tick', 'Tick'], ['count', 'Count a number']].forEach(function (o) { seg.appendChild(el('button', { type: 'button', 'aria-pressed': String(kind === o[0]), text: o[1], onclick: function () { kind = o[0]; drawSeg(); } })); });
+        targetBox.hidden = kind !== 'count';
+      };
+      var wf = el('input', { type: 'number', min: '1', max: '26', value: String(i ? i.week_from : 1) }), wt = el('input', { type: 'number', min: '1', max: '26', value: String(i ? i.week_to : 1) });
+      var tool = el('select', {}, [el('option', { value: '', text: 'No shortcut' })].concat(S.template.tools.map(function (t) { return el('option', { value: t.key, selected: i && i.tool_key === t.key, text: t.name }); })));
+      var err = errBox();
+      var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Save', onclick: function () {
+        save.disabled = true;
+        var body = { action: i ? 'item_update' : 'item_add', section_id: Number(sec.value), title: title.value, details: details.value, kind: kind, target: target.value, week_from: wf.value, week_to: wt.value, tool_key: tool.value };
+        if (i) body.item = i.id;
+        req('POST', body).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); toast('Saved.'); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      } });
+      b.appendChild(field('Section', sec)); b.appendChild(field('Task', title)); b.appendChild(field('Details (optional)', details));
+      b.appendChild(el('div', { 'class': 'fld' }, [el('label', { 'class': 'f', text: 'Type' }), seg])); b.appendChild(targetBox);
+      b.appendChild(el('div', { 'class': 'two' }, [field('First week', wf), field('Last week', wt)]));
+      b.appendChild(el('p', { 'class': 'hint', text: 'Weeks are for a 90-day plan; longer or shorter plans stretch them. They are a guide, not a deadline.' }));
+      b.appendChild(field('“Open tool” shortcut', tool)); b.appendChild(err); b.appendChild(el('div', {}, [save]));
+      drawSeg();
+    });
+  }
+  function removeDialog(i) {
+    openDlg('Remove this item?', function (b) {
+      b.appendChild(el('p', { text: '“' + i.title + '”' }));
+      b.appendChild(el('p', { 'class': 'hint', text: 'If nobody has worked on it, it is deleted. If anyone has finished it, it is archived: it leaves every plan but stays in their history. To hide it temporarily instead, use the on/off switch.' }));
+      var go2 = el('button', { type: 'button', 'class': 'btn danger', text: 'Remove', onclick: function () {
+        go2.disabled = true;
+        req('POST', { action: 'item_remove', item: i.id }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); toast(d.how === 'archived' ? 'Archived: kept in people\'s history.' : 'Removed.'); }).catch(function (e) { go2.disabled = false; toast(e.message, true); });
+      } });
+      b.appendChild(el('div', {}, [go2]));
+    });
+  }
+
+  /* ---------- start ---------- */
+  get('init').then(function (d) {
+    S.init = d;
+    $('who').textContent = 'Signed in as ' + d.me.name + (d.role === 'super' ? ' (super admin)' : d.role === 'approver' ? ' (team admin)' : '');
+    S.tab = d.has_plan ? 'plan' : (isApprover() ? 'overview' : 'plan');
+    go(S.tab);
+  }).catch(function (e) {
+    $('view').innerHTML = '';
+    $('view').appendChild(el('div', { 'class': 'empty' }, [el('b', { text: e.status === 403 ? 'The Action Plan is not switched on for you' : 'Could not load' }), e.message]));
+  });
+})();
+</script>
+</body>
+</html>

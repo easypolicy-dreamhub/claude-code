@@ -51,9 +51,9 @@ function setup(): array {
 function tools_of(PDO $pdo, string $email): array { $m = access_find_by_email(load_member_map($pdo), $email); return ticked_tools($pdo, (int)$m['id']); }
 
 echo "Catalog\n";
-check('23 tools in the catalog (your 22 + Members & Access)', count(tool_catalog()) === 23);
+check('24 tools in the catalog (your 22 + Members & Access + Action Plan)', count(tool_catalog()) === 24);
 check('Site Admin tools are locked and not grantable', !array_intersect(['testimonials', 'events', 'site-settings', 'access'], grantable_keys()));
-check('Client Portal is switched through the bridge, not stored as a tick', !in_array('client-portal', grantable_keys(), true) && in_array('client-portal', switchable_keys(), true) && count(switchable_keys()) === 19);
+check('Client Portal is switched through the bridge, not stored as a tick', !in_array('client-portal', grantable_keys(), true) && in_array('client-portal', switchable_keys(), true) && count(switchable_keys()) === 20);
 check('basic set = Servicing + Sales + Recruitment (12)', count(basic_keys()) === 12 && !in_array('monthly-report', basic_keys(), true) && !in_array('team', basic_keys(), true));
 check('career-code/dashboard maps to Career Code Candidates', tool_for_path('career-code/dashboard/index.html')['key'] === 'career-code-candidates');
 check('career-code/live maps to Career Code', tool_for_path('career-code/live/')['key'] === 'career-code');
@@ -144,7 +144,7 @@ $rr = access_add($pdo, $cfx, $you, ['email' => 'already2@x.com', 'name' => 'A2',
 check('already on Cloudflare: reported as not newly added', $rr['cloudflare'] === 'ok' && $rr['cloudflare_added'] === false && !array_filter($lx, fn ($c) => $c[0] === 'PUT'));
 $rr = access_add($pdo, $cfx, $you, ['email' => 'fresh@x.com', 'name' => 'Fresh', 'type' => 'tester']);
 check('a new email: reported as added to Cloudflare', $rr['cloudflare_added'] === true);
-check('add with "all tools" turns the portal on', portal_enabled('all@x.com') && $r['portal'] === 'on' && count(tools_of($pdo, 'all@x.com')) === 18);
+check('add with "all tools" turns the portal on', portal_enabled('all@x.com') && $r['portal'] === 'on' && count(tools_of($pdo, 'all@x.com')) === 19);
 access_remove($pdo, null, $you, 'cp2@x.com');
 check('removing someone switches the portal off (data kept)', !portal_enabled('cp2@x.com') && isset(e3pb_load()['cp2@x.com']));
 // pause also switches it off, resume brings it back

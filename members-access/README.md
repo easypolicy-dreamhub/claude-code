@@ -75,3 +75,33 @@ Every tool page is **checked on the server** and shows one standard "You don't h
 - The gate protects tool **pages**. Tools that save data keep their own server checks as before.
 - Adding a new tool later: add it to `private/lib/tools.php` **and** give the card the same `key` in `apps.js`.
 - Tests: `php tests/access.php` and `php tests/access_team.php` (run in the full site folder).
+
+
+---
+
+# Action Plan (phase 11, step 1: the core)
+
+A new **Action Plan** card (group "Training"): one template, a plan per new associate, tick / count / approve, and an overview.
+Design: `action-plan/DESIGN.md`. This is **step 1 only**: auto-counts from the Client Portal / Career Code, DISC from Career Code, WhatsApp nudges and the printable Day-90 review come later.
+
+## What it does
+- **Template (you edit it once):** your sections and tasks, with suggested weeks. Add, edit, turn off, remove (archives if anyone finished it), reorder; add, rename, turn off sections.
+- **Assign:** Everyone > **+ Assign a plan**: pick a Team member, a start date, a plan length (default 90 days). It switches the Action Plan card on for them, and for any team admin above them (who approves).
+- **Agent:** sees only their own plan: "Week 4 of 13", **Due this week**, **Still to finish**, follow-ups, and every section. Taps **Mark done** or counts with + / −. Weeks are a guide: they see "Suggested by week N", never "overdue" or "Behind".
+- **You and team admins:** Everyone (overview with On track / A little behind / Behind), **Approvals** (Approve, or Send back with a note), and each person's page.
+- **Only you:** the template, assigning, a person's start date and length, DISC style, your private number, "Not needed for this person", changing a week or target for one person, and extra items for one person.
+- **Team admins** (Group Managers switched on as team admins on the Team page) approve and send back only for people below them. Nobody approves their own items.
+
+## Install (in this order)
+1. **Back up** `public_html/members` and `private/lib` as before.
+2. **Database:** phpMyAdmin > your database > SQL tab > paste `private/schema_phase11.sql` > Go. Run it **once**. It only adds five new tables; nothing existing changes.
+3. **Upload and extract the zip in your home folder** (above `public_html`). It overwrites files with the same names.
+4. Open the toolkit: an **Action Plan** card appears for you. Open it, press **Everyone > + Assign a plan**, and set up your first associate. The starting template is already filled in from your spreadsheet.
+
+Time zone: dates follow `Asia/Kuala_Lumpur`. To change it, add `'timezone' => 'Region/City',` to `private/config.php`.
+
+## Good to know
+- Existing members do **not** get the card automatically; assigning a plan switches it on for that person. You can also tick it for anyone in Members & Access.
+- Turning an item **off** hides it for everyone and loses nothing. **Removing** an item nobody has touched deletes it; if anyone finished it, it is archived so their history stays.
+- The `.htaccess` gate now also protects `/members/action-plan/`.
+- Tests: `php tests/actionplan.php` (119 checks), plus the earlier suites. A browser test harness is in `tests/ap_harness.php` (not for the live site).

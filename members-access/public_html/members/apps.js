@@ -116,6 +116,15 @@ const APPS = [
     note:  "You see your own invitees and your team's."
   },
   {
+    key:   "action-plan",
+    name:  "Action Plan",
+    url:   "/members/action-plan/",
+    icon:  "🗺️",
+    about: "Your first 90 days step by step: what to do each week, your progress, and what your leader has approved",
+    group: "Training",
+    note:  "Your leader assigns it. Suggested weeks are a guide, not a deadline."
+  },
+  {
     key:   "activity",
     name:  "Team Activity",
     url:   "/members/activity/",
