@@ -440,12 +440,15 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
           acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Reopen', onclick: function () { post({ action: 'reopen', plan: p.id, item: it.id }); } }));
         } else {
           acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Mark as approved', onclick: function () { post({ action: 'approve', plan: p.id, item: it.id }); } }));
-          if (it.status === 'todo') acts.appendChild(el('button', { type: 'button', 'class': 'btn warn small', text: 'Follow up', onclick: function () { sendBackDialog(p, it); } }));
+          if (it.status === 'todo') acts.appendChild(el('button', { type: 'button', 'class': 'btn warn small', text: 'Ask them to do this', title: 'Sends them a note; the item shows as needing follow-up', onclick: function () { sendBackDialog(p, it); } }));
         }
       }
     }
     // The shortcut is for the agent. A leader looking at someone else's plan would open their OWN tool, so it is not shown there.
-    if (it.tool && p.own) acts.appendChild(el('a', { 'class': 'btn small', href: it.tool.url, target: 'e3tool-' + it.tool.key, text: 'Open ' + it.tool.name + ' ›' }));
+    if (it.tool && p.own) {
+      if (p.preview) acts.appendChild(el('span', { 'class': 'btn small', 'aria-disabled': 'true', title: 'Preview only: this opens for them, not for you', style: 'opacity:.6;cursor:default', text: 'Open ' + it.tool.name + ' ›' }));
+      else acts.appendChild(el('a', { 'class': 'btn small', href: it.tool.url, target: 'e3tool-' + it.tool.key, text: 'Open ' + it.tool.name + ' ›' }));
+    }
     if (S.init.role === 'super' && !p.own && !p.preview) {
       if (it.extra) acts.appendChild(el('button', { type: 'button', 'class': 'btn small danger', text: 'Remove', onclick: function () { post({ action: 'extra_remove', plan: p.id, item: it.id }); } }));
       else acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: it.has_override ? 'Adjusted ✎' : 'Adjust', onclick: function () { adjustDialog(p, it); } }));
