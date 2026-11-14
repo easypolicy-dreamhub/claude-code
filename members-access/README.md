@@ -105,3 +105,32 @@ Time zone: dates follow `Asia/Kuala_Lumpur`. To change it, add `'timezone' => 'R
 - Turning an item **off** hides it for everyone and loses nothing. **Removing** an item nobody has touched deletes it; if anyone finished it, it is archived so their history stays.
 - The `.htaccess` gate now also protects `/members/action-plan/`.
 - Tests: `php tests/actionplan.php` (119 checks), plus the earlier suites. A browser test harness is in `tests/ap_harness.php` (not for the live site).
+
+
+---
+
+# Action Plan step 2: automatic counts (phase 12)
+
+Numbers that fill themselves in, so agents do not type them and you do not have to trust a self-reported count. **Only numbers** cross over: the portal's notes stay encrypted and are never read, and no client or candidate name is sent anywhere.
+
+| Plan item | Counted from | Rule |
+|---|---|---|
+| Prospect list (100) | Client Portal | prospects on the list now |
+| Natural market survey (70) | Client Portal | notes of type **Open** since the start date |
+| Presentations (50) | Client Portal | notes of type **Present** since the start date |
+| New business (3) | Client Portal | cases closed since the start date, with the **ANP so far** shown |
+| Career Introduction 1+2 | Career Code | candidates added since the start date (a tick item: the number shows beside it) |
+| DISC style | Career Code | the style from the candidate's test, matched by email; a style you set by hand wins |
+
+- **The date range** is the person's plan start date up to today.
+- **When a number reaches its target by itself,** the item goes to the approval list (an agent cannot "Mark done" a count).
+- **No portal (or it is switched off) for someone?** Nothing breaks: those items stay counts they enter by hand, with a hint to switch the portal on.
+- **Any item can use it:** Template > Edit > "Counted automatically from". The choices are the rows above plus "Recruit notes".
+
+## Install
+1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase12.sql` > Go, **once**. No new tables; it only switches the automatic count on for the five items above in your existing template.
+2. **Extract the zip in your home folder** (overwrites the same-named files).
+3. Open someone's plan > **Plan settings > Check the automatic counts**. It lists what it found (note types and their counts, the closes table's columns, ANP). If a number looks wrong, send me that screen.
+
+## What I could not check
+I have not seen the Client Portal's database, only how its pages use it. Counting notes by type and prospects follows the portal's own code. The **closes** table (cases closed) is the least certain: its columns are found by name, and the check screen shows what was found. If it cannot recognise the date, it says so and that item stays manual.

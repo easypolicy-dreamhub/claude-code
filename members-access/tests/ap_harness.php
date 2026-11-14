@@ -6,12 +6,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/ap_support.php';
 
 $file = getenv('AP_DB') ?: sys_get_temp_dir() . '/ap_harness.sqlite';
+$portalDir = $file . '.portal';
+if (!is_dir($portalDir)) { @mkdir($portalDir . '/agents', 0777, true); copy(__DIR__ . '/fixtures/team-bridge.php', $portalDir . '/team-bridge.php'); }
+putenv('E3_PORTAL_BRIDGE=' . $portalDir . '/team-bridge.php');
 $root = dirname(__DIR__) . '/public_html';
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 function ap_h_seed(string $file): void
 {
     @unlink($file);
+    exec('rm -rf ' . escapeshellarg($GLOBALS['portalDir'] . '/agents') . ' ' . escapeshellarg($GLOBALS['portalDir'] . '/agents.json'));
+    @mkdir($GLOBALS['portalDir'] . '/agents', 0777, true);
     [$pdo, $you, $ids] = ap_world($file);
     $today = '2026-03-23';
     ap_ensure_template($pdo, '2026-03-01');
@@ -23,10 +28,19 @@ function ap_h_seed(string $file): void
             ap_progress_set($pdo, $dave, $it['id'], ['status' => 'done', 'approved_by' => $you['id'], 'approved_at' => ap_now()]);
         }
         if ($it['title'] === 'Family Visit') { ap_tick($pdo, ap_plan_row($pdo, $dave), $it['id'], $today); }
-        if ($it['title'] === 'Prospect list (100)') { ap_count($pdo, ap_plan_row($pdo, $dave), $it['id'], 64, $today); }
-        if ($it['title'] === 'Presentations (50)') { ap_count($pdo, ap_plan_row($pdo, $dave), $it['id'], 6, $today); }
+        if ($it['title'] === 'Customer fact finding forms (30)') { ap_count($pdo, ap_plan_row($pdo, $dave), $it['id'], 6, $today); }
     }
     ap_plan_update($pdo, $you, $dave, ['disc' => 'IS', 'private_number' => 7]);
+    // a pretend Client Portal for Dave: 64 prospects, 10 market surveys, 6 presentations, 2 closed cases
+    global $portalDir;
+    e3pb_toggle('dave@x.com', 'Dave', true);
+    $dir = $portalDir . '/agents/' . e3pb_load()['dave@x.com']['uid'];
+    ap_make_portal($dir, 'A');
+    $pd = ap_portal_db($dir);
+    for ($i = 0; $i < 64; $i++) { $pd->exec("INSERT INTO clients (name, kind, created_at) VALUES ('Someone', 'prospect', '2026-03-01')"); }
+    for ($i = 1; $i <= 10; $i++) { ap_note($pd, 'open', '2026-03-' . sprintf('%02d', 2 + $i)); }
+    for ($i = 1; $i <= 6; $i++) { ap_note($pd, 'present', '2026-03-' . sprintf('%02d', 2 + $i)); }
+    $pd->exec("INSERT INTO closes (close_date, name, plan, anp, updated_at) VALUES ('2026-03-12', 'x', 'p', 4000, 'x'), ('2026-03-20', 'y', 'q', 6500, 'x')");
     file_put_contents($file . '.ids', json_encode($ids));
 }
 

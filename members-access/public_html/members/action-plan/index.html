@@ -60,6 +60,7 @@ h2,h3{font-family:Poppins,"DM Sans",sans-serif;margin:0}
 .chip.follow{background:var(--redbg);color:var(--red)}
 .chip.done{background:var(--greenbg);color:var(--green)}
 .chip.soft{background:#ECE8E4;color:var(--muted)}
+.chip.auto{background:var(--bluebg);color:var(--blue)}
 
 /* header of a plan */
 .ph{display:flex;flex-direction:column;gap:12px}
@@ -284,8 +285,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     top.appendChild(meta);
     var head = el('div', { 'class': 'card ph' }, [top,
       el('div', {}, [el('div', { 'class': 'bar', 'aria-label': p.progress.percent + ' percent approved' }, [el('i', { style: 'width:' + p.progress.percent + '%' })]), el('p', { 'class': 'hint', style: 'margin-top:6px', text: p.progress.done + ' of ' + p.progress.total + ' steps approved (' + p.progress.percent + '%)' })])]);
-    if (!person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Your style (' + p.disc.style + '): ' + p.disc.hint }));
-    if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint: ' + p.disc.hint }));
+    var discFrom = p.disc && p.disc.source ? ' (from ' + p.disc.source + ')' : '';
+    if (!person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Your style (' + p.disc.style + discFrom + '): ' + p.disc.hint }));
+    if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint' + discFrom + ': ' + p.disc.hint }));
     if (person && S.init.role === 'super') head.appendChild(planSettings(p));
     box.appendChild(head);
     if (person) box.insertBefore(el('div', {}, [el('button', { type: 'button', 'class': 'btn small', text: '← Everyone', onclick: function () { go('overview'); } })]), head);
@@ -345,11 +347,26 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       if (!window.confirm('Close ' + p.member.name + '\'s plan? It leaves the lists, but nothing is deleted. Assigning them again brings it back with their progress.')) return;
       req('POST', { action: 'plan_update', plan: p.id, closed: true }).then(function () { toast('Plan closed.'); return refreshInit(); }).then(function () { go('overview'); }).catch(fail);
     } });
+    var check = el('button', { type: 'button', 'class': 'btn small', text: 'Check the automatic counts', onclick: function () { autoCheckDialog(p); } });
     return el('details', {}, [el('summary', { style: 'cursor:pointer;font-weight:600;min-height:40px' }, ['Plan settings']),
       el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:8px' }, [
         el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Default 90. Every suggested week stretches to fit.')]),
         el('div', { 'class': 'two' }, [field('DISC style', disc), field('Your private number', num, 'Only you see this.')]),
-        err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, close])])]);
+        err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, check, close])])]);
+  }
+  function autoCheckDialog(p) {
+    openDlg('Automatic counts for ' + p.member.name, function (b) {
+      b.appendChild(el('p', { 'class': 'hint', text: 'Checking…' }));
+      get('autocheck', '&plan=' + p.id).then(function (d) {
+        b.innerHTML = '';
+        var c = d.check;
+        b.appendChild(el('p', { 'class': 'hint', text: 'Counted from ' + fmtDate(c.since) + ' to ' + fmtDate(c.until) + '. Only numbers are read: nothing about clients or candidates.' }));
+        b.appendChild(el('div', { 'class': 'banner ' + (c.portal.found ? 'good' : 'warn') }, [c.portal.found ? 'Client Portal data found.' : 'Client Portal: ' + (c.portal.why || 'not found') + ' Its counts stay manual.']));
+        c.lines.forEach(function (l) { b.appendChild(el('div', { 'class': 'dd', text: l })); });
+        (c.problems || []).filter(Boolean).forEach(function (pr) { b.appendChild(el('div', { 'class': 'banner warn', text: pr })); });
+        b.appendChild(el('p', { 'class': 'hint', text: 'If a number looks wrong, send me this screen and I will adjust how it is counted.' }));
+      }).catch(function (e) { b.innerHTML = ''; b.appendChild(el('p', { 'class': 'err', text: e.message })); });
+    });
   }
 
   function itemRow(it, p) {
@@ -370,15 +387,20 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (it.skipped) mm.appendChild(el('span', { 'class': 'chip soft', text: 'Not needed' + (it.skip_note ? ': ' + it.skip_note : '') }));
     body.appendChild(mm);
     if (it.status === 'followup' && it.note) body.appendChild(el('div', { 'class': 'note', text: (p.own ? 'Your leader says: ' : 'You asked: ') + it.note }));
+    var autoOn = it.auto && it.auto.value !== null && it.auto.value !== undefined;
     if (it.kind === 'count' && it.target) {
       var pct = Math.min(100, Math.round(it.count * 100 / it.target));
       body.appendChild(el('div', { 'class': 'prog' }, [el('div', { 'class': 'bar thin' + (approver && it.pace_behind ? ' amber' : '') }, [el('i', { style: 'width:' + pct + '%' })]), el('b', { text: it.count + ' / ' + it.target })]));
     }
+    if (autoOn) body.appendChild(el('div', { 'class': 'mm' }, [el('span', { 'class': 'chip auto', text: it.kind === 'count' ? 'Counted automatically' : String(it.auto.value) + ' ' + it.auto.label }),
+      it.kind === 'count' ? el('span', { text: 'from ' + it.auto.label + ' since ' + fmtDate(p.start_date) }) : null, it.auto.extra ? el('span', { text: '· ' + it.auto.extra }) : null]));
+    else if (it.auto && it.auto.portal_off && p.own) body.appendChild(el('div', { 'class': 'mm' }, [el('span', { text: 'Switch on your Client Portal and this counts by itself. Until then, enter it by hand.' })]));
     var acts = el('div', { 'class': 'acts' });
     if (!it.skipped) {
       if (p.own) {
-        if (it.kind === 'count' && it.status !== 'done') acts.appendChild(stepper(it, p));
-        else if (it.status === 'todo' || it.status === 'followup') acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Mark done', onclick: function () { post({ action: 'tick', item: it.id }); } }));
+        if (it.kind === 'count' && it.status !== 'done' && !autoOn) acts.appendChild(stepper(it, p));
+        else if (it.kind === 'count' && it.status === 'followup') acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Ask for approval again', onclick: function () { post({ action: 'tick', item: it.id }); } }));
+        else if (it.kind !== 'count' && (it.status === 'todo' || it.status === 'followup')) acts.appendChild(el('button', { type: 'button', 'class': 'btn good small', text: 'Mark done', onclick: function () { post({ action: 'tick', item: it.id }); } }));
         if (it.status === 'waiting') acts.appendChild(el('button', { type: 'button', 'class': 'btn small', text: 'Undo', onclick: function () { post({ action: 'untick', item: it.id }); } }));
       } else if (approver) {
         if (it.status === 'waiting') {
@@ -559,7 +581,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       if (!s.items.length) card.appendChild(el('p', { 'class': 'hint', style: 'padding:12px 14px', text: 'No items yet.' }));
       s.items.forEach(function (i, ii) {
         card.appendChild(el('div', { 'class': 'ti' + (i.active ? '' : ' off') }, [
-          el('div', {}, [el('div', { 'class': 'tt', text: i.title }), el('div', { 'class': 'mm' }, [el('span', { text: i.week_from === i.week_to ? 'Week ' + i.week_to : 'Weeks ' + i.week_from + '–' + i.week_to }), i.kind === 'count' ? el('span', { 'class': 'chip soft', text: 'Count ' + i.target }) : el('span', { 'class': 'chip soft', text: 'Tick' }), i.tool_key ? el('span', { 'class': 'chip disc', text: '→ ' + toolName(i.tool_key) }) : null, i.active ? null : el('span', { 'class': 'chip soft', text: 'Off' })])]),
+          el('div', {}, [el('div', { 'class': 'tt', text: i.title }), el('div', { 'class': 'mm' }, [el('span', { text: i.week_from === i.week_to ? 'Week ' + i.week_to : 'Weeks ' + i.week_from + '–' + i.week_to }), i.kind === 'count' ? el('span', { 'class': 'chip soft', text: 'Count ' + i.target }) : el('span', { 'class': 'chip soft', text: 'Tick' }), i.tool_key ? el('span', { 'class': 'chip disc', text: '→ ' + toolName(i.tool_key) }) : null, i.auto_key ? el('span', { 'class': 'chip auto', text: 'auto: ' + autoName(i.auto_key) }) : null, i.active ? null : el('span', { 'class': 'chip soft', text: 'Off' })])]),
           el('div', { 'class': 'ctl' }, [
             el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move up', text: '↑', disabled: ii === 0, onclick: function () { tpl({ action: 'item_move', item: i.id, dir: -1 }); } }),
             el('button', { type: 'button', 'class': 'ic', 'aria-label': 'Move down', text: '↓', disabled: ii === s.items.length - 1, onclick: function () { tpl({ action: 'item_move', item: i.id, dir: 1 }); } }),
@@ -571,15 +593,16 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     });
     return box;
   }
+  function autoName(k) { var a = (S.template.autos || []).filter(function (x) { return x.key === k; })[0]; return a ? a.label.toLowerCase() : k; }
   function toolName(k) { var t = S.template.tools.filter(function (x) { return x.key === k; })[0]; return t ? t.name : k; }
-  function tpl(body) { return req('POST', body).then(function (d) { S.template = { sections: d.sections, tools: d.tools }; render(); return d; }).catch(fail); }
+  function tpl(body) { return req('POST', body).then(function (d) { S.template = { sections: d.sections, tools: d.tools, autos: d.autos }; render(); return d; }).catch(fail); }
   function sectionDialog(s) {
     openDlg(s && s.id ? 'Rename section' : 'Add a section', function (b) {
       var name = el('input', { type: 'text', maxlength: '80', value: s && s.name ? s.name : '' });
       var err = errBox();
       var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Save', onclick: function () {
         save.disabled = true;
-        req('POST', s && s.id ? { action: 'section_update', section: s.id, name: name.value } : { action: 'section_add', name: name.value }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+        req('POST', s && s.id ? { action: 'section_update', section: s.id, name: name.value } : { action: 'section_add', name: name.value }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools, autos: d.autos }; render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
       } });
       b.appendChild(field('Name', name)); b.appendChild(err); b.appendChild(el('div', {}, [save]));
     });
@@ -601,18 +624,20 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       };
       var wf = el('input', { type: 'number', min: '1', max: '26', value: String(i ? i.week_from : 1) }), wt = el('input', { type: 'number', min: '1', max: '26', value: String(i ? i.week_to : 1) });
       var tool = el('select', {}, [el('option', { value: '', text: 'No shortcut' })].concat(S.template.tools.map(function (t) { return el('option', { value: t.key, selected: i && i.tool_key === t.key, text: t.name }); })));
+      var auto = el('select', {}, [el('option', { value: '', text: 'Not automatic (the agent enters it)' })].concat((S.template.autos || []).map(function (a) { return el('option', { value: a.key, selected: i && i.auto_key === a.key, text: a.label + ' (' + a.source + ')' }); })));
       var err = errBox();
       var save = el('button', { type: 'button', 'class': 'btn primary', text: 'Save', onclick: function () {
         save.disabled = true;
-        var body = { action: i ? 'item_update' : 'item_add', section_id: Number(sec.value), title: title.value, details: details.value, kind: kind, target: target.value, week_from: wf.value, week_to: wt.value, tool_key: tool.value };
+        var body = { action: i ? 'item_update' : 'item_add', section_id: Number(sec.value), title: title.value, details: details.value, kind: kind, target: target.value, week_from: wf.value, week_to: wt.value, tool_key: tool.value, auto_key: auto.value };
         if (i) body.item = i.id;
-        req('POST', body).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); toast('Saved.'); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+        req('POST', body).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools, autos: d.autos }; render(); toast('Saved.'); }).catch(function (e) { save.disabled = false; showErr(err, e); });
       } });
       b.appendChild(field('Section', sec)); b.appendChild(field('Task', title)); b.appendChild(field('Details (optional)', details));
       b.appendChild(el('div', { 'class': 'fld' }, [el('label', { 'class': 'f', text: 'Type' }), seg])); b.appendChild(targetBox);
       b.appendChild(el('div', { 'class': 'two' }, [field('First week', wf), field('Last week', wt)]));
       b.appendChild(el('p', { 'class': 'hint', text: 'Weeks are for a 90-day plan; longer or shorter plans stretch them. They are a guide, not a deadline.' }));
-      b.appendChild(field('“Open tool” shortcut', tool)); b.appendChild(err); b.appendChild(el('div', {}, [save]));
+      b.appendChild(field('“Open tool” shortcut', tool));
+      b.appendChild(field('Counted automatically from', auto, 'For a count, this replaces what the agent types, when a number can be found; if not, they enter it. On a tick item it only shows the number beside it.')); b.appendChild(err); b.appendChild(el('div', {}, [save]));
       drawSeg();
     });
   }
@@ -622,7 +647,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       b.appendChild(el('p', { 'class': 'hint', text: 'If nobody has worked on it, it is deleted. If anyone has finished it, it is archived: it leaves every plan but stays in their history. To hide it temporarily instead, use the on/off switch.' }));
       var go2 = el('button', { type: 'button', 'class': 'btn danger', text: 'Remove', onclick: function () {
         go2.disabled = true;
-        req('POST', { action: 'item_remove', item: i.id }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools }; render(); toast(d.how === 'archived' ? 'Archived: kept in people\'s history.' : 'Removed.'); }).catch(function (e) { go2.disabled = false; toast(e.message, true); });
+        req('POST', { action: 'item_remove', item: i.id }).then(function (d) { dlg.close(); S.template = { sections: d.sections, tools: d.tools, autos: d.autos }; render(); toast(d.how === 'archived' ? 'Archived: kept in people\'s history.' : 'Removed.'); }).catch(function (e) { go2.disabled = false; toast(e.message, true); });
       } });
       b.appendChild(el('div', {}, [go2]));
     });

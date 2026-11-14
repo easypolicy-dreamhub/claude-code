@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/access.php';
 require_once __DIR__ . '/team.php';
 require_once __DIR__ . '/actionplan_seed.php';
+require_once __DIR__ . '/actionplan_auto.php';
 
 /**
  * Action Plan: one template, a plan per associate, progress with approval.
@@ -127,15 +128,16 @@ function ap_ensure_template(PDO $pdo, string $today): void
     }
     $so = 0;
     $sec = $pdo->prepare('INSERT INTO ap_sections (name, sort_order, active) VALUES (?, ?, 1)');
-    $ins = $pdo->prepare('INSERT INTO ap_items (section_id, title, details, week_from, week_to, kind, target, tool_key, sort_order, active, archived, created_on) VALUES (?,?,?,?,?,?,?,?,?,1,0,?)');
+    $ins = $pdo->prepare('INSERT INTO ap_items (section_id, title, details, week_from, week_to, kind, target, tool_key, auto_key, sort_order, active, archived, created_on) VALUES (?,?,?,?,?,?,?,?,?,?,1,0,?)');
     $pdo->beginTransaction();
     try {
         foreach (ap_seed_data() as $name => $items) {
             $sec->execute([$name, ++$so * 10]);
             $sid = (int)$pdo->lastInsertId();
             $io = 0;
-            foreach ($items as [$title, $details, $from, $to, $kind, $target, $tool]) {
-                $ins->execute([$sid, $title, $details, $from, $to, $kind, $target, $tool, ++$io * 10, $today]);
+            foreach ($items as $row) {
+                [$title, $details, $from, $to, $kind, $target, $tool] = $row;
+                $ins->execute([$sid, $title, $details, $from, $to, $kind, $target, $tool, $row[7] ?? null, ++$io * 10, $today]);
             }
         }
         $pdo->commit();
@@ -187,7 +189,7 @@ function ap_item_public(array $i): array
     return [
         'id' => (int)$i['id'], 'section_id' => $i['section_id'] === null ? null : (int)$i['section_id'], 'title' => $i['title'], 'details' => (string)($i['details'] ?? ''),
         'week_from' => (int)$i['week_from'], 'week_to' => (int)$i['week_to'], 'kind' => $i['kind'], 'target' => $i['target'] === null ? null : (int)$i['target'],
-        'tool_key' => $i['tool_key'], 'active' => (bool)$i['active'],
+        'tool_key' => $i['tool_key'], 'auto_key' => $i['auto_key'] ?? null, 'active' => (bool)$i['active'],
     ];
 }
 
@@ -207,9 +209,13 @@ function ap_clean_item(array $in, PDO $pdo): array
     if ($tool !== '' && ap_tool_url($tool) === null) {
         throw new HttpError(422, 'Unknown tool for the shortcut.');
     }
+    $auto = trim((string)($in['auto_key'] ?? ''));
+    if ($auto !== '' && !isset(AP_AUTO[$auto])) {
+        throw new HttpError(422, 'Unknown automatic count.');
+    }
     return [
         'title' => ap_text($in['title'] ?? '', 160, 'The task'), 'details' => ap_text($in['details'] ?? '', 1000, 'Details', false),
-        'week_from' => $from, 'week_to' => $to, 'kind' => $kind, 'target' => $target, 'tool_key' => $tool === '' ? null : $tool,
+        'week_from' => $from, 'week_to' => $to, 'kind' => $kind, 'target' => $target, 'tool_key' => $tool === '' ? null : $tool, 'auto_key' => $auto === '' ? null : $auto,
     ];
 }
 
@@ -306,8 +312,8 @@ function ap_item_add(PDO $pdo, array $actor, array $in): int
     $c = ap_clean_item($in, $pdo);
     $max = $pdo->prepare('SELECT COALESCE(MAX(sort_order), 0) FROM ap_items WHERE section_id = ? AND plan_id IS NULL');
     $max->execute([$sid]);
-    $pdo->prepare('INSERT INTO ap_items (section_id, title, details, week_from, week_to, kind, target, tool_key, sort_order, active, archived, created_on) VALUES (?,?,?,?,?,?,?,?,?,1,0,?)')
-        ->execute([$sid, $c['title'], $c['details'], $c['week_from'], $c['week_to'], $c['kind'], $c['target'], $c['tool_key'], (int)$max->fetchColumn() + 10, gmdate('Y-m-d')]);
+    $pdo->prepare('INSERT INTO ap_items (section_id, title, details, week_from, week_to, kind, target, tool_key, auto_key, sort_order, active, archived, created_on) VALUES (?,?,?,?,?,?,?,?,?,?,1,0,?)')
+        ->execute([$sid, $c['title'], $c['details'], $c['week_from'], $c['week_to'], $c['kind'], $c['target'], $c['tool_key'], $c['auto_key'], (int)$max->fetchColumn() + 10, gmdate('Y-m-d')]);
     $id = (int)$pdo->lastInsertId();
     audit($pdo, (int)$actor['id'], 'ap.item.add', $id, ['title' => $c['title']]);
     return $id;
@@ -326,7 +332,7 @@ function ap_item_update(PDO $pdo, array $actor, int $id, array $in): void
         audit($pdo, (int)$actor['id'], $in['active'] === true ? 'ap.item.on' : 'ap.item.off', $id, []);
         return;
     }
-    $merged = array_merge(ap_item_public($row), array_intersect_key($in, array_flip(['title', 'details', 'week_from', 'week_to', 'kind', 'target', 'tool_key', 'section_id'])));
+    $merged = array_merge(ap_item_public($row), array_intersect_key($in, array_flip(['title', 'details', 'week_from', 'week_to', 'kind', 'target', 'tool_key', 'auto_key', 'section_id'])));
     $c = ap_clean_item($merged, $pdo);
     $sid = (int)($merged['section_id'] ?? $row['section_id']);
     $s = $pdo->prepare('SELECT 1 FROM ap_sections WHERE id = ?');
@@ -334,8 +340,8 @@ function ap_item_update(PDO $pdo, array $actor, int $id, array $in): void
     if (!$s->fetchColumn()) {
         throw new HttpError(422, 'Choose a section.');
     }
-    $pdo->prepare('UPDATE ap_items SET section_id = ?, title = ?, details = ?, week_from = ?, week_to = ?, kind = ?, target = ?, tool_key = ? WHERE id = ?')
-        ->execute([$sid, $c['title'], $c['details'], $c['week_from'], $c['week_to'], $c['kind'], $c['target'], $c['tool_key'], $id]);
+    $pdo->prepare('UPDATE ap_items SET section_id = ?, title = ?, details = ?, week_from = ?, week_to = ?, kind = ?, target = ?, tool_key = ?, auto_key = ? WHERE id = ?')
+        ->execute([$sid, $c['title'], $c['details'], $c['week_from'], $c['week_to'], $c['kind'], $c['target'], $c['tool_key'], $c['auto_key'], $id]);
     audit($pdo, (int)$actor['id'], 'ap.item.update', $id, ['title' => $c['title']]);
 }
 
@@ -511,6 +517,7 @@ function ap_plan_items(PDO $pdo, array $plan, string $today): array
         $ovr[(int)$r['item_id']] = $r;
     }
 
+    $ctx = null;   // the automatic counts, worked out once and only if some item uses them
     $out = [];
     foreach ($rows->fetchAll() as $i) {
         $extra = $i['plan_id'] !== null;
@@ -547,6 +554,21 @@ function ap_plan_items(PDO $pdo, array $plan, string $today): array
         $target = isset($o['target']) && $o['target'] !== null ? (int)$o['target'] : ($i['target'] === null ? null : (int)$i['target']);
         $status = $g ? (string)$g['status'] : 'todo';
         $cnt = $g ? (int)$g['cnt'] : 0;
+        // Counted by itself (Client Portal / Career Code), when there is a number to use. Otherwise the agent enters it.
+        $auto = null;
+        $autoKey = $extra ? '' : (string)($i['auto_key'] ?? '');
+        if ($autoKey !== '' && isset(AP_AUTO[$autoKey])) {
+            $ctx ??= ap_auto_context($pdo, $plan, $today);
+            $av = $ctx['values'][$autoKey] ?? null;
+            $auto = ['key' => $autoKey, 'label' => AP_AUTO[$autoKey]['label'], 'source' => AP_AUTO[$autoKey]['source'], 'value' => $av, 'extra' => $ctx['extra'][$autoKey] ?? '',
+                'portal_off' => AP_AUTO[$autoKey]['source'] === 'Client Portal' && $av === null && !$ctx['portal']['found']];
+            if ($kind === 'count' && $av !== null) {
+                $cnt = $av;
+                if ($status === 'todo' && $target && $cnt >= $target) {
+                    $status = 'waiting';   // reached the target by itself: it goes to the approver
+                }
+            }
+        }
         $skipped = !empty($o['skip']) && (int)$o['skip'] === 1;
         $window = $week === 0 ? 'upcoming' : ($week < $sf ? 'upcoming' : ($week > $st ? 'past' : 'now'));
         $resolved = in_array($status, ['waiting', 'done'], true);
@@ -577,7 +599,7 @@ function ap_plan_items(PDO $pdo, array $plan, string $today): array
             'from' => $sf, 'to' => $st, 'window' => $window, 'overdue' => $overdue, 'pace_behind' => $paceBehind, 'expected' => $expected,
             'skipped' => $skipped, 'skip_note' => (string)($o['skip_note'] ?? ''),
             'base' => ['from' => $from, 'to' => $to, 'target' => $i['target'] === null ? null : (int)$i['target']],
-            'has_override' => (bool)$o, 'tool' => ap_tool_url($i['tool_key']),
+            'has_override' => (bool)$o, 'tool' => ap_tool_url($i['tool_key']), 'auto' => $auto,
         ];
     }
     usort($out, static fn (array $a, array $b): int => [$a['s_sort'], $a['sort'], $a['id']] <=> [$b['s_sort'], $b['sort'], $b['id']]);
@@ -659,6 +681,9 @@ function ap_tick(PDO $pdo, array $plan, int $itemId, string $today): void
     if ($it['status'] === 'done') {
         throw new HttpError(409, 'That one is already approved.');
     }
+    if ($it['kind'] === 'count' && $it['status'] === 'todo') {
+        throw new HttpError(422, 'This one is a count: it goes for approval by itself when it reaches ' . ($it['target'] ?? 'the target') . '.');
+    }
     ap_progress_set($pdo, (int)$plan['id'], $itemId, ['status' => 'waiting', 'submitted_at' => ap_now(), 'note' => null]);
 }
 
@@ -683,6 +708,9 @@ function ap_count(PDO $pdo, array $plan, int $itemId, int $n, string $today): vo
     }
     if ($it['status'] === 'done') {
         throw new HttpError(409, 'That one is already approved.');
+    }
+    if ($it['auto'] !== null && $it['auto']['value'] !== null) {
+        throw new HttpError(422, 'This one is counted automatically, so there is nothing to enter.');
     }
     $n = ap_int_range($n, 0, 100000, 'The number');
     $f = ['cnt' => $n];
@@ -790,12 +818,12 @@ function ap_extra_remove(PDO $pdo, array $actor, array $plan, int $itemId): void
 
 /* ---------- views ---------- */
 
-function ap_disc_info(?string $disc): ?array
+function ap_disc_info(?string $disc, ?string $source = null): ?array
 {
     if ($disc === null || $disc === '') {
         return null;
     }
-    return ['style' => $disc, 'hint' => AP_DISC_HINT[$disc[0]] ?? ''];
+    return ['style' => $disc, 'hint' => AP_DISC_HINT[$disc[0]] ?? '', 'source' => $source];
 }
 
 /**
@@ -823,7 +851,7 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
         'id' => (int)$plan['id'], 'member' => ['id' => (int)$plan['member_id'], 'name' => $m['name']],
         'start_date' => $plan['start_date'], 'length_days' => (int)$plan['length_days'], 'week' => $week, 'weeks_total' => ap_weeks_total((int)$plan['length_days']),
         'starts_in_days' => $week === 0 ? max(0, -ap_days_between((string)$plan['start_date'], $today)) : 0,
-        'closed' => (bool)$plan['closed'], 'disc' => ap_disc_info($plan['disc']),
+        'closed' => (bool)$plan['closed'], 'disc' => ap_disc_info($plan['disc'] ?: ap_disc_from_career_code($pdo, (string)($m['email'] ?? ''), AP_DISC), $plan['disc'] ? null : 'Career Code'),
         'progress' => ['total' => $sum['total'], 'done' => $sum['done'], 'waiting' => $sum['waiting'], 'followup' => $sum['followup'], 'percent' => $sum['percent']],
         'items' => $outItems, 'own' => $own,
     ];
@@ -850,7 +878,7 @@ function ap_overview(PDO $pdo, array $map, array $viewer, string $today): array
         $week = ap_week((string)$plan['start_date'], $today);
         $sum = ap_summary(ap_plan_items($pdo, $plan, $today), $week);
         $rows[] = [
-            'plan_id' => (int)$plan['id'], 'member_id' => $mid, 'name' => $map[$mid]['name'], 'disc' => $plan['disc'],
+            'plan_id' => (int)$plan['id'], 'member_id' => $mid, 'name' => $map[$mid]['name'], 'disc' => $plan['disc'] ?: ap_disc_from_career_code($pdo, (string)$map[$mid]['email'], AP_DISC),
             'week' => $week, 'weeks_total' => ap_weeks_total((int)$plan['length_days']), 'start_date' => $plan['start_date'],
             'percent' => $sum['percent'], 'waiting' => $sum['waiting'], 'followup' => $sum['followup'], 'label' => $sum['label'], 'label_text' => AP_LABEL_TEXT[$sum['label']],
             'behind_items' => $sum['behind_items'],
@@ -939,7 +967,10 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                 return ['plan' => $payload($theirPlan((int)($q['plan'] ?? 0)), false)];
             case 'template':
                 $needSuper();
-                return ['sections' => ap_template($pdo), 'tools' => ap_tool_options()];
+                return ['sections' => ap_template($pdo), 'tools' => ap_tool_options(), 'autos' => ap_auto_options()];
+            case 'autocheck':
+                $needSuper();
+                return ['check' => ap_auto_diagnose($pdo, ap_plan_row($pdo, (int)($q['plan'] ?? 0)), $today)];
         }
         throw new HttpError(400, 'Unknown view.');
     }
@@ -1034,7 +1065,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                     ap_item_move($pdo, $item, (int)($in['dir'] ?? 0));
                     break;
             }
-            return $res + ['sections' => ap_template($pdo), 'tools' => ap_tool_options()];
+            return $res + ['sections' => ap_template($pdo), 'tools' => ap_tool_options(), 'autos' => ap_auto_options()];
     }
     throw new HttpError(400, 'Unknown action.');
 }

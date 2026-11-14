@@ -2,7 +2,7 @@
 
 A new **Action Plan** card in the E3 toolkit. It replaces the "New Associate Action Plan" spreadsheet: same programme, plus target weeks, real progress counts, an approval queue, and one overview of every new associate.
 
-**Status: step 1 (the core) is built** in `members-access/` (see its README). Steps 2 and 3 are not built yet. Everything can change.
+**Status: steps 1 (the core) and 2 (automatic counts from the Client Portal and Career Code, DISC from Career Code) are built** in `members-access/` (see its README). Step 3 (WhatsApp nudges, printable Day-90 review, buddy view) is not built yet. Everything can change.
 
 ---
 

@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * The starting template: the DreamHub E3 New Associate Action Plan, with suggested weeks.
  * Edited later on the Action Plan > Template screen; this runs only while the template is empty.
- * Each item: [title, details, week_from, week_to, 'tick'|'count', target|null, tool_key|null]
+ * Each item: [title, details, week_from, week_to, 'tick'|'count', target|null, tool_key|null, auto_key|null]
+ * auto_key: counted by itself from the toolkit (see actionplan_auto.php); for a tick item it only shows a number beside it.
  */
 function ap_seed_data(): array
 {
@@ -35,7 +36,7 @@ function ap_seed_data(): array
             ['Product knowledge: Medical, CI, Life', null, 2, 6, 'tick', null, 'sum-assured'],
         ],
         'Kick Start' => [
-            ['Prospect list (100)', 'Name, relationship, location, age, occupation, category.', 1, 2, 'count', 100, null],
+            ['Prospect list (100)', 'Name, relationship, location, age, occupation, category.', 1, 2, 'count', 100, null, 'prospects'],
             ['Categorise the list', 'Trust vs capability, 9宮格, 6同.', 1, 2, 'tick', null, null],
             ['定聯', null, 1, 2, 'tick', null, null],
             ['Join DL2', null, 1, 2, 'tick', null, null],
@@ -46,9 +47,9 @@ function ap_seed_data(): array
         'Practical' => [
             ['Customer fact finding forms (30)', null, 3, 12, 'count', 30, 'protection-needs'],
             ['Questioning technique', null, 3, 6, 'tick', null, null],
-            ['Natural market survey (70)', null, 3, 12, 'count', 70, null],
-            ['Presentations (50)', null, 3, 12, 'count', 50, null],
-            ['New business (3)', null, 3, 12, 'count', 3, null],
+            ['Natural market survey (70)', null, 3, 12, 'count', 70, null, 'open'],
+            ['Presentations (50)', null, 3, 12, 'count', 50, null, 'present'],
+            ['New business (3)', null, 3, 12, 'count', 3, null, 'closes'],
             ['Sales cycle and presentation training', null, 3, 4, 'tick', null, null],
             ['Fact finding skills enhancement', null, 3, 6, 'tick', null, null],
             ['Objection handling', 'No hurry, no trust, no money, no authority, no needs.', 5, 8, 'tick', null, null],
@@ -58,7 +59,7 @@ function ap_seed_data(): array
             ['Open market skill', null, 6, 12, 'tick', null, null],
         ],
         'Talent Acquisition' => [
-            ['Career Introduction 1+2', null, 8, 12, 'tick', null, 'career-code'],
+            ['Career Introduction 1+2', null, 8, 12, 'tick', null, 'career-code', 'career_added'],
         ],
         'After-sales' => [
             ['Policy delivery', 'Use the delivery template and checklist.', 6, 13, 'tick', null, null],

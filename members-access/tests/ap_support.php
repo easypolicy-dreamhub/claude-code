@@ -40,3 +40,19 @@ function ap_world(?string $file = null): array
     $pdo->prepare('UPDATE members SET is_team_admin = 1 WHERE id = ?')->execute([$ids['Gm']]);
     return [$pdo, load_member_map($pdo)[$you['id']], $ids];
 }
+
+/** A pretend Client Portal database for one person. $closes: 'A' (close_date, anp), 'B' (cdate, canp), 'C' (unrecognisable), 'none'. */
+function ap_make_portal(string $dir, string $closes = 'A'): void
+{
+    @mkdir($dir, 0777, true);
+    $db = new PDO('sqlite:' . $dir . '/clients.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $db->exec('CREATE TABLE clients (id INTEGER PRIMARY KEY, name TEXT, kind TEXT, created_at TEXT)');
+    $db->exec('CREATE TABLE notes (id INTEGER PRIMARY KEY, client_id INTEGER, enc_body TEXT, follow_up TEXT, created_at TEXT, kind TEXT, appt_date TEXT, next_kind TEXT, done INTEGER DEFAULT 0)');
+    $defs = ['A' => 'CREATE TABLE closes (id INTEGER PRIMARY KEY, close_date TEXT, name TEXT, plan TEXT, anp REAL, updated_at TEXT)',
+        'B' => 'CREATE TABLE closes (id INTEGER PRIMARY KEY, cdate TEXT, cname TEXT, cplan TEXT, canp TEXT)',
+        'C' => 'CREATE TABLE closes (id INTEGER PRIMARY KEY, foo TEXT, bar TEXT)'];
+    if (isset($defs[$closes])) { $db->exec($defs[$closes]); }
+}
+function ap_portal_db(string $dir): PDO { return new PDO('sqlite:' . $dir . '/clients.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); }
+function ap_note(PDO $db, string $kind, string $date): void { $db->prepare('INSERT INTO notes (client_id, enc_body, created_at, kind, appt_date) VALUES (1, ?, ?, ?, ?)')->execute(['ENCRYPTED-SECRET', $date . ' 10:00:00', $kind, $date]); }
+

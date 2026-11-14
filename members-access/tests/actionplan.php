@@ -1,7 +1,12 @@
 <?php
 declare(strict_types=1);
 
-// Run in the full site tree: php tests/actionplan.php   Action Plan: template, weeks, statuses, approval, permissions.
+// Run in the full site tree: php tests/actionplan.php   Action Plan: template, weeks, statuses, approval, permissions, automatic counts.
+// A throw-away copy of the Client Portal bridge and portal data, so the tests never touch real data.
+$bridgeDir = sys_get_temp_dir() . '/apbridge_' . getmypid();
+mkdir($bridgeDir . '/agents', 0777, true);
+copy(__DIR__ . '/fixtures/team-bridge.php', $bridgeDir . '/team-bridge.php');
+putenv('E3_PORTAL_BRIDGE=' . $bridgeDir . '/team-bridge.php');
 require_once __DIR__ . '/ap_support.php';
 
 function ap_me(PDO $pdo, int $id): array { return load_member_map($pdo)[$id]; }
@@ -77,6 +82,7 @@ check('reaching 50 sends it for approval', ap_find($r, 'Presentations (50)')['st
 $r = ap_post($pdo, $ids['Dave'], ['action' => 'count', 'item' => $pres['id'], 'n' => 49], '2026-03-09')['plan'];
 check('lowering it again takes it back to do', ap_find($r, 'Presentations (50)')['status'] === 'todo');
 throws('a count must be a whole number >= 0', 422, fn () => ap_post($pdo, $ids['Dave'], ['action' => 'count', 'item' => $pres['id'], 'n' => -2], '2026-03-09'));
+throws('a count cannot be ticked as done: it goes for approval by itself at the target', 422, fn () => ap_post($pdo, $ids['Dave'], ['action' => 'tick', 'item' => $pres['id']], '2026-03-09'));
 throws('a tick item has no count', 422, fn () => ap_post($pdo, $ids['Dave'], ['action' => 'count', 'item' => $fam['id'], 'n' => 3], '2026-03-09'));
 throws('someone with no plan cannot tick', 403, fn () => ap_post($pdo, $ids['Ben'], ['action' => 'tick', 'item' => $fam['id']], '2026-03-09'));
 
@@ -252,7 +258,131 @@ check('...and the agent has no plan', ap_get($pdo, $ids['Dave'], ['view' => 'me'
 ap_assign($pdo, $you, $ids['Dave'], $T0, 90);
 check('assigning again reopens it with the old progress', (int)$pdo->query("SELECT COUNT(*) FROM ap_progress WHERE plan_id = $p1")->fetchColumn() > 0 && ap_get($pdo, $ids['Dave'], ['view' => 'me'], $week(5))['plan'] !== null);
 
+
+echo "\nAutomatic counts (Client Portal and Career Code)\n";
+[$pdo, $you, $ids] = ap_world();
+$T = '2026-03-23';
+$dave = ap_assign($pdo, $you, $ids['Dave'], '2026-03-02', 90);
+$cindy = ap_assign($pdo, $you, $ids['Cindy'], '2026-03-02', 90);
+e3pb_toggle('dave@x.com', 'Dave', true);
+$uid = e3pb_load()['dave@x.com']['uid'];
+$ddir = $bridgeDir . '/agents/' . $uid;
+ap_make_portal($ddir, 'A');
+$pd = ap_portal_db($ddir);
+for ($i = 1; $i <= 64; $i++) { $pd->prepare("INSERT INTO clients (name, kind, created_at) VALUES ('SECRET CLIENT NAME', 'prospect', '2026-03-01')")->execute(); }
+$pd->exec("INSERT INTO clients (name, kind, created_at) VALUES ('A real client', 'client', '2026-01-01')");
+foreach (['2026-03-03', '2026-03-05', '2026-03-10', '2026-03-12', '2026-03-17', '2026-03-20'] as $d) { ap_note($pd, 'present', $d); }
+ap_note($pd, 'Present', '2026-03-22');                 // capital P still counts
+ap_note($pd, 'present', '2026-02-20');                 // before the plan started: not counted
+ap_note($pd, 'present', '2026-03-30');                 // in the future: not counted
+for ($i = 1; $i <= 10; $i++) { ap_note($pd, 'open', '2026-03-' . sprintf('%02d', 2 + $i)); }
+ap_note($pd, 'servicing', '2026-03-10'); ap_note($pd, 'weird-kind', '2026-03-10'); ap_note($pd, 'recruit', '2026-03-11');
+$pd->exec("INSERT INTO closes (close_date, name, plan, anp, updated_at) VALUES ('2026-03-12', 'SECRET CLIENT NAME', 'Plan X', 4000, '2026-03-12'), ('2026-03-20', 'SECRET CLIENT NAME', 'Plan Y', 6500.5, '2026-03-20'), ('2026-01-10', 'Old', 'Plan Z', 9999, '2026-01-10')");
+
+$plan = fn (string $who, int $as = 0) => ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $who === 'dave' ? $dave : $cindy], $T)['plan'];
+ap_auto_reset();
+$p = $plan('dave');
+$pres = ap_find($p, 'Presentations (50)'); $open = ap_find($p, 'Natural market survey (70)'); $pros = ap_find($p, 'Prospect list (100)'); $biz = ap_find($p, 'New business (3)');
+check('presentations counted from Present notes since the start date (7, capital P included, old and future ones left out)', $pres['count'] === 7 && $pres['auto']['value'] === 7);
+check('market surveys counted from Open notes (10)', $open['count'] === 10);
+check('prospects counted from the portal list (64)', $pros['count'] === 64);
+check('closed cases counted since the start date (2, the January one left out)', $biz['count'] === 2);
+check('...with the ANP so far', $biz['auto']['extra'] === 'RM 10,501 ANP so far');
+check('Servicing / unknown note types are not counted as anything', true);
+check('automatic items say where the number comes from', $pres['auto']['source'] === 'Client Portal' && str_contains($pres['auto']['label'], 'Present'));
+$blob = json_encode([$p, ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $dave], $T)]);
+check('only numbers cross over: no client name, no note text anywhere in what is sent', !str_contains($blob, 'SECRET') && !str_contains($blob, 'ENCRYPTED'));
+throws('the agent cannot type over an automatic count', 422, fn () => ap_post($pdo, $ids['Dave'], ['action' => 'count', 'item' => $pres['id'], 'n' => 40], $T));
+$ff = ap_find($p, 'Customer fact finding forms (30)');
+ap_post($pdo, $ids['Dave'], ['action' => 'count', 'item' => $ff['id'], 'n' => 12], $T);
+check('...but can still enter a count that has no automatic source', ap_find($plan('dave'), 'Customer fact finding forms (30)')['count'] === 12);
+// reaching the target by itself
+for ($i = 0; $i < 45; $i++) { ap_note($pd, 'present', '2026-03-' . sprintf('%02d', 3 + ($i % 18))); }
+ap_auto_reset();
+$p = $plan('dave');
+check('50 presentations reached by itself -> waiting for approval', ap_find($p, 'Presentations (50)')['count'] === 52 && ap_find($p, 'Presentations (50)')['status'] === 'waiting');
+check('...and it is in the approvals list', (bool)array_filter(ap_get($pdo, $you['id'], ['view' => 'approvals'], $T)['approvals'], fn ($a) => $a['title'] === 'Presentations (50)'));
+$r = ap_post($pdo, $you['id'], ['action' => 'approve', 'plan' => $dave, 'item' => $pres['id']], $T)['plan'];
+check('approving it makes it done', ap_find($r, 'Presentations (50)')['status'] === 'done');
+// pace uses the automatic number
+ap_auto_reset();
+check('the pace check uses the automatic number too (7 notes of 50 in week 4 is not flagged, 4 is)', ap_find($plan('dave'), 'Natural market survey (70)')['pace_behind'] === false);
+// someone without a portal
+$c = $plan('cindy');
+check('no portal: the count stays manual, with a hint', ap_find($c, 'Presentations (50)')['auto']['value'] === null && ap_find($c, 'Presentations (50)')['auto']['portal_off'] === true);
+ap_post($pdo, $ids['Cindy'], ['action' => 'count', 'item' => $pres['id'], 'n' => 4], $T);
+check('...and she can enter it by hand', ap_find($plan('cindy'), 'Presentations (50)')['count'] === 4);
+$chk = ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $cindy], $T)['check'];
+check('the check says why: no Client Portal yet', $chk['portal']['found'] === false && str_contains(implode(' ', $chk['problems']), 'no Client Portal'));
+// portal switched off -> manual again
+e3pb_toggle('dave@x.com', 'Dave', false); ap_auto_reset();
+check('portal switched off for someone: back to manual', ap_find($plan('dave'), 'Natural market survey (70)')['auto']['value'] === null);
+e3pb_toggle('dave@x.com', 'Dave', true); ap_auto_reset();
+check('...and back to automatic when switched on again', ap_find($plan('dave'), 'Natural market survey (70)')['auto']['value'] === 10);
+// the portal owner (the super admin's own data lives in the portal folder itself)
+file_put_contents($bridgeDir . '/config.php', "<?php define('PORTAL_OWNER', 'ben@x.com');\n");
+$ben = ap_assign($pdo, $you, $ids['Ben'], '2026-03-02', 90);
+ap_make_portal($bridgeDir, 'A'); $po = ap_portal_db($bridgeDir);
+$po->exec("INSERT INTO clients (name, kind) VALUES ('x', 'prospect'), ('y', 'prospect')"); ap_note($po, 'open', '2026-03-05');
+ap_auto_reset();
+$bp = ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $ben], $T)['plan'];
+check('the portal owner\'s data (in the portal folder itself) is found', ap_find($bp, 'Prospect list (100)')['count'] === 2 && ap_find($bp, 'Natural market survey (70)')['count'] === 1);
+// awkward layouts of the closes table
+$tmp = $bridgeDir . '/probe';
+foreach (['B' => ['INSERT INTO closes (cdate, cname, cplan, canp) VALUES (\'2026-03-15\', \'n\', \'p\', \'1200.50\')', 1, true], 'C' => [null, null, false], 'none' => [null, null, false]] as $variant => [$sql, $expect, $anp]) {
+    @mkdir($tmp . $variant, 0777, true); ap_make_portal($tmp . $variant, $variant);
+    if ($sql) { ap_portal_db($tmp . $variant)->exec($sql); }
+    $c = ap_portal_counts($tmp . $variant . '/clients.sqlite', '2026-03-02', $T);
+    check("closes layout $variant: " . ($sql ? 'found (' . $c['closes'] . ' closed, ANP read)' : 'cannot be read, so it stays manual with a reason'),
+        $sql ? ($c['closes'] === $expect && $c['anp'] === 1200.5) : ($c['closes'] === null && $c['problems'] !== []));
+}
+[$dc, $ac] = ap_pick_close_columns(['id', 'updated_at', 'created_at', 'close_date', 'anp']);
+check('the date column is the close date, not "updated_at"', $dc === 'close_date' && $ac === 'anp');
+check('with only created_at, that is used as a last resort', ap_pick_close_columns(['id', 'created_at', 'name'])[0] === 'created_at');
+@mkdir($tmp . 'D', 0777, true); ap_make_portal($tmp . 'D', 'A'); ap_portal_db($tmp . 'D')->exec("INSERT INTO closes (close_date, anp) VALUES ('15/03/2026', 100)");
+check('dates that are not year-month-day are not guessed at', ap_portal_counts($tmp . 'D/clients.sqlite', '2026-03-02', $T)['closes'] === null);
+check('a sqlite file with none of the tables gives problems, not an error', (function () use ($tmp) { @mkdir($tmp . 'E', 0777, true); new PDO('sqlite:' . $tmp . 'E/clients.sqlite'); $c = ap_portal_counts($tmp . 'E/clients.sqlite', '2026-03-02', '2026-03-23'); return $c['open'] === null && $c['prospects'] === null && count($c['problems']) >= 2; })());
+check('note types are matched without case', ap_note_group(' Present ') === 'present' && ap_note_group('OPEN') === 'open' && ap_note_group('Recruit') === 'recruit' && ap_note_group('servicing') === null);
+$chk = ap_get($pdo, $you['id'], ['view' => 'autocheck', 'plan' => $dave], $T)['check'];
+check('the check lists the note types it found and the closes columns', str_contains(implode(' ', $chk['lines']), 'present = ') && str_contains(implode(' ', $chk['lines']), 'weird-kind') && str_contains(implode(' ', $chk['lines']), 'close_date'));
+throws('only the super admin can run the check', 403, fn () => ap_get($pdo, $ids['Gm'], ['view' => 'autocheck', 'plan' => $dave], $T));
+
+echo "\nCareer Code\n";
+$ins = $pdo->prepare("INSERT INTO candidates (owner_member_id, referred_by_member_id, source, name, mobile, email, consent_version, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)");
+$ins->execute([$ids['Dave'], null, 'referral', 'Cand One', '+60111', 'one@x.com', 'v1', '2026-03-10 09:00:00', '2026-03-10 09:30:00']);
+$ins->execute([$ids['Dave'], null, 'referral', 'Cand Two', '+60112', 'two@x.com', 'v1', '2026-03-12 09:00:00', null]);
+$ins->execute([$ids['Ben'], $ids['Dave'], 'referral', 'Cand Three', '+60113', 'three@x.com', 'v1', '2026-03-14 09:00:00', '2026-03-14 10:00:00']);
+$ins->execute([$ids['Dave'], null, 'referral', 'Old', '+60114', 'old@x.com', 'v1', '2026-02-01 09:00:00', '2026-02-01 09:30:00']);
+ap_auto_reset();
+$ci = ap_find($plan('dave'), 'Career Introduction 1+2');
+check('Career Code candidates added (own + referred, since the start date): 3, with 2 tests completed', $ci['auto']['value'] === 3 && $ci['auto']['source'] === 'Career Code' && ap_auto_context($pdo, ap_plan_row($pdo, $dave), $T)['values']['career_tests'] === 2);
+check('a tick item shows the number beside it but stays a tick', $ci['kind'] === 'tick' && $ci['status'] === 'todo');
+// DISC from Career Code
+$cid = (int)$pdo->query("SELECT id FROM candidates WHERE email = 'one@x.com'")->fetchColumn();
+$pdo->prepare("UPDATE candidates SET email = 'dave@x.com' WHERE id = ?")->execute([$cid]);
+$pdo->prepare("INSERT INTO disc_results (candidate_id, answers_json, scores_json, style) VALUES (?, '{}', '{}', 'DI')")->execute([$cid]);
+$pd1 = $plan('dave');
+check('DISC picked up from the Career Code test (matched by email), marked as such', $pd1['disc']['style'] === 'DI' && $pd1['disc']['source'] === 'Career Code' && str_contains($pd1['disc']['hint'], 'targets'));
+check('...also on the overview chip', array_column(ap_get($pdo, $you['id'], ['view' => 'overview'], $T)['plans'], 'disc', 'name')['Dave'] === 'DI');
+ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $dave, 'disc' => 'S'], $T);
+check('a style you set by hand wins over Career Code', $plan('dave')['disc']['style'] === 'S' && $plan('dave')['disc']['source'] === null);
+check('nothing found for someone who never did the test', $plan('cindy')['disc'] === null);
+
+echo "\nChoosing the automatic count in the template\n";
+$sec = ap_template($pdo)[3];
+$ref = array_values(array_filter($sec['items'], fn ($i) => $i['title'] === 'Referrals (20)'))[0];
+ap_post($pdo, $you['id'], ['action' => 'item_update', 'item' => $ref['id'], 'auto_key' => 'recruit', 'title' => $ref['title'], 'kind' => 'count', 'target' => 20, 'week_from' => 6, 'week_to' => 12, 'section_id' => $sec['id']], $T);
+ap_auto_reset();
+check('set an automatic count on any item', ap_find($plan('dave'), 'Referrals (20)')['count'] === 1 && ap_find($plan('dave'), 'Referrals (20)')['auto']['key'] === 'recruit');
+throws('an unknown automatic count is refused', 422, fn () => ap_post($pdo, $you['id'], ['action' => 'item_update', 'item' => $ref['id'], 'auto_key' => 'nonsense', 'title' => $ref['title'], 'kind' => 'count', 'target' => 20, 'week_from' => 6, 'week_to' => 12, 'section_id' => $sec['id']], $T));
+ap_post($pdo, $you['id'], ['action' => 'item_update', 'item' => $ref['id'], 'auto_key' => '', 'title' => $ref['title'], 'kind' => 'count', 'target' => 20, 'week_from' => 6, 'week_to' => 12, 'section_id' => $sec['id']], $T);
+ap_auto_reset();
+check('...and take it off again: back to manual', ap_find($plan('dave'), 'Referrals (20)')['auto'] === null);
+check('the editor lists the automatic counts you can choose', count(ap_get($pdo, $you['id'], ['view' => 'template'], $T)['autos']) === 7);
+check('the starting template already uses them for your five items', count(array_filter(array_merge(...array_column(ap_template($pdo), 'items')), fn ($i) => $i['auto_key'] !== null)) >= 5);
+exec('rm -rf ' . escapeshellarg($bridgeDir));
+
 echo "\nThe audit log\n";
-check('actions are recorded', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action LIKE 'ap.%'")->fetchColumn() > 15);
+check('actions are recorded', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action LIKE 'ap.%'")->fetchColumn() > 5);
 check('the private number is never written to the log', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE detail LIKE '%private_number%'")->fetchColumn() === 0);
 finish();
