@@ -1059,9 +1059,12 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
         'end_date' => gmdate('Y-m-d', strtotime((string)$plan['start_date'] . ' +' . ((int)$plan['length_days'] - 1) . ' days')),
         'buddy' => !empty($plan['buddy_id']) && isset($map[(int)$plan['buddy_id']]) ? ['id' => (int)$plan['buddy_id'], 'name' => $map[(int)$plan['buddy_id']]['name']] : null,
     ];
-    if ($own && $p['buddy'] !== null) {   // so they can message their buddy; only on their own plan
+    if (($own || $approver) && $p['buddy'] !== null) {
         $wa = preg_replace('/\D+/', '', (string)($map[$p['buddy']['id']]['whatsapp'] ?? '')) ?? '';
-        $p['buddy']['whatsapp'] = $wa === '' ? null : $wa;
+        $p['buddy']['has_whatsapp'] = $wa !== '';
+        if ($own) {   // the number itself goes only to the person whose buddy it is
+            $p['buddy']['whatsapp'] = $wa === '' ? null : $wa;
+        }
     }
     if ($approver) {
         $p['last_nudged_at'] = $plan['last_nudged_at'] ?? null;
