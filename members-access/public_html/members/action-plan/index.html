@@ -175,7 +175,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   body{background:#fff !important;background-image:none !important}
   main{max-width:none;padding:0}
   .sheet{border:0;padding:0;border-radius:0}
-  .sheet h3,.sheet table,.sheet .box,.sheet .sig{break-inside:avoid}
+  .sheet h3{break-after:avoid;page-break-after:avoid}
+  .sheet tr,.sheet .box,.sheet .sig{break-inside:avoid;page-break-inside:avoid}
+  .sheet thead{display:table-header-group}
   @page{margin:14mm}
 }
 </style>
@@ -712,7 +714,8 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     p.items.forEach(function (i) { if (!by[i.section]) { by[i.section] = []; order.push(i.section); } by[i.section].push(i); });
     order.forEach(function (name) {
       var its = by[name], done = its.filter(function (i) { return i.status === 'done' && !i.skipped; }).length, tot = its.filter(function (i) { return !i.skipped; }).length;
-      sheet.appendChild(el('h3', { text: name + ' (' + done + ' of ' + tot + ')' }));
+      var h3 = el('h3', { text: name + ' (' + done + ' of ' + tot + ')' });
+      sheet.appendChild(h3);
       var tb = el('table', {}, [el('thead', {}, [el('tr', {}, [el('th', { text: 'Step' }), el('th', { text: 'Count' }), el('th', { text: 'Result' })])]),
         el('tbody', {}, its.map(function (i) {
           return el('tr', {}, [el('td', { text: (i.status === 'done' && !i.skipped ? '✓ ' : '') + i.title }), el('td', { text: i.kind === 'count' && i.target ? i.count + ' / ' + i.target : '' }), el('td', { text: statusWords(i) })]);
