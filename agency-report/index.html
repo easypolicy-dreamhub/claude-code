@@ -1401,8 +1401,8 @@ $('#btnPrint').addEventListener('click',exportPDF);
 
 /* ---------- drafts: saved on the portal by drafts.php, shared by every signed-in editor ---------- */
 const DAPI='drafts.php';
-const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your email is not on the allowed list for drafts.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'There are too many drafts. Delete some old ones first.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
-let DRAFTS={ok:false,note:'Checking…',list:[],user:''};
+const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your email is not on the allowed list for drafts.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'You already have the maximum number of drafts. Delete an old one to make room.',not_found:'This draft no longer exists. It may have been deleted. Your work is still on screen, so use Save as new draft to keep it.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
+let DRAFTS={ok:false,note:'Checking…',list:[],user:'',max:10};
 async function dapi(action,body,qs){
   const opt=body?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'fetch'},body:JSON.stringify(body)}:{credentials:'same-origin',headers:{'X-Requested-With':'fetch'}};
   const r=await fetch(`${DAPI}?action=${action}${qs||''}`,opt);let j=null;try{j=await r.json();}catch(e){}
@@ -1417,13 +1417,15 @@ function draftNote(text,bad){const el=$('#draftMsg');if(el){el.innerHTML=text?`<
 function draftError(e,what){
   if(e.code==='conflict'){draftNote(`${shortUser(e.data&&e.data.by)||'Someone else'} saved this draft after you opened it. Use Save as new draft to keep your version, or Reload to take theirs.`,true);return;}
   let m=DRAFT_ERR[e.code];
+  if(e.code==='not_found'&&what==='open')m='That draft no longer exists. It may have been deleted.';
   if(!m&&(e.status===401||e.status===403))m=DRAFT_ERR.not_signed_in;
-  if(!m&&e.status===404)m=what==='open'?'That draft no longer exists. It may have been deleted.':'drafts.php was not found on your portal.';
+  if(!m&&e.status===404)m='drafts.php was not found on your portal.';
   if(!m)m='Couldn’t reach the drafts on your portal. Check your connection, or the draft may be too large for the server.';
   draftNote(m,true);toast(m);
 }
 async function refreshDrafts(){
-  try{const r=await dapi('list');DRAFTS={ok:true,note:'',list:r.drafts||[],user:r.user||''};}
+  try{const r=await dapi('list');DRAFTS={ok:true,note:'',list:r.drafts||[],user:r.user||'',max:r.max||10};
+    if(curDraft&&!DRAFTS.list.some(d=>d.id===curDraft.id)){curDraft=null;draftBase=null;draftNote('The draft you were working on no longer exists. Your work is still on screen. Use Save as new draft to keep it.',true);}}
   catch(e){
     let n=DRAFT_ERR[e.code];
     if(!n&&(e.status===401||e.status===403))n=DRAFT_ERR.not_signed_in;
@@ -1447,7 +1449,8 @@ function renderDrafts(){
   g.innerHTML=`<h2>Drafts</h2>
     <p class="hint">Saved on your portal, so you and your admin can open the same report from any device. Photos are shared separately in the photo library.</p>
     <div id="draftCur"></div>
-    <div class="newc"><input id="draftName" placeholder="${esc(draftDefaultName())}" aria-label="Draft name" maxlength="80"><button class="btn small primary" id="draftSaveNew">Save as new draft</button></div>
+    <div class="newc"><input id="draftName" placeholder="${esc(draftDefaultName())}" aria-label="Draft name" maxlength="80"><button class="btn small primary" id="draftSaveNew"${DRAFTS.list.length>=DRAFTS.max?' disabled':''}>Save as new draft</button></div>
+    <p class="hint" id="draftCount" style="margin:6px 0 0">${DRAFTS.list.length} of ${DRAFTS.max} drafts used.${DRAFTS.list.length>=DRAFTS.max?' Delete one to save a new draft.':''}</p>
     <p class="hint" id="draftHint" style="margin:6px 0 0"></p>
     <p class="hint" id="draftMsg">${msg}</p>
     <div id="draftList">${DRAFTS.list.length?DRAFTS.list.map(draftRow).join(''):'<p class="hint">No drafts yet. Load this month’s files, then save one.</p>'}</div>`;
@@ -1484,13 +1487,13 @@ async function saveDraftNew(){
   const name=($('#draftName').value.trim()||draftDefaultName()),payload=stateJSON();
   try{const r=await dapi('save',{name,payload,info:draftInfo()});curDraft=r.saved;draftBase=payload;toast('Draft saved');await refreshDrafts();$('#draftName').value='';}
   catch(e){draftError(e);}
-  const b=$('#draftSaveNew');if(b)b.disabled=false;
+  const b=$('#draftSaveNew');if(b)b.disabled=DRAFTS.ok&&DRAFTS.list.length>=DRAFTS.max;
 }
 async function saveDraftChanges(){
   if(!curDraft)return;const btn=$('#draftSave');if(btn)btn.disabled=true;draftNote('');
   const payload=stateJSON();
   try{const r=await dapi('save',{id:curDraft.id,name:curDraft.name,payload,expect:curDraft.updated,info:draftInfo()});curDraft=r.saved;draftBase=payload;toast('Draft saved');await refreshDrafts();}
-  catch(e){draftError(e);draftShown='';updateDraftBar();}
+  catch(e){draftError(e);if(e.code==='not_found'){await refreshDrafts();}else{draftShown='';updateDraftBar();}}
 }
 async function openDraft(id){
   draftNote('');
@@ -1500,7 +1503,7 @@ async function openDraft(id){
     curDraft={id:r.id,name:r.name,updated:r.updated,by:r.by};draftBase=null;
     applyState(s);draftBase=stateJSON();
     toast('Draft opened');await refreshDrafts();
-  }catch(e){draftError(e,'open');}
+  }catch(e){draftError(e,'open');if(e.code==='not_found')await refreshDrafts();}
 }
 $('#draftGroup').addEventListener('click',async e=>{
   const t=e.target.closest('button');if(!t)return;

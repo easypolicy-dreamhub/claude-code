@@ -45,7 +45,7 @@ Note: the cPanel zips `e3-members-all-9-apps.zip` and `e3-members-all-tools.zip`
    - The name box shows the suggested name (agency, month, year) as a hint that refreshes whenever files load, with a line saying what an empty name will become.
    - A working bar shows "All changes saved" or "Unsaved changes" with Save changes and Close draft. Autosave to the browser still runs as before.
    - Protection against overwriting: saving sends the version it opened (`expect`); if somebody else saved the draft since, the server answers 409 and the page tells the user to save as new or reload.
-   - Access: the same Cloudflare Access sign-in as `photos.php`, and unlike photos, drafts are readable and writable only by the allowed emails (they hold production figures). Maximum 200 drafts, 6 MB each. Stored as the exact JSON string the page sent.
+   - Access: the same Cloudflare Access sign-in as `photos.php`, and unlike photos, drafts are readable and writable only by the allowed emails (they hold production figures). Maximum 10 drafts (setting `$MAX_DRAFTS` at the top of `drafts.php`; the page shows "n of 10 drafts used" and disables Save as new draft when full), 6 MB each. If somebody deletes the draft you are working on, Save changes says the draft no longer exists and keeps your work on screen (use Save as new draft). Stored as the exact JSON string the page sent.
 6. **Slide result line removed (by request).** "ANP year to date", "Target by <month>" and "Year-end goal" were taken off page 6 because they duplicate the previous page or confuse (RM 20.43M versus the rounded 20M goal). The CSS class `.mapa-res` is now unused.
 
 ## 4. Rules and decisions to keep

@@ -12,6 +12,8 @@
 $TEAM_DOMAIN    = '';
 $AUD_TAG        = '';
 $ALLOWED_EMAILS = array();
+/* Most drafts that can be kept at once. Delete an old one to make room. */
+$MAX_DRAFTS     = 10;
 /* ===================== End of the part you edit ====================== */
 
 header('X-Content-Type-Options: nosniff');
@@ -155,7 +157,7 @@ $idxFile = $store . '/index.json';
 if ($action === 'list') {
   $idx = array_values(load_idx($idxFile));
   usort($idx, function ($a, $b) { $x = isset($a['updated']) ? $a['updated'] : 0; $y = isset($b['updated']) ? $b['updated'] : 0; return $y > $x ? 1 : ($y < $x ? -1 : 0); });
-  ok(array('drafts' => $idx, 'user' => $email));
+  ok(array('drafts' => $idx, 'user' => $email, 'max' => $MAX_DRAFTS));
 }
 if ($action === 'get') {
   $id = isset($_GET['id']) ? $_GET['id'] : '';
@@ -198,7 +200,7 @@ if ($action === 'save') {
       fail(409, 'conflict', array('updated' => $idx[$id]['updated'], 'by' => isset($idx[$id]['by']) ? $idx[$id]['by'] : ''));
     }
   } else {
-    if (count($idx) >= 200) fail(400, 'too_many_drafts');
+    if (count($idx) >= $MAX_DRAFTS) fail(400, 'too_many_drafts', array('max' => $MAX_DRAFTS));
     $id = bin2hex(random_bytes(8));
   }
   $updated = (int)round(microtime(true) * 1000);
