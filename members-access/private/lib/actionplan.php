@@ -1158,7 +1158,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
         switch ((string)($q['view'] ?? 'init')) {
             case 'init':
                 return [
-                    'role' => $role, 'me' => ['id' => (int)$viewer['id'], 'name' => $viewer['name']], 'today' => $today, 'has_plan' => $mine !== null,
+                    'role' => $role, 'member_type' => member_type($viewer), 'me' => ['id' => (int)$viewer['id'], 'name' => $viewer['name']], 'today' => $today, 'has_plan' => $mine !== null,
                     'waiting' => $role === 'agent' ? 0 : count(ap_approvals($pdo, $map, $viewer, $today)),
                     'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [],
                     'disc_options' => AP_DISC, 'tools' => ap_tool_options(), 'default_days' => AP_BASE_DAYS,

@@ -318,7 +318,8 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       person = false;
     }
     if (!p) {
-      box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No Action Plan yet' }), 'Your leader will set one up for you. It will appear here.']));
+      if (S.init.member_type && S.init.member_type !== 'team') box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'Nothing set up for you here' }), 'The Action Plan is for Team members. If you are someone\'s buddy, their progress appears under the Buddy tab.']));
+      else box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No Action Plan yet' }), 'Your leader will set one up for you. It will appear here.']));
       return box;
     }
     var approver = isApprover() && !p.own;

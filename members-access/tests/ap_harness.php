@@ -25,6 +25,9 @@ function ap_h_seed(string $file): void
     $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60123456789', $ids['Dave']]);
     $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60198765432', $ids['Cindy']]);
     ap_plan_update($pdo, $you, $dave, ['buddy_id' => $ids['Cindy']]);
+    $ids['Ivy'] = create_member($pdo, $you['id'], ['email' => 'ivy@x.com', 'name' => 'Ivy', 'rank' => 'agent', 'upline_id' => $ids['You'], 'referral_code' => 'r-ivy'])['id'];
+    $pdo->exec("UPDATE members SET member_type = 'intern' WHERE id = " . (int)$ids['Ivy']);   // an Intern with the Action Plan card switched on but nothing assigned
+    set_ticked_tools($pdo, (int)$ids['Ivy'], ['action-plan']);
     $items = ap_plan_items($pdo, ap_plan_row($pdo, $dave), $today);
     foreach ($items as $it) {
         if ($it['to'] <= 1 && $it['title'] !== 'Family Visit') {

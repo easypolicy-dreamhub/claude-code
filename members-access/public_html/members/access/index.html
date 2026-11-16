@@ -409,7 +409,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
             var sw = el('button', { type: 'button', 'class': 'sw', role: 'switch', 'aria-checked': String(cur.tools.indexOf(t.key) >= 0), 'aria-label': t.name });
             sw.addEventListener('click', function () { flip(cur, t.key, sw, upd); });
             switches.push({ sw: sw, key: t.key });
-            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, t.link_only ? el('small', { text: 'Opens in Gemini: hides the card only' }) : (t.bridge ? el('small', { text: 'Same switch as on the Team page' }) : null)]), sw]);
+            kid = el('div', { 'class': 'tr' }, [el('span', { 'class': 'ic', 'aria-hidden': 'true', text: toolIcon(t.key) }), el('div', { 'class': 'tn' }, [t.name, t.link_only ? el('small', { text: 'Opens in Gemini: hides the card only' }) : (t.bridge ? el('small', { text: 'Same switch as on the Team page' }) : (t.key === 'action-plan' && !p.super && p.type && p.type !== 'team' ? el('small', { text: 'Only needed if they are someone\'s buddy. A plan is only assigned to Team members.' }) : null))]), sw]);
           }
           grp.appendChild(kid);
         });

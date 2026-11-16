@@ -447,6 +447,7 @@ $T = '2026-03-23';
 $dave = ap_assign($pdo, $you, $ids['Dave'], '2026-03-02', 90);
 $ben = ap_assign($pdo, $you, $ids['Ben'], '2026-03-02', 90);
 $mp = ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $dave], $T)['plan'];
+check('init tells the page what kind of member is looking (for the "nothing set up" message)', ap_get($pdo, $you['id'], ['view' => 'init'], $T)['member_type'] === 'team');
 check('plan carries its end date (start + length - 1)', $mp['end_date'] === '2026-05-30');
 $n = ap_get($pdo, $you['id'], ['view' => 'nudge', 'plan' => $dave], $T)['nudge'];
 check('nudge: drafted message names them, week, percent and what is due', str_starts_with($n['text'], 'Hi Dave,') && str_contains($n['text'], 'week 4 of 13') && str_contains($n['text'], 'due about now'));
