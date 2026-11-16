@@ -381,7 +381,7 @@ function team_tree(PDO $pdo, array $map, array $viewer, bool $includeInactive): 
     foreach ($ids as $id) {
         $m = $map[$id];
         if (($m['member_type'] ?? 'team') !== 'team') {
-            continue;   // Admins and Testers are managed under Site Settings > Members & Access, not in the team tree
+            continue;   // Admins, Testers and Interns are managed under Site Settings > Members & Access, not in the team tree
         }
         if (!$m['is_active'] && !$includeInactive) {
             continue;

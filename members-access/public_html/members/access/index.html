@@ -58,7 +58,7 @@ button{font:inherit;color:inherit}
 .em{font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
 .meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
 .badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;letter-spacing:.01em}
-.badge.team{background:#E3EAEE;color:#24475A}.badge.admin{background:#EFE3DA;color:#7A4A24}.badge.tester{background:#E9E4F1;color:#523B7A}.badge.super{background:var(--slate);color:#fff}
+.badge.team{background:#E3EAEE;color:#24475A}.badge.admin{background:#EFE3DA;color:#7A4A24}.badge.tester{background:#E9E4F1;color:#523B7A}.badge.intern{background:#E1EFE6;color:#245C3A}.badge.super{background:var(--slate);color:#fff}
 .cnt{font-size:13px;color:var(--muted)}
 .flag{display:inline-block;margin-top:4px;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:8px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberline)}
 .empty{text-align:center;color:var(--muted);padding:34px 12px;background:#fff;border:1px dashed var(--line);border-radius:14px}
@@ -232,7 +232,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     var q = query.trim().toLowerCase();
     return D.people.filter(function (p) {
       if (filter === 'attention' && !needsAttention(p)) return false;
-      if (['team', 'admin', 'tester'].indexOf(filter) >= 0 && p.type !== filter) return false;
+      if (['team', 'admin', 'tester', 'intern'].indexOf(filter) >= 0 && p.type !== filter) return false;
       return !q || (p.name + ' ' + p.email).toLowerCase().indexOf(q) >= 0;
     });
   }
@@ -240,7 +240,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
     renderBanners();
     var app = $('app'); app.innerHTML = '';
     var counts = { all: D.people.length, attention: D.people.filter(needsAttention).length };
-    ['team', 'admin', 'tester'].forEach(function (t) { counts[t] = D.people.filter(function (p) { return p.type === t; }).length; });
+    ['team', 'admin', 'tester', 'intern'].forEach(function (t) { counts[t] = D.people.filter(function (p) { return p.type === t; }).length; });
 
     var search = el('input', { 'class': 'search', type: 'search', placeholder: 'Search name or email', 'aria-label': 'Search name or email', autocomplete: 'off', value: query });
     search.addEventListener('input', function () { query = search.value; renderBody(); });
@@ -253,7 +253,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
 
     if (view === 'person') {
       var chips = el('div', { 'class': 'chips', role: 'group', 'aria-label': 'Filter people', style: 'margin-top:12px' });
-      [['all', 'Everyone'], ['team', 'Team'], ['admin', 'Admin'], ['tester', 'Tester'], ['attention', 'Needs setup']].forEach(function (f) {
+      [['all', 'Everyone'], ['team', 'Team'], ['admin', 'Admin'], ['tester', 'Tester'], ['intern', 'Intern'], ['attention', 'Needs setup']].forEach(function (f) {
         if (f[0] === 'attention' && !counts.attention && filter !== 'attention') return;
         chips.appendChild(el('button', { type: 'button', 'class': 'chip', 'aria-pressed': String(filter === f[0]), onclick: function () { filter = f[0]; render(); } }, [f[1], el('span', { 'class': 'n', text: String(counts[f[0]]) })]));
       });
@@ -372,14 +372,14 @@ input[readonly]{background:var(--tile);color:var(--muted)}
       var nameIn = el('input', { type: 'text', id: 'pName', value: p.name, maxlength: '120', autocomplete: 'off' });
       var typeSel = null;
       var detailKids = [el('div', {}, [el('label', { 'class': 'f', 'for': 'pName', text: 'Name' }), nameIn])];
-      typeSel = el('select', { id: 'pType' }, ['team', 'admin', 'tester'].map(function (t) { return el('option', { value: t, selected: p.type === t, text: typeName(t) }); }));
+      typeSel = el('select', { id: 'pType' }, ['team', 'admin', 'tester', 'intern'].map(function (t) { return el('option', { value: t, selected: p.type === t, text: typeName(t) }); }));
       detailKids.push(el('div', {}, [el('label', { 'class': 'f', 'for': 'pType', text: 'Type' }), typeSel]));
       var save = el('button', { type: 'button', 'class': 'btn small', text: 'Save', onclick: function () {
         save.disabled = true;
         var payload = { action: 'update', id: p.id, name: nameIn.value }; if (typeSel) payload.type = typeSel.value;
         req('POST', payload).then(function (d) { take(d); toast('Saved.'); personDialog(p.email); }).catch(function (e) { save.disabled = false; err.textContent = e.message; err.hidden = false; });
       } });
-      body.appendChild(el('div', { 'class': 'sec' }, [el('div', { 'class': 'two' }, detailKids), el('p', { 'class': 'hint', text: 'Team member: in your team tree (rank and upline are on the Team page). Admin or Tester: outside the tree, only see their own data.' }), el('div', { style: 'margin-top:10px' }, [save]), err]));
+      body.appendChild(el('div', { 'class': 'sec' }, [el('div', { 'class': 'two' }, detailKids), el('p', { 'class': 'hint', text: 'Team member: in your team tree (rank and upline are on the Team page). Admin, Tester or Intern: outside the tree, only see their own data.' }), el('div', { style: 'margin-top:10px' }, [save]), err]));
 
       // tools
       var sum = el('div', { 'class': 'sum' });
@@ -482,7 +482,7 @@ input[readonly]{background:var(--tile);color:var(--muted)}
 
       var typeBox = el('div', { 'class': 'types', role: 'group', 'aria-label': 'Type' });
       var startBox = el('div', {});
-      var types = [['team', 'Team member', 'Your agents and leaders. Appears in the Team tree. Rank and upline are set on the Team page.'], ['admin', 'Admin', 'Staff with their own job, such as the agency report or monthly report. Not in your team tree.'], ['tester', 'Tester', 'Helping you test the system. Not in your team tree.']];
+      var types = [['team', 'Team member', 'Your agents and leaders. Appears in the Team tree. Rank and upline are set on the Team page.'], ['admin', 'Admin', 'Staff with their own job, such as the agency report or monthly report. Not in your team tree.'], ['tester', 'Tester', 'Helping you test the system. Not in your team tree.'], ['intern', 'Intern', 'On an internship. Not in your team tree. Starts with no tools: tick what they need.']];
       var drawTypes = function () {
         typeBox.innerHTML = '';
         types.forEach(function (t) {

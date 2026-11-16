@@ -83,7 +83,7 @@ function basic_keys(): array
     return array_values(array_map(static fn (array $t): string => $t['key'], array_filter(tool_catalog(), static fn (array $t): bool => $t['basic'])));
 }
 
-const MEMBER_TYPES = ['team' => 'Team member', 'admin' => 'Admin', 'tester' => 'Tester'];
+const MEMBER_TYPES = ['team' => 'Team member', 'admin' => 'Admin', 'tester' => 'Tester', 'intern' => 'Intern'];
 
 function member_type(array $m): string
 {

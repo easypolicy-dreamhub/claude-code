@@ -10,7 +10,7 @@ declare(strict_types=1);
  *   POST {action:'tool', id, tool, on}   switch one tool for one person
  *   POST {action:'tools', id, tools[]}   replace one person's tools
  *   POST {action:'suspend', id, on}      pause / resume someone completely (blocked everywhere, nothing deleted)
- *   POST {action:'remove', email}        Admin / Tester: off the site and Cloudflare, signed out
+ *   POST {action:'remove', email}        Admin / Tester / Intern: off the site and Cloudflare, signed out
  *   POST {action:'cf_add', email}        put someone already on this site onto Cloudflare
  */
 require_once __DIR__ . '/../../../private/bootstrap.php';

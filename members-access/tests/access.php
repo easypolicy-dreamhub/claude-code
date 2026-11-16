@@ -88,6 +88,21 @@ check('"copy from David" copies his ticks', tools_of($pdo, 'amy@x.com') === tool
 $ex = access_add($pdo, null, $you, ['email' => 'ex@x.com', 'name' => 'Ex', 'type' => 'tester', 'tools' => ['sum-assured', 'bogus']]);
 check('chosen tools are kept, junk dropped', tools_of($pdo, 'ex@x.com') === ['sum-assured']);
 
+echo "\nIntern (a fourth type, outside the tree)\n";
+$ivy = access_add($pdo, null, $you, ['email' => 'ivy@x.com', 'name' => 'Ivy', 'type' => 'intern']);
+$ivm = load_member_map($pdo)[(int)$pdo->query("SELECT id FROM members WHERE email = 'ivy@x.com'")->fetchColumn()];
+check('Intern: stored as intern, label "Intern"', member_type($ivm) === 'intern' && MEMBER_TYPES['intern'] === 'Intern');
+check('Intern starts with no tools', tools_of($pdo, 'ivy@x.com') === [] && default_tools_for('intern') === []);
+check('Intern is outside the team tree (no upline)', $ivm['upline_id'] === null);
+$ov = access_overview($pdo, null, load_member_map($pdo));
+$row = array_values(array_filter($ov['people'], fn ($r) => $r['email'] === 'ivy@x.com'))[0];
+check('Members & Access lists Intern with the right type, and the types list has it', $row['type'] === 'intern' && ($ov['types']['intern'] ?? '') === 'Intern');
+access_update($pdo, $you, $ivm['id'], ['type' => 'team']);
+check('Intern -> Team member puts them under the super admin', member_type(load_member_map($pdo)[$ivm['id']]) === 'team' && load_member_map($pdo)[$ivm['id']]['upline_id'] === $you['id']);
+access_update($pdo, $you, $ivm['id'], ['type' => 'intern']);
+check('Team member -> Intern works when nobody is under them', member_type(load_member_map($pdo)[$ivm['id']]) === 'intern');
+$pdo->exec("UPDATE members SET member_type = 'team' WHERE id = " . (int)$ivm['id']);
+
 echo "\nValidation\n";
 throws('duplicate email', 409, fn () => access_add($pdo, null, $you, ['email' => 'david@x.com', 'name' => 'D2', 'type' => 'team']));
 throws('your own email', 409, fn () => access_add($pdo, null, $you, ['email' => 'you@x.com', 'name' => 'Me', 'type' => 'team']));

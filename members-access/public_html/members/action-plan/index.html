@@ -617,7 +617,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   function assignDialog() {
     openDlg('Assign an Action Plan', function (b) {
       var list = (S.overview && S.overview.assignable) || S.init.assignable;
-      if (!list.length) { b.appendChild(el('p', { 'class': 'hint', text: 'Every active Team member already has a plan. (Admins and Testers do not get one.)' })); return; }
+      if (!list.length) { b.appendChild(el('p', { 'class': 'hint', text: 'Every active Team member already has a plan. (Admins, Testers and Interns do not get one.)' })); return; }
       var who = el('select', {}, list.map(function (m) { return el('option', { value: String(m.id), text: m.name }); }));
       var d = new Date(); var today = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
       var start = el('input', { type: 'text', value: today, inputmode: 'numeric', placeholder: 'dd/mm/yyyy' });

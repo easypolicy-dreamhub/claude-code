@@ -147,3 +147,15 @@ I have not seen the Client Portal's database, only how its pages use it. Countin
 1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase14.sql` > Go, **once** (adds two columns to `ap_plans`).
 2. **Extract the zip in your home folder** (overwrites the same-named files).
 3. Reload the Action Plan page.
+
+
+# Members & Access: a fourth type, Intern
+
+- **Intern** joins Team member, Admin and Tester. Like Admin and Tester, an Intern is **outside the team tree**: not on the Team page, not in Team Activity, no rank or upline, and **no Action Plan** (only Team members get one).
+- A new Intern starts with **no tools**: tick what they need under Members & Access. Everything else about types is unchanged (changing a type, pausing, removing, the Cloudflare sync).
+- Members & Access shows an **Intern** badge, an **Intern** filter chip with a count, and Intern in the Add person and type pickers.
+
+## Install
+1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase15.sql` > Go, **once**.
+2. **Extract the zip in your home folder** (overwrites the same-named files).
+3. Reload Members & Access.

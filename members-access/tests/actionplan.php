@@ -57,6 +57,9 @@ throws('not for the super admin', 422, fn () => ap_assign($pdo, $you, $you['id']
 $tester = create_member($pdo, $you['id'], ['email' => 't@x.com', 'name' => 'Tess', 'rank' => 'agent', 'referral_code' => 'tess']);
 $pdo->exec("UPDATE members SET member_type = 'tester' WHERE id = " . (int)$tester['id']);
 throws('not for a Tester or Admin', 422, fn () => ap_assign($pdo, $you, (int)$tester['id'], $T0, 90));
+$pdo->exec("UPDATE members SET member_type = 'intern' WHERE id = " . (int)$tester['id']);
+throws('not for an Intern either', 422, fn () => ap_assign($pdo, $you, (int)$tester['id'], $T0, 90));
+check('an Intern is not offered in the Assign list', !in_array('Tess', array_column(ap_assignable($pdo, load_member_map($pdo)), 'name'), true));
 throws('bad start date', 422, fn () => ap_assign($pdo, $you, $ids['Dave'], 'soon', 90));
 throws('plan length must be 30 to 365 days', 422, fn () => ap_assign($pdo, $you, $ids['Dave'], $T0, 10));
 check('assignable list: team members without a plan', array_column(ap_assignable($pdo, load_member_map($pdo)), 'name') === ['Ben', 'Cindy', 'Dave', 'Eve', 'Gm']);

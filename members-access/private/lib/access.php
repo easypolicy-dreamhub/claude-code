@@ -63,12 +63,12 @@ function access_clean_name(string $raw): string
 function access_clean_type(string $raw): string
 {
     if (!isset(MEMBER_TYPES[$raw])) {
-        throw new HttpError(422, 'Choose Team member, Admin or Tester.');
+        throw new HttpError(422, 'Choose Team member, Admin, Tester or Intern.');
     }
     return $raw;
 }
 
-/** The tools a new person starts with: a Team member gets the basic set, an Admin or Tester gets nothing. */
+/** The tools a new person starts with: a Team member gets the basic set; an Admin, Tester or Intern gets nothing (tick what they need). */
 function default_tools_for(string $type): array
 {
     return $type === 'team' ? basic_keys() : [];
@@ -225,8 +225,8 @@ function access_add(PDO $pdo, ?CfPolicy $cf, array $actor, array $in): array
 }
 
 /**
- * Change the name and/or the type. Team member -> Admin/Tester takes them out of the team tree (only allowed when
- * nobody active is under them); Admin/Tester -> Team member puts them directly under the super admin.
+ * Change the name and/or the type. Team member -> Admin/Tester/Intern takes them out of the team tree (only allowed when
+ * nobody active is under them); Admin/Tester/Intern -> Team member puts them directly under the super admin.
  */
 function access_update(PDO $pdo, array $actor, int $id, array $in): void
 {
@@ -308,7 +308,7 @@ function access_set_tools(PDO $pdo, array $actor, int $id, array $keys): array
 }
 
 /**
- * Remove an Admin / Tester (or an email that is only on Cloudflare): blocked on the site at once, then taken off
+ * Remove an Admin / Tester / Intern (or an email that is only on Cloudflare): blocked on the site at once, then taken off
  * Cloudflare and signed out. Team members are removed on the Team page, which also handles their team and candidates.
  */
 function access_remove(PDO $pdo, ?CfPolicy $cf, array $actor, string $emailRaw): array
