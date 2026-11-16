@@ -74,6 +74,15 @@ textarea{width:100%;border:1px solid var(--app-line);border-radius:8px;padding:9
 .mapa-tbl .sub.r{color:var(--app-muted)}
 .mapa-tbl .tot{font-weight:700}
 .mk{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--app-chip);font:700 12px Poppins,sans-serif;margin-right:8px;vertical-align:middle}
+.draft{border:1px solid var(--app-line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--app-bg)}
+.draft.cur{border:2px solid var(--app-accent);background:var(--app-surface)}
+.draft.open{border-color:var(--app-accent)}
+.draft .dn{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.draft .dn input{flex:1;min-width:0;border:1px solid var(--app-line);border-radius:8px;padding:6px 8px;background:var(--app-surface)}
+.draft .dm{font-size:12.5px;color:var(--app-muted);margin-top:2px}
+.tag-open{font-size:11px;font-weight:700;color:var(--app-accent);border:1.5px solid var(--app-accent);border-radius:999px;padding:0 8px}
+.warnTxt{color:var(--app-warn);font-weight:600}
+.badTxt{color:var(--app-bad);font-weight:600}
 .mapa-chain{margin:10px 0 0;font-size:13.5px;line-height:1.45;color:var(--app-muted)}
 .mapa-chain b{color:var(--app-ink)}
 .checks{list-style:none;margin:0;padding:0}
@@ -337,6 +346,7 @@ table.rank tr.gap td{background:none;padding:0;height:8px;color:var(--muted);tex
     </div>
 
     <section class="tabpane on" id="tab-data">
+      <div class="group" id="draftGroup"></div>
       <div class="group">
         <h2>This month’s files</h2>
         <label class="drop" id="dropXlsx"><span class="ic">X</span><div><b>Production report (Excel)</b><span id="xlsxStatus">The agency ranking workbook from your admin</span></div><input type="file" id="fileXlsx" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"></label>
@@ -589,8 +599,9 @@ S.awards.forEach(w=>{if(/^MDRT$/i.test(String(w.name).trim())&&(w.min===''||w.mi
 const catImgs={};
 const photos=new Map(); // key -> record
 let celebImg=null;
+let curDraft=null,draftBase=null,draftShown='';
 function load(){try{const s=JSON.parse(localStorage.getItem(LS_KEY)||'null');if(s)return Object.assign(structuredClone(DEFAULT_SETTINGS),s,{ov:Object.assign({},DEFAULT_SETTINGS.ov,s.ov||{})});}catch(e){}return structuredClone(DEFAULT_SETTINGS);}
-function save(){try{S._excel=excel;S._pdf=pdfData;S._rec=recData;localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
+function save(){S._excel=excel;S._pdf=pdfData;S._rec=recData;let j=null;try{j=JSON.stringify(S);localStorage.setItem(LS_KEY,j);}catch(e){}if(j!==null)onStateSaved(j);}
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -1388,6 +1399,133 @@ async function exportPDF(){
 }
 $('#btnPrint').addEventListener('click',exportPDF);
 
+/* ---------- drafts: saved on the portal by drafts.php, shared by every signed-in editor ---------- */
+const DAPI='drafts.php';
+const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your email is not on the allowed list for drafts.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'There are too many drafts. Delete some old ones first.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
+let DRAFTS={ok:false,note:'Checking…',list:[],user:''};
+async function dapi(action,body,qs){
+  const opt=body?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'fetch'},body:JSON.stringify(body)}:{credentials:'same-origin',headers:{'X-Requested-With':'fetch'}};
+  const r=await fetch(`${DAPI}?action=${action}${qs||''}`,opt);let j=null;try{j=await r.json();}catch(e){}
+  if(!r.ok||!j){const err=new Error((j&&j.error)||('http '+r.status));err.status=r.status;err.code=j&&j.error;err.data=j;throw err;}return j;
+}
+function stateJSON(){S._excel=excel;S._pdf=pdfData;S._rec=recData;return JSON.stringify(S);}
+function draftInfo(){const m=reportMonth();return{month:m||0,year:m?reportYear():0,agency:S.agency};}
+function draftDefaultName(){const m=reportMonth();return m?`${S.agency} ${MONTH_NAMES[m-1].slice(0,3)} ${reportYear()}`:`${S.agency} draft`;}
+function fmtWhen(ms){try{return new Date(ms).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return'';}}
+function shortUser(e){return String(e||'').split('@')[0];}
+function draftNote(text,bad){const el=$('#draftMsg');if(el){el.innerHTML=text?`<span class="${bad?'badTxt':'warnTxt'}">${esc(text)}</span>`:'';}}
+function draftError(e,what){
+  if(e.code==='conflict'){draftNote(`${shortUser(e.data&&e.data.by)||'Someone else'} saved this draft after you opened it. Use Save as new draft to keep your version, or Reload to take theirs.`,true);return;}
+  let m=DRAFT_ERR[e.code];
+  if(!m&&(e.status===401||e.status===403))m=DRAFT_ERR.not_signed_in;
+  if(!m&&e.status===404)m=what==='open'?'That draft no longer exists. It may have been deleted.':'drafts.php was not found on your portal.';
+  if(!m)m='Couldn’t reach the drafts on your portal. Check your connection, or the draft may be too large for the server.';
+  draftNote(m,true);toast(m);
+}
+async function refreshDrafts(){
+  try{const r=await dapi('list');DRAFTS={ok:true,note:'',list:r.drafts||[],user:r.user||''};}
+  catch(e){
+    let n=DRAFT_ERR[e.code];
+    if(!n&&(e.status===401||e.status===403))n=DRAFT_ERR.not_signed_in;
+    if(!n&&e.status===404)n='Drafts need drafts.php in the agency-report folder on your portal, next to index.html and photos.php.';
+    if(!n)n='Couldn’t reach the drafts on your portal. Check your connection and try again.';
+    DRAFTS={ok:false,note:n,list:[],user:''};
+  }
+  renderDrafts();
+}
+function draftRow(d){
+  const cur=curDraft&&curDraft.id===d.id;
+  const what=d.month?`${MONTH_NAMES[d.month-1].slice(0,3)} ${d.year||''}${d.agency?' · '+esc(d.agency):''} · `:'';
+  return `<div class="draft${cur?' open':''}" data-did="${esc(d.id)}"><div class="dn"><b>${esc(d.name)}</b>${cur?' <span class="tag-open">open</span>':''}</div>
+    <div class="dm">${what}saved ${esc(fmtWhen(d.updated))} by ${esc(shortUser(d.by))}</div>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-dact="open">${cur?'Reload':'Open'}</button><button class="btn small" data-dact="rename">Rename</button><button class="btn small" data-dact="delete">Delete</button></div></div>`;
+}
+function renderDrafts(){
+  const g=$('#draftGroup');if(!g)return;
+  if(!DRAFTS.ok){g.innerHTML=`<h2>Drafts</h2><p class="hint">${esc(DRAFTS.note||'Checking…')}</p>${DRAFTS.note&&DRAFTS.note!=='Checking…'?'<button class="btn small" id="draftRetry">Try again</button>':''}`;return;}
+  const keep=$('#draftName')?$('#draftName').value:'',msg=$('#draftMsg')?$('#draftMsg').innerHTML:'';
+  g.innerHTML=`<h2>Drafts</h2>
+    <p class="hint">Saved on your portal, so you and your admin can open the same report from any device. Photos are shared separately in the photo library.</p>
+    <div id="draftCur"></div>
+    <div class="newc"><input id="draftName" placeholder="${esc(draftDefaultName())}" aria-label="Draft name" maxlength="80"><button class="btn small primary" id="draftSaveNew">Save as new draft</button></div>
+    <p class="hint" id="draftMsg">${msg}</p>
+    <div id="draftList">${DRAFTS.list.length?DRAFTS.list.map(draftRow).join(''):'<p class="hint">No drafts yet. Load this month’s files, then save one.</p>'}</div>`;
+  if(keep)$('#draftName').value=keep;
+  draftShown='';updateDraftBar();
+}
+function draftDirty(j){return !!curDraft&&draftBase!==null&&(j||stateJSON())!==draftBase;}
+function updateDraftBar(j){
+  const el=$('#draftCur');if(!el)return;
+  if(!curDraft){el.innerHTML='';draftShown='';return;}
+  const dirty=draftDirty(j),key=curDraft.id+'|'+curDraft.updated+'|'+curDraft.name+'|'+dirty;
+  if(key===draftShown)return;draftShown=key;
+  el.innerHTML=`<div class="draft cur"><div class="dn">Working on <b>${esc(curDraft.name)}</b></div>
+    <div class="dm">${dirty?'<span class="warnTxt">Unsaved changes</span>':'All changes saved'} · last saved ${esc(fmtWhen(curDraft.updated))} by ${esc(shortUser(curDraft.by))}</div>
+    <div class="row" style="margin-top:8px"><button class="btn small primary" id="draftSave" ${dirty?'':'disabled'}>Save changes</button><button class="btn small" id="draftClose">Close draft</button></div></div>`;
+}
+function onStateSaved(j){if(curDraft&&draftBase!==null)updateDraftBar(j);}
+function applyState(s){
+  S=Object.assign(structuredClone(DEFAULT_SETTINGS),s,{ov:Object.assign({},DEFAULT_SETTINGS.ov,s.ov||{})});
+  excel=S._excel||null;pdfData=S._pdf||null;recData=S._rec||null;
+  if(!S.awards)S.awards=structuredClone(DEFAULT_SETTINGS.awards);
+  renderAll();save();
+}
+/* A button that needs a second tap, because pop-up confirmations are not always shown. */
+function armed(btn,label){
+  if(btn.dataset.armed)return true;
+  btn.dataset.armed='1';const old=btn.textContent;btn.textContent=label;
+  setTimeout(()=>{if(btn.isConnected&&btn.dataset.armed){delete btn.dataset.armed;btn.textContent=old;}},4000);
+  return false;
+}
+async function saveDraftNew(){
+  const btn=$('#draftSaveNew');if(btn)btn.disabled=true;draftNote('');
+  const name=($('#draftName').value.trim()||draftDefaultName()),payload=stateJSON();
+  try{const r=await dapi('save',{name,payload,info:draftInfo()});curDraft=r.saved;draftBase=payload;toast('Draft saved');await refreshDrafts();$('#draftName').value='';}
+  catch(e){draftError(e);}
+  const b=$('#draftSaveNew');if(b)b.disabled=false;
+}
+async function saveDraftChanges(){
+  if(!curDraft)return;const btn=$('#draftSave');if(btn)btn.disabled=true;draftNote('');
+  const payload=stateJSON();
+  try{const r=await dapi('save',{id:curDraft.id,name:curDraft.name,payload,expect:curDraft.updated,info:draftInfo()});curDraft=r.saved;draftBase=payload;toast('Draft saved');await refreshDrafts();}
+  catch(e){draftError(e);draftShown='';updateDraftBar();}
+}
+async function openDraft(id){
+  draftNote('');
+  try{
+    const r=await dapi('get',null,'&id='+encodeURIComponent(id));
+    const s=JSON.parse(r.payload);
+    curDraft={id:r.id,name:r.name,updated:r.updated,by:r.by};draftBase=null;
+    applyState(s);draftBase=stateJSON();
+    toast('Draft opened');await refreshDrafts();
+  }catch(e){draftError(e,'open');}
+}
+$('#draftGroup').addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.id==='draftRetry'){DRAFTS.note='Checking…';renderDrafts();refreshDrafts();return;}
+  if(t.id==='draftSaveNew'){saveDraftNew();return;}
+  if(t.id==='draftSave'){saveDraftChanges();return;}
+  if(t.id==='draftClose'){curDraft=null;draftBase=null;renderDrafts();return;}
+  const row=t.closest('[data-did]'),act=t.dataset.dact;if(!row||!act)return;
+  const id=row.dataset.did,d=DRAFTS.list.find(x=>x.id===id);
+  if(act==='open'){
+    const unsaved=curDraft?draftDirty():!!(excel||pdfData||recData);
+    if(unsaved&&!armed(t,'Tap again to replace current work'))return;
+    openDraft(id);
+  }else if(act==='rename'){
+    row.querySelector('.dn').innerHTML=`<input class="rn" value="${esc(d?d.name:'')}" maxlength="80" aria-label="New name"><button class="btn small primary" data-dact="renamesave">Save</button>`;
+    row.querySelector('.rn').focus();
+  }else if(act==='renamesave'){
+    const name=row.querySelector('.rn').value.trim();if(!name)return;
+    try{await dapi('rename',{id,name});if(curDraft&&curDraft.id===id)curDraft.name=name;toast('Draft renamed');await refreshDrafts();}catch(err){draftError(err);}
+  }else if(act==='delete'){
+    if(!armed(t,'Tap again to delete'))return;
+    try{await dapi('delete',{id});if(curDraft&&curDraft.id===id){curDraft=null;draftBase=null;}toast('Draft deleted');await refreshDrafts();}catch(err){draftError(err);}
+  }
+});
+$('#draftGroup').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('rn')){e.preventDefault();e.target.closest('.draft').querySelector('[data-dact="renamesave"]').click();}
+  else if(e.key==='Enter'&&e.target.id==='draftName'){e.preventDefault();saveDraftNew();}});
+
 /* ---------- init ---------- */
 function placeRec(r){if(r.key==='__celeb')celebImg=r.out;else if(r.key.startsWith('__cat_'))catImgs[r.key.slice(6)]=r.out;else photos.set(r.key,r);}
 function libStatus(local){
@@ -1400,7 +1538,7 @@ function libStatus(local){
   if(SERVER&&extra.length){mg.textContent=`Copy ${extra.length} photo${extra.length===1?'':'s'} from this device to the shared library`;mg.onclick=async()=>{mg.disabled=true;let n=0;for(const r of extra){mg.textContent=`Copying ${++n} of ${extra.length}…`;photos.set(r.key,r);await storeRec(r);}toast(`${n} photos copied to the shared library`);mg.hidden=true;mg.disabled=false;renderAll();};}
 }
 (async()=>{
-  renderAll();
+  renderAll();renderDrafts();
   let local=[];
   try{
     const r=await api('list');SERVER=true;
@@ -1412,7 +1550,7 @@ function libStatus(local){
     else if(e.status===401||e.status===403)serverNote='The shared library didn’t accept this sign-in, so photos are kept on this device for now. Try signing out of the members area and in again.';
     const all=await idbAll();all.forEach(placeRec);
   }
-  renderAll();libStatus(local);
+  renderAll();libStatus(local);refreshDrafts();
 })();
 </script>
 <script id="e3-tabfix">
