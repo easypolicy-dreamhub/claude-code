@@ -134,3 +134,21 @@ Source: GitHub `easypolicy-dreamhub/claude-code`, working branch `claude/youthfu
 - They notice logic gaps quickly (the DISC check, the leader seeing their own Client Portal button, the preview that opened the leader's tool). Before delivering, check every button and caption per viewer: agent, leader viewing an agent, team admin, buddy.
 - Their screenshots are the main feedback channel; the answer to "something looks off" is usually a screenshot request.
 - They prefer a recommendation to a list of options.
+
+## 9. Business rules stated by the owner (must be respected by future work)
+
+Stated 16 Nov 2026. These apply to the whole members system, not only the Action Plan.
+
+Ranks and structure
+- The career path is **agent -> unit manager -> group manager**. A group manager must have at least one unit manager in their team. The owner is currently a **Unit Manager**; there is **no Group Manager in the team yet**. The owner expects their (about four) unit managers to be promoted to group manager, sooner or later.
+- In the system, **Team admin** needs rank Group Manager plus the Team admin switch (`is_team_admin()` in `private/lib/team.php`). A Unit Manager cannot be a team admin today, so a Unit Manager who recruits agents cannot see their Action Plans unless the coach feature (below) or a rule for unit managers is built.
+- **Intern** is a fourth member type (outside the team tree, no tools to start, no Action Plan). The owner is building a separate internship program (90-day style) in another chat; it should use `member_type = 'intern'`.
+
+Group privacy (NOT built yet; must not be broken, and must be designed before it happens)
+- When a unit manager is promoted to group manager, the owner will offer them a choice: stay in the owner's system and use the owner's toolkits, **on their own**. If they stay, **the owner (super admin) must never see their team's information any more**, out of respect for the group's privacy.
+- Today the super admin sees everything (`ap_scope()` returns "everyone" for the super admin; the Team page, Team Activity and the Action Plan lists all work that way). Any new feature must go through one central scope function so an "independent group" can be excluded later. The exact meaning of "team information" still needs the owner's answers (see below).
+- Open questions for when it is built: (a) does it hide names and emails in Members & Access, or only team data (tree, activity, candidates, Action Plans, Client Portal numbers)? (b) who adds and removes the independent group's people on the Cloudflare policy (today one policy, owned by the owner)? (c) does the independent group get its own Action Plan template? (d) can the owner still pause or switch tools for the group manager personally?
+
+Action Plan coach decisions so far (coach feature NOT built yet)
+- One coach per plan (not per phase). Default coach = the person's **upline** (the introducer; there is no separate introducer field). If the upline is the owner, the owner is shown as the coach (permissions are unchanged because the super admin can already do everything). The agent sees "Your coach: <name>". The coach sees only the plans they coach and cannot adjust items, DISC, private number, buddy or close a plan.
+- Undecided: whether unit managers and above should automatically see every plan below them (Action Plan only), and whether existing plans get their coach filled in from the upline.
