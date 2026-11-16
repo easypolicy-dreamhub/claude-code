@@ -443,6 +443,7 @@ exec('rm -rf ' . escapeshellarg($bridgeDir));
 
 echo "\nStep 3: WhatsApp nudge, buddy, review data\n";
 [$pdo, $you, $ids] = ap_world();
+ap_auto_reset();
 $T = '2026-03-23';
 $dave = ap_assign($pdo, $you, $ids['Dave'], '2026-03-02', 90);
 $ben = ap_assign($pdo, $you, $ids['Ben'], '2026-03-02', 90);
@@ -493,6 +494,91 @@ check('buddy cleared: no buddy, the old buddy sees nobody', $ap['buddy'] === nul
 ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $dave, 'buddy_id' => $ids['Cindy']], $T);
 ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $dave, 'closed' => true], $T);
 check('a closed plan drops out of the buddy list', ap_get($pdo, $ids['Cindy'], ['view' => 'buddy'], $T)['people'] === []);
+
+echo "\nCoach: one per plan, a Unit Manager or above\n";
+[$pdo, $you, $ids] = ap_world();
+ap_auto_reset();   // the automatic counts are cached per plan number; this is a new world
+$T = '2026-03-23';
+$mk = fn (string $n, string $rank, int $up) => create_member($pdo, $you['id'], ['email' => strtolower($n) . '@x.com', 'name' => $n, 'rank' => $rank, 'upline_id' => $up, 'referral_code' => 'r-' . strtolower($n)])['id'];
+$ids['Zed'] = $mk('Zed', 'agent', $ids['Eve']);       // recruited by Eve (a Unit Manager)
+$ids['Yan'] = $mk('Yan', 'agent', $ids['Zed']);       // recruited by Zed (an agent) under Eve
+$map = load_member_map($pdo);
+check('default coach: introducer is a Unit Manager -> that Unit Manager', ap_default_coach($map, $ids['Zed']) === $ids['Eve']);
+check('default coach: introducer is a plain agent -> nearest Unit Manager above them', ap_default_coach($map, $ids['Yan']) === $ids['Eve']);
+check('default coach: introducer is the super admin -> the super admin', ap_default_coach($map, $ids['Ben']) === $you['id']);
+check('default coach: introducer is a Group Manager (team admin) -> that Group Manager', ap_default_coach($map, $ids['Dave']) === $ids['Gm']);
+check('who can coach: Unit Manager, Group Manager and the super admin; not a plain agent', ap_coach_eligible($map[$ids['Eve']]) && ap_coach_eligible($map[$ids['Gm']]) && ap_coach_eligible($map[$you['id']]) && !ap_coach_eligible($map[$ids['Zed']]));
+$pdo->exec("UPDATE members SET member_type = 'tester' WHERE id = " . (int)$ids['Eve']);
+check('...and not an Admin, Tester or Intern', !ap_coach_eligible(load_member_map($pdo)[$ids['Eve']]));
+$pdo->exec("UPDATE members SET member_type = 'team' WHERE id = " . (int)$ids['Eve']);
+check('the coach dropdown lists exactly those people', array_column(ap_coach_options(load_member_map($pdo)), 'name') === ['Eve', 'Gm', 'You']);
+
+$zed = ap_assign($pdo, $you, $ids['Zed'], '2026-03-02', 90);
+$yan = ap_assign($pdo, $you, $ids['Yan'], '2026-03-02', 90);
+$ben = ap_assign($pdo, $you, $ids['Ben'], '2026-03-02', 90);
+$dave = ap_assign($pdo, $you, $ids['Dave'], '2026-03-02', 90);
+$pz = ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $zed], $T)['plan'];
+check('assigning sets the default coach (Eve) and the plan shows it', $pz['coach']['name'] === 'Eve' && $pz['coach_invalid'] === false);
+check('...the Action Plan card is switched on for the coach', in_array('action-plan', ticked_tools($pdo, $ids['Eve']), true));
+check('the super admin as default coach: no card to switch on, plan shows "You"', ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $ben], $T)['plan']['coach']['name'] === 'You');
+check('the agent sees who their coach is', ap_get($pdo, $ids['Zed'], ['view' => 'me'], $T)['plan']['coach']['name'] === 'Eve' && !array_key_exists('coach_invalid', ap_get($pdo, $ids['Zed'], ['view' => 'me'], $T)['plan']));
+
+$init = ap_get($pdo, $ids['Eve'], ['view' => 'init'], $T);
+check('a coach (not a team admin) is an approver for the plans they coach', $init['role'] === 'approver' && $init['is_team_admin'] === false && $init['coach_count'] === 2 && $init['coach_options'] === []);
+$names = array_column(ap_get($pdo, $ids['Eve'], ['view' => 'overview'], $T)['plans'], 'name');
+sort($names);
+check('...and sees only the plans they coach (Zed and Yan), nobody else', $names === ['Yan', 'Zed']);
+throws('...not another plan', 403, fn () => ap_get($pdo, $ids['Eve'], ['view' => 'person', 'plan' => $ben], $T));
+$zt = ap_find(ap_get($pdo, $ids['Zed'], ['view' => 'me'], $T)['plan'], 'Family Visit');
+ap_post($pdo, $ids['Zed'], ['action' => 'tick', 'item' => $zt['id']], $T);
+check('the coach sees it waiting for approval', in_array('Family Visit', array_column(ap_get($pdo, $ids['Eve'], ['view' => 'approvals'], $T)['approvals'], 'title'), true));
+$r = ap_post($pdo, $ids['Eve'], ['action' => 'approve', 'plan' => $zed, 'item' => $zt['id']], $T)['plan'];
+check('the coach can approve', ap_find($r, 'Family Visit')['status'] === 'done');
+ap_post($pdo, $ids['Eve'], ['action' => 'sendback', 'plan' => $zed, 'item' => $zt['id'], 'note' => 'again'], $T);
+check('...send back, and the agent sees the note', ap_find(ap_get($pdo, $ids['Zed'], ['view' => 'me'], $T)['plan'], 'Family Visit')['note'] === 'again');
+check('...and nudge', ap_get($pdo, $ids['Eve'], ['view' => 'nudge', 'plan' => $zed], $T)['nudge']['name'] === 'Zed');
+check('the coach sees the whole plan: label, notes, no private number', isset($pz['label']) && !array_key_exists('private_number', ap_get($pdo, $ids['Eve'], ['view' => 'person', 'plan' => $zed], $T)['plan']));
+throws('the coach cannot approve on a plan they do not coach', 403, fn () => ap_post($pdo, $ids['Eve'], ['action' => 'approve', 'plan' => $ben, 'item' => 1], $T));
+throws('the coach cannot change plan settings', 403, fn () => ap_post($pdo, $ids['Eve'], ['action' => 'plan_update', 'plan' => $zed, 'length_days' => 120], $T));
+throws('...nor assign, adjust or add extras', 403, fn () => ap_post($pdo, $ids['Eve'], ['action' => 'assign', 'member_id' => $ids['Ben'], 'start_date' => '02/03/2026', 'length_days' => 90], $T));
+throws('...nor change the coach', 403, fn () => ap_post($pdo, $ids['Eve'], ['action' => 'plan_update', 'plan' => $zed, 'coach_id' => $ids['Eve']], $T));
+throws('...nor open the template', 403, fn () => ap_get($pdo, $ids['Eve'], ['view' => 'template'], $T));
+check('the super admin can approve on a coached plan too (either one is enough)', ap_post($pdo, $you['id'], ['action' => 'approve', 'plan' => $zed, 'item' => $zt['id']], $T)['plan'] !== null);
+
+echo "\n";
+throws('a plain agent cannot be picked as coach', 422, fn () => ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $yan, 'coach_id' => $ids['Zed']], $T));
+throws('...nor the person themselves', 422, fn () => ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $zed, 'coach_id' => $ids['Eve'] + 0 === $ids['Zed'] ? 0 : $ids['Zed']], $T));
+$r = ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $yan, 'coach_id' => $ids['Gm']], $T)['plan'];
+check('the super admin can pick another coach (a Group Manager)', $r['coach']['name'] === 'Gm' && in_array('action-plan', ticked_tools($pdo, $ids['Gm']), true));
+check('...the old coach no longer sees that plan', !in_array('Yan', array_column(ap_get($pdo, $ids['Eve'], ['view' => 'overview'], $T)['plans'], 'name'), true));
+$gn = array_column(ap_get($pdo, $ids['Gm'], ['view' => 'overview'], $T)['plans'], 'name');
+sort($gn);
+check('a team admin who also coaches sees their whole downline plus the plan they coach', $gn === ['Dave', 'Yan']);
+$r = ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $yan, 'coach_id' => ''], $T)['plan'];
+check('"No coach" is allowed', $r['coach'] === null && !in_array('Yan', array_column(ap_get($pdo, $ids['Gm'], ['view' => 'overview'], $T)['plans'], 'name'), true));
+$pdo->exec('UPDATE ap_plans SET closed = 1 WHERE id = ' . (int)$ben);
+ap_post($pdo, $you['id'], ['action' => 'plan_update', 'plan' => $ben, 'coach_id' => $ids['Gm']], $T);
+$ben2 = ap_assign($pdo, $you, $ids['Ben'], '2026-03-02', 90);
+check('assigning again (reopening) keeps the coach already on the plan', ap_get($pdo, $you['id'], ['view' => 'person', 'plan' => $ben], $T)['plan']['coach']['name'] === 'Gm');
+
+echo "\n";
+$pdo->exec("UPDATE members SET rank_label = 'agent' WHERE id = " . (int)$ids['Eve']);
+check('a coach demoted below Unit Manager stops coaching (no access)', ap_get($pdo, $ids['Eve'], ['view' => 'init'], $T)['role'] === 'agent' && ap_coached_ids($pdo, load_member_map($pdo), $ids['Eve']) === []);
+$ov = ap_get($pdo, $you['id'], ['view' => 'overview'], $T)['plans'];
+check('...and the super admin is warned on that plan', array_values(array_filter($ov, fn ($r) => $r['name'] === 'Zed'))[0]['coach_invalid'] === true);
+$pdo->exec("UPDATE members SET rank_label = 'unit_manager' WHERE id = " . (int)$ids['Eve']);
+check('promoted back: coaching resumes', ap_get($pdo, $ids['Eve'], ['view' => 'init'], $T)['coach_count'] === 1);
+$pdo->exec("UPDATE ap_plans SET closed = 1 WHERE id = " . (int)$zed);
+check('a closed plan is no longer coached', ap_get($pdo, $ids['Eve'], ['view' => 'init'], $T)['coach_count'] === 0);
+$pdo->exec("UPDATE ap_plans SET closed = 0 WHERE id = " . (int)$zed);
+
+echo "\n";
+$pdo->exec("UPDATE ap_plans SET coach_id = NULL, coach_set = 0 WHERE id = " . (int)$dave);
+ap_get($pdo, $ids['Dave'], ['view' => 'init'], $T);
+$row = $pdo->query('SELECT coach_id, coach_set FROM ap_plans WHERE id = ' . (int)$dave)->fetch();
+check('plans from before coaches existed get their default coach the first time the page opens', (int)$row['coach_id'] === $ids['Gm'] && (int)$row['coach_set'] === 1);
+check('...and it is written to the audit log', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action = 'ap.coach_default'")->fetchColumn() >= 1);
+check('the assign list carries each person\'s default coach for the dropdown', array_values(array_filter(ap_assignable($pdo, load_member_map($pdo)), fn ($a) => $a['name'] === 'Cindy'))[0]['default_coach'] === $ids['Gm']);
 
 echo "\nThe audit log\n";
 check('actions are recorded', (int)$pdo->query("SELECT COUNT(*) FROM audit_log WHERE action LIKE 'ap.%'")->fetchColumn() > 5);

@@ -159,3 +159,20 @@ I have not seen the Client Portal's database, only how its pages use it. Countin
 1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase15.sql` > Go, **once**.
 2. **Extract the zip in your home folder** (overwrites the same-named files).
 3. Reload Members & Access.
+
+
+# Action Plan: a coach for every plan
+
+- **One coach per plan.** Only a **Unit Manager or above** (or the super admin) can be a coach; not a plain agent, Admin, Tester or Intern.
+- **Default coach** = the nearest Unit Manager or above, going up from the person's upline (the introducer); if there is none, the super admin. Pre-filled in the Assign box. You can change it any time in Plan settings > Coach, or choose "No coach".
+- **What a coach can do:** see the whole plan of each person they coach (labels, notes, DISC hint), approve, send back, ask them to do something, reopen, nudge on WhatsApp, print the Day-90 review. **Only those plans.** A coach cannot change plan settings, assign, adjust or add extras, set DISC, the private number, the buddy or the coach, close a plan, or open the Template. A coach never approves their own plan.
+- **Who can approve a plan:** the super admin, its coach, and a Group Manager above who is a team admin. Any one of them is enough.
+- **The agent sees** "Your coach: <name>." Nobody is told when they are made a coach. The Action Plan card is switched on for a coach automatically.
+- **Existing plans** get their default coach the first time the Action Plan page opens after the update.
+- **If a coach stops being eligible** (demoted below Unit Manager, paused or removed), their coaching access stops at once and the plan shows a warning on Everyone; choose another coach in Plan settings.
+- **Everyone tab, for a coach who is not a team admin,** is called **People I coach**. Your own plan view has a third switch, **What <coach> sees** (read-only).
+
+## Install
+1. **Database:** phpMyAdmin > SQL tab > paste `private/schema_phase16.sql` > Go, **once** (adds `coach_id` and `coach_set` to `ap_plans`).
+2. **Extract the zip in your home folder** (overwrites the same-named files).
+3. Reload the Action Plan page.

@@ -100,18 +100,130 @@ function ap_now(): string
     return gmdate('Y-m-d H:i:s');
 }
 
-function ap_role(array $viewer): string
+function ap_role(array $viewer, array $coached = []): string
 {
-    return tool_is_super($viewer) ? 'super' : (is_team_admin($viewer) ? 'approver' : 'agent');
+    return tool_is_super($viewer) ? 'super' : (is_team_admin($viewer) || $coached ? 'approver' : 'agent');
 }
 
 /** Member ids an approver may act on: null = everyone (super admin), otherwise the people below them. */
-function ap_scope(array $map, array $viewer): ?array
+function ap_scope(array $map, array $viewer, array $coached = []): ?array
 {
     if (tool_is_super($viewer)) {
         return null;
     }
-    return is_team_admin($viewer) ? downline_ids($map, (int)$viewer['id']) : [];
+    // a team admin sees everyone below them; a coach also sees the plans they coach (whoever they are)
+    return array_values(array_unique(array_merge(is_team_admin($viewer) ? downline_ids($map, (int)$viewer['id']) : [], $coached)));
+}
+
+/* ---------- coaches ---------- */
+
+/** Who can coach: the super admin, or an active Team member who is a Unit Manager or higher. (A plain agent cannot; nor an Admin, Tester or Intern.) */
+function ap_coach_eligible(array $m): bool
+{
+    if (empty($m['is_active'])) {
+        return false;
+    }
+    return tool_is_super($m) || (member_type($m) === 'team' && rank_level((string)$m['rank_label']) >= RANK_LEVEL['unit_manager']);
+}
+
+/** The default coach: the nearest Unit Manager or above going up from the person's upline (the introducer); if there is none, the super admin. */
+function ap_default_coach(array $map, int $memberId): ?int
+{
+    $m = $map[$memberId] ?? null;
+    if ($m === null) {
+        return null;
+    }
+    $up = $m['upline_id'] === null ? null : (int)$m['upline_id'];
+    $found = nearest_leader($map, $up, RANK_LEVEL['unit_manager']);
+    if ($found !== null && isset($map[$found]) && ap_coach_eligible($map[$found])) {
+        return $found;
+    }
+    foreach ($map as $x) {
+        if (tool_is_super($x)) {
+            return (int)$x['id'];
+        }
+    }
+    return null;
+}
+
+/** The people who can be picked as coach, for the dropdowns. */
+function ap_coach_options(array $map): array
+{
+    $out = [];
+    foreach ($map as $m) {
+        if (ap_coach_eligible($m)) {
+            $out[] = ['id' => (int)$m['id'], 'name' => $m['name'], 'rank' => tool_is_super($m) ? 'Super admin' : (RANK_LABEL[$m['rank_label']] ?? '')];
+        }
+    }
+    usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+    return $out;
+}
+
+/** Member ids of the open plans this person coaches (only while they are still eligible to coach). */
+function ap_coached_ids(PDO $pdo, array $map, int $coachId): array
+{
+    if (!isset($map[$coachId]) || !ap_coach_eligible($map[$coachId])) {
+        return [];
+    }
+    try {
+        $st = $pdo->prepare('SELECT member_id FROM ap_plans WHERE coach_id = ? AND closed = 0');
+        $st->execute([$coachId]);
+        $rows = $st->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Throwable $e) {   // schema_phase16.sql has not been run yet
+        return [];
+    }
+    $out = [];
+    foreach ($rows as $mid) {
+        if (isset($map[(int)$mid]) && $map[(int)$mid]['is_active'] && (int)$mid !== $coachId) {
+            $out[] = (int)$mid;
+        }
+    }
+    return $out;
+}
+
+/** Validate a coach choice for a plan: null = none; otherwise an eligible person who is not the plan's own member. */
+function ap_check_coach(array $map, int $planMemberId, $value): ?int
+{
+    if ($value === null || (is_string($value) && trim($value) === '')) {
+        return null;
+    }
+    $cid = (int)$value;
+    if (!isset($map[$cid]) || !ap_coach_eligible($map[$cid]) || $cid === $planMemberId) {
+        throw new HttpError(422, 'A coach must be an active Unit Manager or higher (or you), and cannot be the person themselves.');
+    }
+    return $cid;
+}
+
+/** So a coach can open the Action Plan card. Best effort. */
+function ap_tick_card_for(PDO $pdo, array $map, ?int $memberId): void
+{
+    if ($memberId === null || !isset($map[$memberId]) || tool_is_super($map[$memberId])) {
+        return;
+    }
+    try {
+        $ticked = ticked_tools($pdo, $memberId);
+        if (!in_array('action-plan', $ticked, true)) {
+            set_ticked_tools($pdo, $memberId, array_merge($ticked, ['action-plan']));
+        }
+    } catch (Throwable $e) {
+        error_log('ap coach tick: ' . $e->getMessage());
+    }
+}
+
+/** Plans created before coaches existed get their default coach the first time anyone opens the Action Plan. */
+function ap_backfill_coaches(PDO $pdo, array $map, int $actorId): void
+{
+    try {
+        $rows = $pdo->query('SELECT id, member_id FROM ap_plans WHERE coach_set = 0')->fetchAll();
+    } catch (Throwable $e) {   // schema_phase16.sql has not been run yet
+        return;
+    }
+    foreach ($rows as $r) {
+        $c = ap_default_coach($map, (int)$r['member_id']);
+        $pdo->prepare('UPDATE ap_plans SET coach_id = ?, coach_set = 1 WHERE id = ?')->execute([$c, (int)$r['id']]);
+        ap_tick_card_for($pdo, $map, $c);
+        audit($pdo, $actorId, 'ap.coach_default', (int)$r['member_id'], ['plan' => (int)$r['id'], 'coach' => $c]);
+    }
 }
 
 function ap_in_scope(?array $scope, int $memberId): bool
@@ -408,7 +520,7 @@ function ap_assignable(PDO $pdo, array $map): array
     $out = [];
     foreach ($map as $m) {
         if ($m['is_active'] && !tool_is_super($m) && member_type($m) === 'team' && !in_array((int)$m['id'], $have, true)) {
-            $out[] = ['id' => (int)$m['id'], 'name' => $m['name'], 'has' => array_values(array_unique(member_tool_keys($pdo, $m)))];
+            $out[] = ['id' => (int)$m['id'], 'name' => $m['name'], 'has' => array_values(array_unique(member_tool_keys($pdo, $m))), 'default_coach' => ap_default_coach($map, (int)$m['id'])];
         }
     }
     usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
@@ -459,7 +571,8 @@ function ap_switch_on_tools(PDO $pdo, array $m, array $keys): array
     return $done;
 }
 
-function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $days, array $tools = []): int
+/** @param 'default'|int|null $coach 'default' = the default coach (or the one already on a reopened plan); null = no coach; an id = that person */
+function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $days, array $tools = [], $coach = 'default'): int
 {
     $map = load_member_map($pdo);
     $m = $map[$memberId] ?? null;
@@ -468,6 +581,7 @@ function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $da
     }
     $start = ap_date($start);
     $days = ap_int_range($days, 30, 365, 'The plan length (days)');
+    $chosenCoach = $coach === 'default' ? null : ap_check_coach($map, $memberId, $coach);
     $old = ap_plan_of_member($pdo, $memberId);
     if ($old !== null && !(int)$old['closed']) {
         throw new HttpError(409, 'That person already has a plan.');
@@ -483,6 +597,12 @@ function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $da
             $id = (int)$pdo->lastInsertId();
         }
         audit($pdo, (int)$actor['id'], 'ap.assign', $memberId, ['plan' => $id, 'start' => $start, 'days' => $days]);
+        $row = ap_plan_row($pdo, $id);
+        if ($coach !== 'default' || !(int)($row['coach_set'] ?? 0)) {
+            $cid = $coach === 'default' ? ap_default_coach($map, $memberId) : $chosenCoach;
+            $pdo->prepare('UPDATE ap_plans SET coach_id = ?, coach_set = 1 WHERE id = ?')->execute([$cid, $id]);
+            audit($pdo, (int)$actor['id'], 'ap.coach', $memberId, ['plan' => $id, 'coach' => $cid, 'how' => $coach === 'default' ? 'default' : 'chosen']);
+        }
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
@@ -506,6 +626,8 @@ function ap_assign(PDO $pdo, array $actor, int $memberId, string $start, int $da
     } catch (Throwable $e) {
         error_log('ap_assign tick: ' . $e->getMessage());
     }
+    $cRow = ap_plan_row($pdo, $id);
+    ap_tick_card_for($pdo, $map, empty($cRow['coach_id']) ? null : (int)$cRow['coach_id']);
     if ($tools) {
         try {
             $done = ap_switch_on_tools($pdo, $m, $tools);
@@ -524,6 +646,11 @@ function ap_plan_update(PDO $pdo, array $actor, int $planId, array $in): void
     $plan = ap_plan_row($pdo, $planId);
     $set = [];
     $newBuddy = null;
+    $newCoach = null;
+    if (array_key_exists('coach_id', $in)) {
+        $set['coach_id'] = $newCoach = ap_check_coach(load_member_map($pdo), (int)$plan['member_id'], $in['coach_id']);
+        $set['coach_set'] = 1;
+    }
     if (array_key_exists('buddy_id', $in)) {
         $bv = trim((string)$in['buddy_id']);
         if ($bv === '') {
@@ -562,6 +689,9 @@ function ap_plan_update(PDO $pdo, array $actor, int $planId, array $in): void
     $cols = implode(', ', array_map(static fn (string $c): string => "$c = ?", array_keys($set)));
     $pdo->prepare("UPDATE ap_plans SET $cols WHERE id = ?")->execute([...array_values($set), $planId]);
     audit($pdo, (int)$actor['id'], 'ap.plan.update', $planId, array_diff_key($set, ['private_number' => 1]));
+    if ($newCoach !== null) {
+        ap_tick_card_for($pdo, load_member_map($pdo), $newCoach);
+    }
     if ($newBuddy !== null) {   // so the buddy can open the Action Plan card and see their buddy's progress
         try {
             $ticked = ticked_tools($pdo, $newBuddy);
@@ -1058,6 +1188,7 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
         'items' => $outItems, 'own' => $own,
         'end_date' => gmdate('Y-m-d', strtotime((string)$plan['start_date'] . ' +' . ((int)$plan['length_days'] - 1) . ' days')),
         'buddy' => !empty($plan['buddy_id']) && isset($map[(int)$plan['buddy_id']]) ? ['id' => (int)$plan['buddy_id'], 'name' => $map[(int)$plan['buddy_id']]['name']] : null,
+        'coach' => !empty($plan['coach_id']) && isset($map[(int)$plan['coach_id']]) ? ['id' => (int)$plan['coach_id'], 'name' => $map[(int)$plan['coach_id']]['name']] : null,
     ];
     if (($own || $approver) && $p['buddy'] !== null) {
         $wa = preg_replace('/\D+/', '', (string)($map[$p['buddy']['id']]['whatsapp'] ?? '')) ?? '';
@@ -1067,6 +1198,7 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
         }
     }
     if ($approver) {
+        $p['coach_invalid'] = !empty($plan['coach_id']) && (!isset($map[(int)$plan['coach_id']]) || !ap_coach_eligible($map[(int)$plan['coach_id']]));
         $p['last_nudged_at'] = $plan['last_nudged_at'] ?? null;
         $p['label'] = $sum['label'];
         $p['label_text'] = AP_LABEL_TEXT[$sum['label']];
@@ -1080,7 +1212,7 @@ function ap_plan_payload(PDO $pdo, array $map, array $plan, string $today, strin
 
 function ap_overview(PDO $pdo, array $map, array $viewer, string $today): array
 {
-    $scope = ap_scope($map, $viewer);
+    $scope = ap_scope($map, $viewer, ap_coached_ids($pdo, $map, (int)$viewer['id']));
     $rows = [];
     foreach ($pdo->query('SELECT * FROM ap_plans WHERE closed = 0')->fetchAll() as $plan) {
         $mid = (int)$plan['member_id'];
@@ -1094,6 +1226,9 @@ function ap_overview(PDO $pdo, array $map, array $viewer, string $today): array
             'week' => $week, 'weeks_total' => ap_weeks_total((int)$plan['length_days']), 'start_date' => $plan['start_date'],
             'percent' => $sum['percent'], 'waiting' => $sum['waiting'], 'followup' => $sum['followup'], 'label' => $sum['label'], 'label_text' => AP_LABEL_TEXT[$sum['label']],
             'behind_items' => $sum['behind_items'],
+            'coach_id' => empty($plan['coach_id']) ? null : (int)$plan['coach_id'],
+            'coach' => !empty($plan['coach_id']) && isset($map[(int)$plan['coach_id']]) ? $map[(int)$plan['coach_id']]['name'] : null,
+            'coach_invalid' => !empty($plan['coach_id']) && (!isset($map[(int)$plan['coach_id']]) || !ap_coach_eligible($map[(int)$plan['coach_id']])),
         ];
     }
     $rank = ['behind' => 0, 'slightly_behind' => 1, 'on_track' => 2, 'not_started' => 3, 'none' => 4, 'complete' => 5];
@@ -1103,7 +1238,7 @@ function ap_overview(PDO $pdo, array $map, array $viewer, string $today): array
 
 function ap_approvals(PDO $pdo, array $map, array $viewer, string $today): array
 {
-    $scope = ap_scope($map, $viewer);
+    $scope = ap_scope($map, $viewer, ap_coached_ids($pdo, $map, (int)$viewer['id']));
     $out = [];
     foreach ($pdo->query('SELECT * FROM ap_plans WHERE closed = 0')->fetchAll() as $plan) {
         $mid = (int)$plan['member_id'];
@@ -1133,8 +1268,10 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
     ap_ensure_template($pdo, $today);
     $map = load_member_map($pdo);
     $viewer = $map[(int)$me['id']] ?? $me;
-    $role = ap_role($viewer);
-    $scope = ap_scope($map, $viewer);
+    ap_backfill_coaches($pdo, $map, (int)$viewer['id']);
+    $coached = ap_coached_ids($pdo, $map, (int)$viewer['id']);
+    $role = ap_role($viewer, $coached);
+    $scope = ap_scope($map, $viewer, $coached);
     $mine = ap_plan_of_member($pdo, (int)$viewer['id']);
     $mine = $mine && !(int)$mine['closed'] ? $mine : null;
 
@@ -1158,7 +1295,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
         switch ((string)($q['view'] ?? 'init')) {
             case 'init':
                 return [
-                    'role' => $role, 'member_type' => member_type($viewer), 'me' => ['id' => (int)$viewer['id'], 'name' => $viewer['name']], 'today' => $today, 'has_plan' => $mine !== null,
+                    'role' => $role, 'is_team_admin' => is_team_admin($viewer), 'coach_count' => count($coached), 'coach_options' => $role === 'super' ? ap_coach_options($map) : [], 'member_type' => member_type($viewer), 'me' => ['id' => (int)$viewer['id'], 'name' => $viewer['name']], 'today' => $today, 'has_plan' => $mine !== null,
                     'waiting' => $role === 'agent' ? 0 : count(ap_approvals($pdo, $map, $viewer, $today)),
                     'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [],
                     'disc_options' => AP_DISC, 'tools' => ap_tool_options(), 'default_days' => AP_BASE_DAYS,
@@ -1178,7 +1315,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
                 if ($role === 'agent') {
                     throw new HttpError(403, 'Not available.');
                 }
-                return ['plans' => ap_overview($pdo, $map, $viewer, $today), 'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [], 'plan_tools' => $role === 'super' ? ap_plan_tools($pdo) : []];
+                return ['plans' => ap_overview($pdo, $map, $viewer, $today), 'assignable' => $role === 'super' ? ap_assignable($pdo, $map) : [], 'plan_tools' => $role === 'super' ? ap_plan_tools($pdo) : [], 'coach_options' => $role === 'super' ? ap_coach_options($map) : []];
             case 'approvals':
                 if ($role === 'agent') {
                     throw new HttpError(403, 'Not available.');
@@ -1245,7 +1382,7 @@ function ap_dispatch(PDO $pdo, array $me, string $method, array $q, array $in, s
         /* super admin: plans */
         case 'assign':
             $needSuper();
-            $id = ap_assign($pdo, $viewer, (int)($in['member_id'] ?? 0), (string)($in['start_date'] ?? ''), (int)($in['length_days'] ?? AP_BASE_DAYS), is_array($in['tools'] ?? null) ? $in['tools'] : []);
+            $id = ap_assign($pdo, $viewer, (int)($in['member_id'] ?? 0), (string)($in['start_date'] ?? ''), (int)($in['length_days'] ?? AP_BASE_DAYS), is_array($in['tools'] ?? null) ? $in['tools'] : [], array_key_exists('coach_id', $in) ? (($in['coach_id'] === '' || $in['coach_id'] === null) ? null : (int)$in['coach_id']) : 'default');
             return ['plan_id' => $id, 'assignable' => ap_assignable($pdo, load_member_map($pdo))];
         case 'plan_update':
             $needSuper();

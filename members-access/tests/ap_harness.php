@@ -25,6 +25,9 @@ function ap_h_seed(string $file): void
     $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60123456789', $ids['Dave']]);
     $pdo->prepare('UPDATE members SET whatsapp = ? WHERE id = ?')->execute(['60198765432', $ids['Cindy']]);
     ap_plan_update($pdo, $you, $dave, ['buddy_id' => $ids['Cindy']]);
+    $ids['Zed'] = create_member($pdo, $you['id'], ['email' => 'zed@x.com', 'name' => 'Zed', 'rank' => 'agent', 'upline_id' => $ids['Eve'], 'referral_code' => 'r-zed'])['id'];   // recruited by Eve, a Unit Manager: Eve is the default coach
+    ap_assign($pdo, $you, $ids['Zed'], '2026-03-09', 90);
+    $ids['Nia'] = create_member($pdo, $you['id'], ['email' => 'nia@x.com', 'name' => 'Nia', 'rank' => 'agent', 'upline_id' => $ids['You'], 'referral_code' => 'r-nia'])['id'];   // no tool ticked at all
     $ids['Ivy'] = create_member($pdo, $you['id'], ['email' => 'ivy@x.com', 'name' => 'Ivy', 'rank' => 'agent', 'upline_id' => $ids['You'], 'referral_code' => 'r-ivy'])['id'];
     $pdo->exec("UPDATE members SET member_type = 'intern' WHERE id = " . (int)$ids['Ivy']);   // an Intern with the Action Plan card switched on but nothing assigned
     set_ticked_tools($pdo, (int)$ids['Ivy'], ['action-plan']);

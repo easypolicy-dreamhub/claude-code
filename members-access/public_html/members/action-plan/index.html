@@ -269,7 +269,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     var t = $('tabs'); t.innerHTML = '';
     var tabs = [];
     if (S.init.has_plan) tabs.push(['plan', 'My plan', 0]);
-    if (isApprover()) { tabs.push(['overview', 'Everyone', 0]); tabs.push(['approvals', 'Approvals', S.init.waiting]); }
+    if (isApprover()) { tabs.push(['overview', S.init.role === 'approver' && !S.init.is_team_admin ? 'People I coach' : 'Everyone', 0]); tabs.push(['approvals', 'Approvals', S.init.waiting]); }
     if (S.init.role === 'super') tabs.push(['template', 'Template', 0]);
     if (S.init.buddy_count > 0) tabs.push(['buddy', 'Buddy', 0]);
     t.hidden = tabs.length < 2;
@@ -313,7 +313,9 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   function renderPlan(p, person, preview) {
     var box = el('div', { 'class': 'sec', style: 'gap:14px' });
     var realPerson = person && !!p;
-    if (preview && p) {   // exactly what the agent sees: their own wording, no approver tools, no skipped items, read-only
+    if (preview === 'coach' && p) {   // what the coach sees: the whole plan with notes and labels, but no super-admin settings; read-only here
+      p = Object.assign({}, p, { preview: true, coachPreview: true });
+    } else if (preview && p) {   // exactly what the agent sees: their own wording, no approver tools, no skipped items, read-only
       p = Object.assign({}, p, { own: true, preview: true, label: null, items: p.items.filter(function (i) { return !i.skipped; }) });
       person = false;
     }
@@ -334,6 +336,8 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (!person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Your style (' + p.disc.style + discFrom + '): ' + p.disc.hint }));
     if (person && p.disc && p.disc.hint) head.appendChild(el('p', { 'class': 'disc-hint', text: 'Coaching hint' + discFrom + ': ' + p.disc.hint }));
     if (person && p.last_nudged_at) head.appendChild(el('p', { 'class': 'hint', text: 'Last nudged on WhatsApp: ' + fmtDate(String(p.last_nudged_at).slice(0, 10)) + '.' }));
+    if (person && (p.coach || p.coach_invalid)) head.appendChild(el('p', { 'class': 'hint', text: p.coach ? 'Coach: ' + p.coach.name + '.' + (p.coach_invalid ? ' They can no longer coach (not a Unit Manager or above): choose another in Plan settings.' : '') : '' }));
+    if (p.coach && p.own && !person) head.appendChild(el('p', { 'class': 'hint', text: 'Your coach: ' + p.coach.name + '.' }));
     if (p.buddy && person) head.appendChild(el('p', { 'class': 'hint', text: 'Buddy: ' + p.buddy.name + '.' }));
     if (p.buddy && p.own && !person) {
       var bfirst = p.buddy.name.split(' ')[0];
@@ -347,20 +351,22 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       }
       head.appendChild(bline);
     }
-    if (person && S.init.role === 'super') head.appendChild(planSettings(p));
+    if (person && S.init.role === 'super' && !p.coachPreview) head.appendChild(planSettings(p));
     box.appendChild(head);
     if (realPerson) {
       var bar2 = el('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between' }, [
-        el('button', { type: 'button', 'class': 'btn small', text: '← Everyone', onclick: function () { go('overview'); } }),
+        el('button', { type: 'button', 'class': 'btn small', text: '← ' + (S.init.role === 'approver' && !S.init.is_team_admin ? 'People I coach' : 'Everyone'), onclick: function () { go('overview'); } }),
         el('div', { 'class': 'seg', role: 'group', 'aria-label': 'Which view' }, [
           el('button', { type: 'button', 'aria-pressed': String(!preview), text: 'Your view', onclick: function () { S.preview = false; render(); } }),
-          el('button', { type: 'button', 'aria-pressed': String(!!preview), text: 'What ' + (S.plan.member.name.split(' ')[0] || 'they') + ' sees', onclick: function () { S.preview = true; render(); } })])]);
+          (S.init.role === 'super' && S.plan.coach && S.plan.coach.id !== S.init.me.id && !S.plan.coach_invalid) ? el('button', { type: 'button', 'aria-pressed': String(preview === 'coach'), text: 'What ' + (S.plan.coach.name.split(' ')[0] || 'the coach') + ' sees', onclick: function () { S.preview = 'coach'; render(); } }) : null,
+          el('button', { type: 'button', 'aria-pressed': String(preview === true), text: 'What ' + (S.plan.member.name.split(' ')[0] || 'they') + ' sees', onclick: function () { S.preview = true; render(); } })])]);
       var pb = el('div', { 'class': 'pbtn' }, [
         el('button', { type: 'button', 'class': 'btn small', text: 'Nudge on WhatsApp', onclick: function () { nudgeDialog(S.plan); } }),
         el('button', { type: 'button', 'class': 'btn small', text: 'Day-' + S.plan.length_days + ' review', onclick: function () { go('review'); } })]);
       bar2.insertBefore(pb, bar2.lastChild);
       box.insertBefore(bar2, head);
-      if (preview) box.insertBefore(el('div', { 'class': 'banner warn' }, ['This is how ' + S.plan.member.name + ' sees their plan. It is read-only here: switch back to "Your view" to approve or adjust.']), head);
+      if (preview === 'coach') box.insertBefore(el('div', { 'class': 'banner warn' }, ['This is how ' + S.plan.coach.name + ' (the coach) sees ' + S.plan.member.name + '\'s plan. The coach can also approve, send back and nudge here; those buttons are hidden in this preview. Plan settings, adjusting items and extras are yours only.']), head);
+      else if (preview) box.insertBefore(el('div', { 'class': 'banner warn' }, ['This is how ' + S.plan.member.name + ' sees their plan. It is read-only here: switch back to "Your view" to approve or adjust.']), head);
     }
 
     var items = p.items;
@@ -390,7 +396,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       d.addEventListener('toggle', function () { S.open[key] = d.open; });
       box.appendChild(d);
     });
-    if (person && S.init.role === 'super') box.appendChild(el('div', {}, [el('button', { type: 'button', 'class': 'btn', text: '+ Add an extra item for ' + p.member.name, onclick: function () { extraDialog(p); } })]));
+    if (person && S.init.role === 'super' && !p.coachPreview) box.appendChild(el('div', {}, [el('button', { type: 'button', 'class': 'btn', text: '+ Add an extra item for ' + p.member.name, onclick: function () { extraDialog(p); } })]));
     return box;
   }
   function group(title, items, p, kind) {
@@ -410,10 +416,11 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     var disc = el('select', { 'aria-label': 'DISC style' }, [el('option', { value: '', text: 'DISC: not set' })].concat(S.init.disc_options.map(function (d) { return el('option', { value: d, selected: p.disc && p.disc.style === d, text: 'DISC ' + d }); })));
     var num = el('input', { type: 'number', value: p.private_number === null || p.private_number === undefined ? '' : String(p.private_number), min: '1', max: '33', placeholder: 'Private number', 'aria-label': 'Private number (only you see this)' });
     var buddy = el('select', { 'aria-label': 'Buddy' }, [el('option', { value: '', text: 'Buddy: none' })].concat((S.init.try_members || []).filter(function (m) { return m.id !== p.member.id; }).map(function (m) { return el('option', { value: String(m.id), selected: !!(p.buddy && p.buddy.id === m.id), text: 'Buddy: ' + m.name }); })));
+    var coach = el('select', { 'aria-label': 'Coach' }, [el('option', { value: '', text: 'Coach: none' })].concat((S.init.coach_options || []).filter(function (m) { return m.id !== p.member.id; }).map(function (m) { return el('option', { value: String(m.id), selected: !!(p.coach && p.coach.id === m.id), text: 'Coach: ' + m.name + ' (' + m.rank + ')' }); })));
     var err = errBox();
     var save = el('button', { type: 'button', 'class': 'btn small primary', text: 'Save', onclick: function () {
       save.disabled = true;
-      req('POST', { action: 'plan_update', plan: p.id, start_date: start.value, length_days: len.value, disc: disc.value, private_number: num.value, buddy_id: buddy.value }).then(function (d) { S.plan = d.plan; toast('Saved.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
+      req('POST', { action: 'plan_update', plan: p.id, start_date: start.value, length_days: len.value, disc: disc.value, private_number: num.value, buddy_id: buddy.value, coach_id: coach.value }).then(function (d) { S.plan = d.plan; toast('Saved.'); render(); }).catch(function (e) { save.disabled = false; showErr(err, e); });
     } });
     var close = el('button', { type: 'button', 'class': 'btn small danger', text: 'Close this plan', onclick: function () {
       if (!window.confirm('Close ' + p.member.name + '\'s plan? It leaves the lists, but nothing is deleted. Assigning them again brings it back with their progress.')) return;
@@ -424,6 +431,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       el('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:8px' }, [
         el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Default 90. Every suggested week stretches to fit.')]),
         el('div', { 'class': 'two' }, [field('DISC style', disc), field('Your private number', num, 'Only you see this.')]),
+        field('Coach', coach, 'The coach approves, sends back and nudges on this plan, and the agent sees their name. Only a Unit Manager or above (or you). Team admins above them still see it.'),
         field('Buddy', buddy, 'A buddy can see this plan\'s progress (ticks and counts only, no notes). Their Action Plan card is switched on for them.'),
         err, el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [save, check, close])])]);
   }
@@ -604,12 +612,12 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
     if (S.sort === 'name') plans.sort(function (a, b) { return a.name.localeCompare(b.name); });
     else if (S.sort === 'progress') plans.sort(function (a, b) { return a.percent - b.percent; });
     else if (S.sort === 'week') plans.sort(function (a, b) { return a.week - b.week; });
-    if (!plans.length) { box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No plans yet' }), S.init.role === 'super' ? 'Press “+ Assign a plan” to start one for a Team member.' : 'Nobody in your team has a plan yet.'])); return box; }
+    if (!plans.length) { box.appendChild(el('div', { 'class': 'empty' }, [el('b', { text: 'No plans yet' }), S.init.role === 'super' ? 'Press “+ Assign a plan” to start one for a Team member.' : (S.init.is_team_admin ? 'Nobody in your team has a plan yet.' : 'You are not coaching anyone yet.')])); return box; }
     var rows = el('div', { 'class': 'rows' });
     plans.forEach(function (r) {
       rows.appendChild(el('button', { type: 'button', 'class': 'row', onclick: function () { go('person', r.plan_id); } }, [
         el('div', {}, [el('div', { 'class': 'nm', text: r.name }), el('div', { 'class': 'sub', text: (r.week === 0 ? 'Starts ' + fmtDate(r.start_date) : 'Week ' + Math.min(r.week, r.weeks_total) + ' of ' + r.weeks_total) + ' · ' + r.percent + '% approved' })]),
-        el('div', { 'class': 'rt' }, [r.disc ? el('span', { 'class': 'chip disc', text: r.disc }) : null, r.waiting ? el('span', { 'class': 'chip waiting', text: r.waiting + ' waiting' }) : null, r.followup ? el('span', { 'class': 'chip follow', text: r.followup + ' follow-up' }) : null, el('span', { 'class': 'chip ' + r.label, text: r.label_text })]),
+        el('div', { 'class': 'rt' }, [r.coach_invalid ? el('span', { 'class': 'chip follow', title: 'This coach can no longer coach (not a Unit Manager or above). Choose another in Plan settings.', text: 'Coach: ' + r.coach + ' (not eligible)' }) : (r.coach ? el('span', { 'class': 'chip soft', text: r.coach_id === S.init.me.id ? 'You coach' : 'Coach: ' + r.coach }) : (S.init.role === 'super' ? el('span', { 'class': 'chip soft', text: 'No coach' }) : null)), r.disc ? el('span', { 'class': 'chip disc', text: r.disc }) : null, r.waiting ? el('span', { 'class': 'chip waiting', text: r.waiting + ' waiting' }) : null, r.followup ? el('span', { 'class': 'chip follow', text: r.followup + ' follow-up' }) : null, el('span', { 'class': 'chip ' + r.label, text: r.label_text })]),
         el('div', { 'class': 'bar thin' }, [el('i', { style: 'width:' + r.percent + '%' })])]));
     });
     box.appendChild(rows);
@@ -626,7 +634,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
       var err = errBox();
       var go2 = el('button', { type: 'button', 'class': 'btn primary', text: 'Assign', onclick: function () {
         go2.disabled = true;
-        req('POST', { action: 'assign', member_id: Number(who.value), start_date: start.value, length_days: Number(len.value), tools: Object.keys(picks).filter(function (k) { return picks[k] && picks[k].checked; }) }).then(function (r) {
+        req('POST', { action: 'assign', member_id: Number(who.value), start_date: start.value, length_days: Number(len.value), coach_id: coachSel.value, tools: Object.keys(picks).filter(function (k) { return picks[k] && picks[k].checked; }) }).then(function (r) {
           dlg.close(); toast('Plan assigned. The Action Plan card and the ticked tools are switched on for them.'); return refreshInit().then(function () { go('person', r.plan_id); });
         }).catch(function (e) { go2.disabled = false; showErr(err, e); });
       } });
@@ -652,7 +660,12 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
         });
       }
       who.addEventListener('change', drawTools); drawTools();
+      var coachOpts = (S.overview && S.overview.coach_options) || S.init.coach_options || [];
+      var coachSel = el('select', { 'aria-label': 'Coach' }, [el('option', { value: '', text: 'No coach: only me and team admins above' })].concat(coachOpts.map(function (m) { return el('option', { value: String(m.id), text: m.name + ' (' + m.rank + ')' }); })));
+      function pickCoach() { var m = list.filter(function (x) { return String(x.id) === who.value; })[0]; coachSel.value = m && m.default_coach ? String(m.default_coach) : ''; }
+      who.addEventListener('change', pickCoach); pickCoach();
       b.appendChild(field('Team member', who)); b.appendChild(el('div', { 'class': 'two' }, [field('Start date', start), field('Plan length (days)', len, 'Usually 90.')]));
+      b.appendChild(field('Coach', coachSel, 'Pre-filled with the nearest Unit Manager or above over them. The coach approves, sends back and nudges on this plan, and the agent sees their name. You can change it later in Plan settings.'));
       b.appendChild(el('p', { 'class': 'hint', text: 'They start with the current template. You can change their start date, length and any item afterwards.' }));
       if (planTools.length) {
         b.appendChild(el('div', { 'class': 'fld' }, [el('label', { 'class': 'f', text: 'Tools to switch on for them' }), toolHint, toolBox]));
@@ -887,7 +900,7 @@ dialog::backdrop{background:rgba(36,51,58,.5)}
   /* ---------- start ---------- */
   get('init').then(function (d) {
     S.init = d;
-    $('who').textContent = 'Signed in as ' + d.me.name + (d.role === 'super' ? ' (super admin)' : d.role === 'approver' ? ' (team admin)' : '');
+    $('who').textContent = 'Signed in as ' + d.me.name + (d.role === 'super' ? ' (super admin)' : d.role === 'approver' ? (d.is_team_admin ? ' (team admin)' : ' (coach)') : '');
     S.tab = d.has_plan ? 'plan' : (isApprover() ? 'overview' : (d.buddy_count > 0 ? 'buddy' : 'plan'));
     go(S.tab);
   }).catch(function (e) {
