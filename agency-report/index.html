@@ -1396,7 +1396,7 @@ $('#btnPrint').addEventListener('click',exportPDF);
 /* ---------- drafts: saved on the portal by drafts.php, shared by every signed-in editor ---------- */
 const DAPI='drafts.php';
 function serverMsg(e){return e&&e.message&&!/^http \d+$/.test(e.message)?e.message:'';}
-const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your account does not have the Agency Report tool switched on. Ask your admin to switch it on in Members & Access.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'You already have the maximum number of drafts. Delete an old one to make room.',not_found:'This draft no longer exists. It may have been deleted. Your work is still on screen, so use Save as new draft to keep it.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
+const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your account does not have the Agency Report tool switched on. Ask your admin to switch it on in Members & Access.',storage_not_writable:'The portal could not write to the drafts folder.',members_check_failed:'The members system could not check your access. Please tell your admin.',members_system_missing:'The members system could not be found on the server. Please tell your admin.',too_many_drafts:'You already have the maximum number of drafts. Delete an old one to make room.',not_found:'This draft no longer exists. It may have been deleted. Your work is still on screen, so use Save as new draft to keep it.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
 let DRAFTS={ok:false,note:'Checking…',list:[],user:'',max:10};
 async function dapi(action,body,qs){
   const opt=body?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'fetch'},body:JSON.stringify(body)}:{credentials:'same-origin',headers:{'X-Requested-With':'fetch'}};
@@ -1549,6 +1549,7 @@ function libStatus(local){
   }catch(e){
     SERVER=false;
     if(e.code==='not_configured')serverNote='The shared library file is on your portal but isn’t set up yet, so photos are kept on this device for now.';
+    else if(e.code==='members_check_failed'||e.code==='members_system_missing')serverNote=(serverMsg(e)||'The members system could not check your access.')+' Photos are kept on this device for now.';
     else if(e.status===401||e.status===403)serverNote=(serverMsg(e)||'The shared library didn’t accept this sign-in.')+' Photos are kept on this device for now.';
     const all=await idbAll();all.forEach(placeRec);
   }
