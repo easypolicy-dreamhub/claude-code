@@ -20,7 +20,7 @@ These tools run on the owner's cPanel hosting, not from this repo. The owner upl
 
 ## Standard header
 
-Every toolkit page has the same dark E3 bar (`<nav class="e3-bar">`, back link to `/members/`, "DreamHub E3" brand, favicon `/images/favicon.png`). Copy it from `agency-report/index.html`. A new toolkit without it is not finished.
+Every toolkit page loads the shared stylesheet `/members/e3-toolkit.css` (do not copy its rules into a page) and uses this markup: `<div class="e3-bar">` (back link to `/members/` and the "DreamHub E3" name), then `<header class="topbar">` with `<h1>Title<small>subtitle</small></h1>` and any buttons or a `<div class="who">`. `agency-report/index.html` shows it. A new toolkit without the shared header is not finished. The shared file is owned by the server, not this repo, so never change header styling in a single page.
 
 ## Working style
 

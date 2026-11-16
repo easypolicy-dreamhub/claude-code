@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<link rel="stylesheet" href="/members/e3-toolkit.css">
 <style>
 :root{
   --app-bg:#F4F2EF;--app-surface:#ffffff;--app-ink:#24333A;--app-muted:#5C6870;--app-line:#E2DDD8;
@@ -26,10 +27,7 @@ body{margin:0;background:var(--app-bg);color:var(--app-ink);font:15px/1.5 "DM Sa
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid #B9AFA7;outline-offset:2px}
-.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--app-surface);border-bottom:1px solid var(--app-line)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--app-surface)}
-.topbar h1{font:700 19px/1.2 Poppins,Montserrat,sans-serif;margin:0;flex:1;letter-spacing:-.01em}
-.topbar h1 small{display:block;font:500 13px Barlow,sans-serif;color:var(--app-muted);letter-spacing:0}
 .btn{border:1px solid var(--app-line);background:var(--app-surface);border-radius:10px;padding:9px 14px;font-weight:600;min-height:42px}
 .btn.primary{background:var(--app-accent);color:var(--app-accent-ink);border-color:var(--app-accent)}
 .btn.small{padding:5px 10px;min-height:32px;font-size:13px;border-radius:8px}
@@ -321,17 +319,12 @@ table.rank tr.gap td{background:none;padding:0;height:8px;color:var(--muted);tex
   :root{padding:0}
 }
 </style>
-<style id="e3-theme">
-.e3-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;min-height:46px;background:#24333A;color:#FFFFFF;font:500 14px/1.2 "DM Sans",system-ui,sans-serif;position:relative;z-index:100}
-.e3-bar a{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#FFFFFF;text-decoration:none}
-.e3-bar a:hover{color:#B9AFA7}
-.e3-bar .e3-brand{font:700 15px/1 Poppins,"DM Sans",system-ui,sans-serif;color:#FFFFFF}
-.e3-bar .e3-brand span{color:#B9AFA7}
-@media print{.e3-bar{display:none !important}}
-</style>
 </head>
 <body>
-<nav class="e3-bar" aria-label="E3 toolkit"><a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>E3 Toolkit</a><span class="e3-brand">Dream<span>Hub</span> E3</span></nav>
+<div class="e3-bar">
+  <a href="/members/"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>E3 Toolkit</a>
+  <span class="e3-brand">Dream<span>Hub</span> E3</span>
+</div>
 <header class="topbar">
   <h1>Agency Report Generator<small id="subtitle">Upload this month’s files to build the deck</small></h1>
   <button class="btn" id="btnPrint" disabled>Save as PDF</button>
@@ -599,7 +592,8 @@ S.awards.forEach(w=>{if(/^MDRT$/i.test(String(w.name).trim())&&(w.min===''||w.mi
 const catImgs={};
 const photos=new Map(); // key -> record
 let celebImg=null;
-let curDraft=null,draftBase=null,draftShown='';
+let curDraft=null,draftBase=null,draftShown='',draftsExpanded=false;
+const DRAFTS_SHORT=3;
 function load(){try{const s=JSON.parse(localStorage.getItem(LS_KEY)||'null');if(s)return Object.assign(structuredClone(DEFAULT_SETTINGS),s,{ov:Object.assign({},DEFAULT_SETTINGS.ov,s.ov||{})});}catch(e){}return structuredClone(DEFAULT_SETTINGS);}
 function save(){S._excel=excel;S._pdf=pdfData;S._rec=recData;let j=null;try{j=JSON.stringify(S);localStorage.setItem(LS_KEY,j);}catch(e){}if(j!==null)onStateSaved(j);}
 
@@ -1453,7 +1447,8 @@ function renderDrafts(){
     <p class="hint" id="draftCount" style="margin:6px 0 0">${DRAFTS.list.length} of ${DRAFTS.max} drafts used.${DRAFTS.list.length>=DRAFTS.max?' Delete one to save a new draft.':''}</p>
     <p class="hint" id="draftHint" style="margin:6px 0 0"></p>
     <p class="hint" id="draftMsg">${msg}</p>
-    <div id="draftList">${DRAFTS.list.length?DRAFTS.list.map(draftRow).join(''):'<p class="hint">No drafts yet. Load this month’s files, then save one.</p>'}</div>`;
+    <div id="draftList">${DRAFTS.list.length?(draftsExpanded?DRAFTS.list:DRAFTS.list.slice(0,DRAFTS_SHORT)).map(draftRow).join(''):'<p class="hint">No drafts yet. Load this month’s files, then save one.</p>'}</div>
+    ${DRAFTS.list.length>DRAFTS_SHORT?`<button class="btn small" id="draftMore" type="button">${draftsExpanded?'Show less':`Show all ${DRAFTS.list.length} drafts`}</button>`:''}`;
   if(keep)$('#draftName').value=keep;
   draftShown='';updateDraftBar();updateDraftName();
 }
@@ -1508,6 +1503,7 @@ async function openDraft(id){
 $('#draftGroup').addEventListener('click',async e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.id==='draftRetry'){DRAFTS.note='Checking…';renderDrafts();refreshDrafts();return;}
+  if(t.id==='draftMore'){draftsExpanded=!draftsExpanded;renderDrafts();return;}
   if(t.id==='draftSaveNew'){saveDraftNew();return;}
   if(t.id==='draftSave'){saveDraftChanges();return;}
   if(t.id==='draftClose'){curDraft=null;draftBase=null;renderDrafts();return;}
