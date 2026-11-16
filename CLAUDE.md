@@ -9,7 +9,7 @@ These tools run on the owner's cPanel hosting, not from this repo. The owner upl
 3. **Back up first, every time:** before extracting, copy each file that will be overwritten to `<name>-backup.html` (or `.php`) in its folder. Say how to roll back.
 4. **Prove it before sending:** extract the zip into a fake `public_html` and list where each file landed. Confirm files that must not change (for example `photos.php`) are not in the zip. Say so in the message.
 5. **Do not invent other upload locations.** If a tool is not under `members/`, ask the owner once for its real folder, then record it in the table below.
-6. Never put passwords, API keys, Cloudflare tags or allowed-email lists into files in this repo or in a zip. `drafts.php` reads those from the existing `photos.php`.
+6. Never put passwords, API keys, Cloudflare tags or allowed-email lists into files in this repo or in a zip. Who may use a tool's server files (for example `photos.php` and `drafts.php`) comes from the members system in `private/` (`boot_member_request()` and `can_use_tool()`), never from a list inside the file. Give every helper function and constant in such a file a unique prefix (`ar_`, `AGENCY_`), because `portal.php` loads another file into the same request.
 
 ## Where each tool lives on the server
 
