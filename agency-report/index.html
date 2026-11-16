@@ -1213,13 +1213,13 @@ function imgURL(k,kind,v){return `${API}?action=${kind}&key=${encodeURIComponent
 async function api(action,body){
   const opt=body?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'fetch'},body:JSON.stringify(body)}:{credentials:'same-origin',headers:{'X-Requested-With':'fetch'}};
   const r=await fetch(`${API}?action=${action}`,opt);let j=null;try{j=await r.json();}catch(e){}
-  if(!r.ok||!j){const err=new Error((j&&j.error)||('http '+r.status));err.status=r.status;err.code=j&&j.error;throw err;}return j;
+  if(!r.ok||!j){const err=new Error((j&&(j.message||j.error))||('http '+r.status));err.status=r.status;err.code=j&&j.error;throw err;}return j;
 }
 function storeRec(rec){
   if(!SERVER)return idbPut(rec).then(storageWarn);
   return api('save',{key:rec.key,name:rec.name,frame:rec.frame||null,out:rec.out,orig:rec.orig&&String(rec.orig).startsWith('data:')?rec.orig:undefined})
     .then(r=>{if(r&&r.saved&&r.saved.orig)rec.origUrl=imgURL(rec.key,'orig',r.saved.updated);return r;})
-    .catch(e=>{console.error(e);toast('Couldn’t save to the shared library. Check your connection and try again.');});
+    .catch(e=>{console.error(e);toast(e.status===403&&serverMsg(e)?serverMsg(e):'Couldn’t save to the shared library. Check your connection and try again.');});
 }
 function delRec(k){return SERVER?api('delete',{key:k}).catch(()=>toast('Couldn’t delete from the shared library. Try again.')):idbDel(k);}
 async function putPhoto(rec){rec.updated=Date.now();photos.set(rec.key,rec);return storeRec(rec);}
@@ -1395,12 +1395,13 @@ $('#btnPrint').addEventListener('click',exportPDF);
 
 /* ---------- drafts: saved on the portal by drafts.php, shared by every signed-in editor ---------- */
 const DAPI='drafts.php';
-const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your email is not on the allowed list for drafts.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'You already have the maximum number of drafts. Delete an old one to make room.',not_found:'This draft no longer exists. It may have been deleted. Your work is still on screen, so use Save as new draft to keep it.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
+function serverMsg(e){return e&&e.message&&!/^http \d+$/.test(e.message)?e.message:'';}
+const DRAFT_ERR={not_configured:'Drafts are not set up yet: drafts.php could not find the Cloudflare Access settings.',not_signed_in:'Drafts did not accept this sign-in. Try signing out of the members area and in again.',not_allowed:'Your account does not have the Agency Report tool switched on. Ask your admin to switch it on in Members & Access.',storage_not_writable:'The portal could not write to the drafts folder.',too_many_drafts:'You already have the maximum number of drafts. Delete an old one to make room.',not_found:'This draft no longer exists. It may have been deleted. Your work is still on screen, so use Save as new draft to keep it.',bad_payload:'This draft is too large to save (limit 6 MB) or is not valid.'};
 let DRAFTS={ok:false,note:'Checking…',list:[],user:'',max:10};
 async function dapi(action,body,qs){
   const opt=body?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'fetch'},body:JSON.stringify(body)}:{credentials:'same-origin',headers:{'X-Requested-With':'fetch'}};
   const r=await fetch(`${DAPI}?action=${action}${qs||''}`,opt);let j=null;try{j=await r.json();}catch(e){}
-  if(!r.ok||!j){const err=new Error((j&&j.error)||('http '+r.status));err.status=r.status;err.code=j&&j.error;err.data=j;throw err;}return j;
+  if(!r.ok||!j){const err=new Error((j&&(j.message||j.error))||('http '+r.status));err.status=r.status;err.code=j&&j.error;err.data=j;throw err;}return j;
 }
 function stateJSON(){S._excel=excel;S._pdf=pdfData;S._rec=recData;return JSON.stringify(S);}
 function draftInfo(){const m=reportMonth();return{month:m||0,year:m?reportYear():0,agency:S.agency};}
@@ -1409,10 +1410,10 @@ function fmtWhen(ms){try{return new Date(ms).toLocaleString('en-GB',{day:'numeri
 function shortUser(e){return String(e||'').split('@')[0];}
 function draftNote(text,bad){const el=$('#draftMsg');if(el){el.innerHTML=text?`<span class="${bad?'badTxt':'warnTxt'}">${esc(text)}</span>`:'';}}
 function draftError(e,what){
-  if(e.code==='conflict'){draftNote(`${shortUser(e.data&&e.data.by)||'Someone else'} saved this draft after you opened it. Use Save as new draft to keep your version, or Reload to take theirs.`,true);return;}
+  if(e.code==='conflict'){draftNote(`${(e.data&&(e.data.by_name||shortUser(e.data.by)))||'Someone else'} saved this draft after you opened it. Use Save as new draft to keep your version, or Reload to take theirs.`,true);return;}
   let m=DRAFT_ERR[e.code];
   if(e.code==='not_found'&&what==='open')m='That draft no longer exists. It may have been deleted.';
-  if(!m&&(e.status===401||e.status===403))m=DRAFT_ERR.not_signed_in;
+  if(!m&&(e.status===401||e.status===403||e.status===415))m=serverMsg(e)||DRAFT_ERR.not_signed_in;
   if(!m&&e.status===404)m='drafts.php was not found on your portal.';
   if(!m)m='Couldn’t reach the drafts on your portal. Check your connection, or the draft may be too large for the server.';
   draftNote(m,true);toast(m);
@@ -1422,7 +1423,7 @@ async function refreshDrafts(){
     if(curDraft&&!DRAFTS.list.some(d=>d.id===curDraft.id)){curDraft=null;draftBase=null;draftNote('The draft you were working on no longer exists. Your work is still on screen. Use Save as new draft to keep it.',true);}}
   catch(e){
     let n=DRAFT_ERR[e.code];
-    if(!n&&(e.status===401||e.status===403))n=DRAFT_ERR.not_signed_in;
+    if(!n&&(e.status===401||e.status===403))n=serverMsg(e)||DRAFT_ERR.not_signed_in;
     if(!n&&e.status===404)n='Drafts need drafts.php in the agency-report folder on your portal, next to index.html and photos.php.';
     if(!n)n='Couldn’t reach the drafts on your portal. Check your connection and try again.';
     DRAFTS={ok:false,note:n,list:[],user:''};
@@ -1433,7 +1434,7 @@ function draftRow(d){
   const cur=curDraft&&curDraft.id===d.id;
   const what=d.month?`${MONTH_NAMES[d.month-1].slice(0,3)} ${d.year||''}${d.agency?' · '+esc(d.agency):''} · `:'';
   return `<div class="draft${cur?' open':''}" data-did="${esc(d.id)}"><div class="dn"><b>${esc(d.name)}</b>${cur?' <span class="tag-open">open</span>':''}</div>
-    <div class="dm">${what}saved ${esc(fmtWhen(d.updated))} by ${esc(shortUser(d.by))}</div>
+    <div class="dm">${what}saved ${esc(fmtWhen(d.updated))} by ${esc(d.by_name||shortUser(d.by))}</div>
     <div class="row" style="margin-top:8px"><button class="btn small" data-dact="open">${cur?'Reload':'Open'}</button><button class="btn small" data-dact="rename">Rename</button><button class="btn small" data-dact="delete">Delete</button></div></div>`;
 }
 function renderDrafts(){
@@ -1460,7 +1461,7 @@ function updateDraftBar(j){
   const dirty=draftDirty(j),key=curDraft.id+'|'+curDraft.updated+'|'+curDraft.name+'|'+dirty;
   if(key===draftShown)return;draftShown=key;
   el.innerHTML=`<div class="draft cur"><div class="dn">Working on <b>${esc(curDraft.name)}</b></div>
-    <div class="dm">${dirty?'<span class="warnTxt">Unsaved changes</span>':'All changes saved'} · last saved ${esc(fmtWhen(curDraft.updated))} by ${esc(shortUser(curDraft.by))}</div>
+    <div class="dm">${dirty?'<span class="warnTxt">Unsaved changes</span>':'All changes saved'} · last saved ${esc(fmtWhen(curDraft.updated))} by ${esc(curDraft.by_name||shortUser(curDraft.by))}</div>
     <div class="row" style="margin-top:8px"><button class="btn small primary" id="draftSave" ${dirty?'':'disabled'}>Save changes</button><button class="btn small" id="draftClose">Close draft</button></div></div>`;
 }
 function onStateSaved(j){if(curDraft&&draftBase!==null)updateDraftBar(j);}
@@ -1495,7 +1496,7 @@ async function openDraft(id){
   try{
     const r=await dapi('get',null,'&id='+encodeURIComponent(id));
     const s=JSON.parse(r.payload);
-    curDraft={id:r.id,name:r.name,updated:r.updated,by:r.by};draftBase=null;
+    curDraft={id:r.id,name:r.name,updated:r.updated,by:r.by,by_name:r.by_name};draftBase=null;
     applyState(s);draftBase=stateJSON();
     toast('Draft opened');await refreshDrafts();
   }catch(e){draftError(e,'open');if(e.code==='not_found')await refreshDrafts();}
@@ -1548,7 +1549,7 @@ function libStatus(local){
   }catch(e){
     SERVER=false;
     if(e.code==='not_configured')serverNote='The shared library file is on your portal but isn’t set up yet, so photos are kept on this device for now.';
-    else if(e.status===401||e.status===403)serverNote='The shared library didn’t accept this sign-in, so photos are kept on this device for now. Try signing out of the members area and in again.';
+    else if(e.status===401||e.status===403)serverNote=(serverMsg(e)||'The shared library didn’t accept this sign-in.')+' Photos are kept on this device for now.';
     const all=await idbAll();all.forEach(placeRec);
   }
   renderAll();libStatus(local);refreshDrafts();

@@ -4,17 +4,15 @@
    Put this file in public_html/members/agency-report/ next to index.html
    and photos.php.
 
-   SETTINGS: normally you change nothing. Leave the three lines below empty
-   and this file uses the same Cloudflare Access settings as photos.php
-   (team domain, AUD tag and allowed emails). Only fill them in here if you
-   want drafts to use different values.
+   There is nothing to set up here. Who may use drafts is decided by
+   Members & Access: anyone who is signed in, active, not paused and has
+   the Agency Report tool switched on (the super admin always can).
+   Names shown as "saved by" come from the same member records.
    ===================================================================== */
-$TEAM_DOMAIN    = '';
-$AUD_TAG        = '';
-$ALLOWED_EMAILS = array();
+
 /* Most drafts that can be kept at once. Delete an old one to make room. */
-$MAX_DRAFTS     = 10;
-/* ===================== End of the part you edit ====================== */
+const MAX_DRAFTS = 10;
+const TOOL_KEY = 'agency-report';
 
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: private, no-store');
@@ -29,86 +27,6 @@ function ok($data) {
   header('Content-Type: application/json');
   echo json_encode($data);
   exit;
-}
-/* Reads one of the access settings out of photos.php, so they are kept in one place. */
-function from_photos_php($name) {
-  $f = __DIR__ . '/photos.php';
-  if (!is_file($f)) return null;
-  $src = @file_get_contents($f);
-  if ($src === false) return null;
-  if ($name === 'ALLOWED_EMAILS') {
-    if (!preg_match('/\$ALLOWED_EMAILS\s*=\s*(?:array\s*\((.*?)\)|\[(.*?)\])\s*;/s', $src, $m)) return array();
-    $body = (isset($m[1]) && $m[1] !== '') ? $m[1] : (isset($m[2]) ? $m[2] : '');
-    $out = array();
-    if (preg_match_all('/\'([^\']+)\'|"([^"]+)"/', $body, $q, PREG_SET_ORDER)) {
-      foreach ($q as $one) {
-        $v = (isset($one[2]) && $one[2] !== '') ? $one[2] : $one[1];
-        if ($v !== '') $out[] = $v;
-      }
-    }
-    return $out;
-  }
-  if (preg_match('/\$' . $name . '\s*=\s*\'([^\']*)\'\s*;/', $src, $m)) return $m[1];
-  return null;
-}
-function b64url($s) {
-  $s = strtr($s, '-_', '+/');
-  $pad = strlen($s) % 4;
-  if ($pad) $s .= str_repeat('=', 4 - $pad);
-  return base64_decode($s);
-}
-function http_get($url) {
-  if (function_exists('curl_init')) {
-    $c = curl_init($url);
-    curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($c, CURLOPT_TIMEOUT, 8);
-    curl_setopt($c, CURLOPT_FOLLOWLOCATION, true);
-    $r = curl_exec($c);
-    $code = curl_getinfo($c, CURLINFO_HTTP_CODE);
-    curl_close($c);
-    return ($code == 200) ? $r : false;
-  }
-  return @file_get_contents($url);
-}
-function find_cert($certs, $kid) {
-  if (!is_array($certs) || empty($certs['public_certs'])) return null;
-  foreach ($certs['public_certs'] as $c) {
-    if (isset($c['kid'], $c['cert']) && $c['kid'] === $kid) return $c['cert'];
-  }
-  return null;
-}
-/* Checks the Cloudflare Access sign-in token. Returns the email, or null. */
-function access_email($team, $aud, $store) {
-  $jwt = '';
-  if (!empty($_SERVER['HTTP_CF_ACCESS_JWT_ASSERTION'])) $jwt = $_SERVER['HTTP_CF_ACCESS_JWT_ASSERTION'];
-  elseif (!empty($_COOKIE['CF_Authorization'])) $jwt = $_COOKIE['CF_Authorization'];
-  if ($jwt === '') return null;
-  $parts = explode('.', $jwt);
-  if (count($parts) !== 3) return null;
-  $hdr = json_decode(b64url($parts[0]), true);
-  $pl  = json_decode(b64url($parts[1]), true);
-  $sig = b64url($parts[2]);
-  if (!is_array($hdr) || !is_array($pl) || !isset($hdr['alg']) || $hdr['alg'] !== 'RS256') return null;
-  $kid = isset($hdr['kid']) ? $hdr['kid'] : '';
-
-  $cacheFile = $store . '/.certs.json';
-  $certs = null;
-  if (is_file($cacheFile) && filemtime($cacheFile) > time() - 3600) {
-    $certs = json_decode((string)file_get_contents($cacheFile), true);
-  }
-  if (!find_cert($certs, $kid)) {
-    $raw = http_get('https://' . $team . '/cdn-cgi/access/certs');
-    if ($raw) { $certs = json_decode($raw, true); @file_put_contents($cacheFile, $raw); }
-  }
-  $pem = find_cert($certs, $kid);
-  if (!$pem) return null;
-  if (openssl_verify($parts[0] . '.' . $parts[1], $sig, $pem, OPENSSL_ALGO_SHA256) !== 1) return null;
-
-  $auds = isset($pl['aud']) ? (array)$pl['aud'] : array();
-  if (!in_array($aud, $auds, true)) return null;
-  if (!isset($pl['exp']) || $pl['exp'] < time()) return null;
-  if (isset($pl['iss']) && rtrim($pl['iss'], '/') !== 'https://' . $team) return null;
-  return isset($pl['email']) ? strtolower($pl['email']) : 'member';
 }
 function id_ok($k) { return is_string($k) && preg_match('/^[a-f0-9]{16}$/', $k); }
 function load_idx($f) {
@@ -125,11 +43,36 @@ function write_atomic($path, $data) {
   if (file_put_contents($tmp, $data) === false) return false;
   return @rename($tmp, $path);
 }
+/* email (lower case) => name, from the member records. Names are cosmetic, so a failure here is not fatal. */
+function member_names($pdo) {
+  $out = array();
+  try {
+    foreach (load_member_map($pdo) as $m) {
+      $e = strtolower((string)(isset($m['email']) ? $m['email'] : ''));
+      $n = trim((string)(isset($m['name']) ? $m['name'] : ''));
+      if ($e !== '' && $n !== '') $out[$e] = $n;
+    }
+  } catch (Throwable $t) { }
+  return $out;
+}
+function with_name($meta, $names) {
+  $by = strtolower((string)(isset($meta['by']) ? $meta['by'] : ''));
+  $meta['by_name'] = isset($names[$by]) ? $names[$by] : '';
+  return $meta;
+}
 
-/* ---------- settings: own values, else the ones in photos.php ---------- */
-if ($TEAM_DOMAIN === '') { $v = from_photos_php('TEAM_DOMAIN'); if ($v !== null) $TEAM_DOMAIN = $v; }
-if ($AUD_TAG === '')     { $v = from_photos_php('AUD_TAG');     if ($v !== null) $AUD_TAG = $v; }
-if (empty($ALLOWED_EMAILS)) { $v = from_photos_php('ALLOWED_EMAILS'); if (is_array($v)) $ALLOWED_EMAILS = $v; }
+/* ---------- sign-in and permission: the members system ---------- */
+$private = __DIR__ . '/../../../private';
+if (!is_file($private . '/bootstrap.php') || !is_file($private . '/lib/tools.php')) fail(500, 'members_system_missing');
+require_once $private . '/bootstrap.php';
+require_once $private . '/lib/tools.php';
+/* Ends the request itself (401/403) when the person is not a signed-in, active, unpaused member,
+   or when the request is a write that does not come from this site. */
+list($config, $pdo, $me) = boot_member_request();
+if (!can_use_tool($pdo, $me, TOOL_KEY)) {
+  fail(403, 'not_allowed', array('message' => 'Your account does not have the Agency Report tool switched on. Ask your admin to switch it on in Members & Access.'));
+}
+$email = strtolower((string)$me['email']);
 
 /* ---------- storage: outside public_html when possible ---------- */
 $store = rtrim(dirname($_SERVER['DOCUMENT_ROOT']), '/') . '/e3-agency-drafts';
@@ -143,35 +86,28 @@ if (!is_dir($store) || !is_writable($store)) fail(500, 'storage_not_writable');
 if (!is_file($store . '/.htaccess')) @file_put_contents($store . '/.htaccess', "Require all denied\nDeny from all\n");
 if (!is_file($store . '/index.html')) @file_put_contents($store . '/index.html', '');
 
-/* ---------- sign-in check ---------- */
-if ($TEAM_DOMAIN === '' || $AUD_TAG === '' || strpos($TEAM_DOMAIN, 'YOUR-TEAM') !== false || strpos($AUD_TAG, 'PASTE') !== false) fail(503, 'not_configured');
-$email = access_email($TEAM_DOMAIN, $AUD_TAG, $store);
-if (!$email) fail(401, 'not_signed_in');
-/* Drafts hold production figures, so only the allowed emails may read or change them. */
-$allowed = array_map('strtolower', $ALLOWED_EMAILS);
-if (!empty($allowed) && !in_array($email, $allowed, true)) fail(403, 'not_allowed');
-
 $action  = isset($_GET['action']) ? $_GET['action'] : '';
 $idxFile = $store . '/index.json';
 
 if ($action === 'list') {
+  $names = member_names($pdo);
   $idx = array_values(load_idx($idxFile));
   usort($idx, function ($a, $b) { $x = isset($a['updated']) ? $a['updated'] : 0; $y = isset($b['updated']) ? $b['updated'] : 0; return $y > $x ? 1 : ($y < $x ? -1 : 0); });
-  ok(array('drafts' => $idx, 'user' => $email, 'max' => $MAX_DRAFTS));
+  $idx = array_map(function ($m) use ($names) { return with_name($m, $names); }, $idx);
+  ok(array('drafts' => $idx, 'user' => $email, 'max' => MAX_DRAFTS));
 }
 if ($action === 'get') {
   $id = isset($_GET['id']) ? $_GET['id'] : '';
   if (!id_ok($id)) fail(400, 'bad_id');
   $f = $store . '/' . $id . '.json';
   if (!is_file($f)) fail(404, 'not_found');
-  header('Content-Type: application/json');
-  header('Content-Length: ' . filesize($f));
-  readfile($f);
-  exit;
+  $d = json_decode((string)file_get_contents($f), true);
+  if (!is_array($d)) fail(404, 'not_found');
+  ok(with_name($d, member_names($pdo)));
 }
 
-/* ---------- changes: POST from the app only ---------- */
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'fetch') fail(405, 'method_not_allowed');
+/* ---------- changes: POST from the app only (the members system already checked header, type and origin) ---------- */
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail(405, 'method_not_allowed');
 $in = json_decode((string)file_get_contents('php://input'), true);
 if (!is_array($in)) fail(400, 'bad_body');
 
@@ -197,10 +133,12 @@ if ($action === 'save') {
     if (!id_ok($id) || !isset($idx[$id])) fail(404, 'not_found');
     /* If somebody saved this draft after the page opened it, do not overwrite their work. */
     if (isset($in['expect']) && (int)$in['expect'] !== (int)$idx[$id]['updated']) {
-      fail(409, 'conflict', array('updated' => $idx[$id]['updated'], 'by' => isset($idx[$id]['by']) ? $idx[$id]['by'] : ''));
+      $names = member_names($pdo);
+      $other = with_name($idx[$id], $names);
+      fail(409, 'conflict', array('updated' => $idx[$id]['updated'], 'by' => isset($idx[$id]['by']) ? $idx[$id]['by'] : '', 'by_name' => $other['by_name']));
     }
   } else {
-    if (count($idx) >= $MAX_DRAFTS) fail(400, 'too_many_drafts', array('max' => $MAX_DRAFTS));
+    if (count($idx) >= MAX_DRAFTS) fail(400, 'too_many_drafts', array('max' => MAX_DRAFTS));
     $id = bin2hex(random_bytes(8));
   }
   $updated = (int)round(microtime(true) * 1000);
@@ -210,7 +148,7 @@ if ($action === 'save') {
   if ($file === false || !write_atomic($store . '/' . $id . '.json', $file)) fail(500, 'write_failed');
   $idx[$id] = $meta;
   if (!write_atomic($idxFile, json_encode($idx))) fail(500, 'write_failed');
-  ok(array('saved' => $meta));
+  ok(array('saved' => with_name($meta, member_names($pdo))));
 }
 if ($action === 'rename') {
   $id = isset($in['id']) ? $in['id'] : '';
@@ -223,7 +161,7 @@ if ($action === 'rename') {
   $d['name'] = $name;
   $idx[$id]['name'] = $name;
   if (!write_atomic($f, json_encode($d)) || !write_atomic($idxFile, json_encode($idx))) fail(500, 'write_failed');
-  ok(array('saved' => $idx[$id]));
+  ok(array('saved' => with_name($idx[$id], member_names($pdo))));
 }
 if ($action === 'delete') {
   $id = isset($in['id']) ? $in['id'] : '';
