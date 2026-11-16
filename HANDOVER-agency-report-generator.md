@@ -100,6 +100,12 @@ Photos and saved settings are not touched by replacing `index.html`.
 - `drafts.php` uses `random_bytes` (PHP 7+) and plain `array()` syntax, so it should run on older cPanel PHP versions, but this was only run on PHP 8.3. If the host's `post_max_size` is small (some hosts use 2M), a very large draft could be refused; the page then shows a message about size.
 - The artifact tool warns that the page refers to a `downloads` capability that is not declared. This only affects the preview.
 
+## 8b. Pending changes agreed with the owner (not built yet, as of 16 Nov 2026)
+
+1. **Shorter drafts list.** Keep the 10-draft maximum, but show only the newest 3 in the list with "Show more" and "Show less" buttons.
+2. **Names instead of emails** for "last saved by" (Working-on box, draft list, conflict message). The Cloudflare sign-in only carries the email, so names must come from a list. Preferred source: the owner's existing member access function that records each user with their email, if it also holds names. Fallback: a small `drafts-names.php` (email to name), which must not be re-sent in later zips. Waiting on the owner to say where the member records live and whether they include names.
+3. **Photo-save warning (suggested, not yet approved).** A message that stays on screen when the signed-in email is not on the photo allowed list, instead of the 3-second pop-up. Cause of the admin's lost photos on 16 Nov was most likely her email missing from `$ALLOWED_EMAILS` in `photos.php`; it was added afterwards (`sgpj1991@gmail.com`). Her earlier uploads never reached the server and must be uploaded again.
+
 ## 9. Picking this up in a new Claude session
 
 Give it this file, the current `index.html` and `drafts.php` (download it from cPanel, or from GitHub path `agency-report/index.html`). The repo has no other files. When publishing a preview artifact, strip the `<!DOCTYPE>`, `<html>`, `<head>` and `<body>` wrapper tags first, because the artifact tool adds its own.
