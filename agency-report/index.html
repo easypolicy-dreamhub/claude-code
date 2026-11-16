@@ -1107,7 +1107,7 @@ function renderPreview(){
 }
 function fitThumbs(){document.querySelectorAll('.thumb').forEach(t=>{const s=t.querySelector('.slide');s.style.transform=`scale(${t.clientWidth/1600})`;});}
 new ResizeObserver(()=>fitThumbs()).observe(document.getElementById('preview'));
-function renderAll(){renderFields();renderClubs();$('#msg1Title').value=S.msg1Title||'';$('#msg1Text').value=S.msg1||'';$('#msg2Title').value=S.msg2Title||'';renderNew();renderChecks();renderPeople();renderDesign();renderPreview();$('#quoteText').value=S.quote;$('#quoteBy').value=S.quoteBy;$('#celebCap').value=S.celebCap;$('#celebLbl').textContent=celebImg?'Photo added. Tap to replace':'Choose a photo';$('#dropCeleb').classList.toggle('ok',!!celebImg);fileStatus();}
+function renderAll(){renderFields();renderClubs();$('#msg1Title').value=S.msg1Title||'';$('#msg1Text').value=S.msg1||'';$('#msg2Title').value=S.msg2Title||'';renderNew();renderChecks();renderPeople();renderDesign();renderPreview();updateDraftName();$('#quoteText').value=S.quote;$('#quoteBy').value=S.quoteBy;$('#celebCap').value=S.celebCap;$('#celebLbl').textContent=celebImg?'Photo added. Tap to replace':'Choose a photo';$('#dropCeleb').classList.toggle('ok',!!celebImg);fileStatus();}
 let rt;function refresh(light){save();clearTimeout(rt);rt=setTimeout(()=>{renderChecks();renderPeople();renderPreview();updateAwardResults();if(!light)renderFields();},140);}
 function updateAwardResults(){const cum=S.guide.slice(0,reportMonth()||12).reduce((a,v)=>a+num(v),0);S.awards.forEach((w,i)=>{const el=document.getElementById('awres-'+i);if(!el)return;const st=awardStats(w);el.innerHTML=st.ach==null?(excel?'Set the qualifying figure to count.':'Upload the production Excel to count.'):`<b>${st.ach}</b> achieved, <b>${st.on}</b> on track (at least ${f0(st.line)}, ${cum}% of ${f0(num(w.min))}).${st.pct==null?'':` <b>${st.pct.toFixed(0)}%</b> of the target of ${num(w.target)}.`}`;});}
 function fileStatus(){
@@ -1448,11 +1448,13 @@ function renderDrafts(){
     <p class="hint">Saved on your portal, so you and your admin can open the same report from any device. Photos are shared separately in the photo library.</p>
     <div id="draftCur"></div>
     <div class="newc"><input id="draftName" placeholder="${esc(draftDefaultName())}" aria-label="Draft name" maxlength="80"><button class="btn small primary" id="draftSaveNew">Save as new draft</button></div>
+    <p class="hint" id="draftHint" style="margin:6px 0 0"></p>
     <p class="hint" id="draftMsg">${msg}</p>
     <div id="draftList">${DRAFTS.list.length?DRAFTS.list.map(draftRow).join(''):'<p class="hint">No drafts yet. Load this month’s files, then save one.</p>'}</div>`;
   if(keep)$('#draftName').value=keep;
-  draftShown='';updateDraftBar();
+  draftShown='';updateDraftBar();updateDraftName();
 }
+function updateDraftName(){const n=draftDefaultName(),el=$('#draftName'),hint=$('#draftHint');if(el)el.placeholder=n;if(hint)hint.textContent=`Leave the name empty to use “${n}”.`;}
 function draftDirty(j){return !!curDraft&&draftBase!==null&&(j||stateJSON())!==draftBase;}
 function updateDraftBar(j){
   const el=$('#draftCur');if(!el)return;

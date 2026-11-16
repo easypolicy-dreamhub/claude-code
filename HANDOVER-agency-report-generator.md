@@ -42,6 +42,7 @@ Note: the cPanel zips `e3-members-all-9-apps.zip` and `e3-members-all-tools.zip`
 7. **Shared drafts (option B).** A "Drafts" group at the top of the Data tab, backed by the new `drafts.php`.
    - Save as new draft (named, default "SG-PJ Sep 2026"), open, reload, rename, delete. Opening or deleting asks for a second tap, because pop-up confirmations are not always shown.
    - A draft is a snapshot of exactly what the browser autosaves: loaded Excel/PDF/recruitment data, keyed-in figures, targets, awards, newcomers, messages, theme, slide order and the ending-photo caption. Photos, the ending photo image and custom category pictures stay in the photo library and are not copied into drafts.
+   - The name box shows the suggested name (agency, month, year) as a hint that refreshes whenever files load, with a line saying what an empty name will become.
    - A working bar shows "All changes saved" or "Unsaved changes" with Save changes and Close draft. Autosave to the browser still runs as before.
    - Protection against overwriting: saving sends the version it opened (`expect`); if somebody else saved the draft since, the server answers 409 and the page tells the user to save as new or reload.
    - Access: the same Cloudflare Access sign-in as `photos.php`, and unlike photos, drafts are readable and writable only by the allowed emails (they hold production figures). Maximum 200 drafts, 6 MB each. Stored as the exact JSON string the page sent.
