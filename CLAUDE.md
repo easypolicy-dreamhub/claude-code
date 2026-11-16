@@ -15,8 +15,12 @@ These tools run on the owner's cPanel hosting, not from this repo. The owner upl
 
 | Repo folder | Server folder (under `public_html`) | Confirmed |
 |---|---|---|
-| `agency-report/` | `members/agency-report/` | yes |
-| other folders | ask the owner | no |
+| `agency-report/` | `members/agency-report/` (tool key `agency-report`) | yes |
+| `legacy-planner/` | `members/legacy-planner/` | yes (from `/members/apps.js`) |
+| `monthly-report/` | `members/monthly-report/` | yes (from `/members/apps.js`) |
+| `ai-coach/`, `scientific-calculator/`, `qr-resized/` | not listed in `/members/apps.js`: ask the owner | no |
+
+`/members/apps.js` is the list of tools and their folders (`/members/<folder>/`). Each tool's `key` ties it to Members & Access and `private/lib/tools.php`, so a new tool also needs its key added there.
 
 ## Standard header
 
