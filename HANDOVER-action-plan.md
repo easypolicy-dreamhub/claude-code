@@ -156,3 +156,7 @@ Action Plan coach feature (built 16 Nov 2026, zip `_n`; database script `schema_
 - The agent sees "Your coach: <name>." The super admin's plan view has a third switch "What <coach> sees" (read-only). Everyone tab for a non-team-admin coach is "People I coach".
 - If a coach stops being eligible their access stops immediately and the plan shows a warning; there is no automatic fall-back to another coach (the owner chooses).
 - Still undecided / not built: Unit Managers automatically seeing everything below them (Option 2, dropped for now), a "Message your coach" button for the agent, notifying a person when they are made a coach.
+
+## 10. Keeping the three shared files in step with the live site
+
+Other chats (for example the Internship program and Visitor Stats) also add tools. Every new tool touches three shared files: `private/lib/tools.php`, `public_html/members/apps.js` and `public_html/members/.htaccess` (the protection list). **Before building any zip, ask the owner for their current copies of those three files and merge, otherwise the zip overwrites their new tools.** Synced on 19 Nov 2026: 26 tools (24 + Internship under Coaching + Visitor Stats, super admin only). Visitor Stats had a card but no server-side protection until `visitor-stats` was added to `tools.php` (locked), `apps.js` (key) and `.htaccess`.
