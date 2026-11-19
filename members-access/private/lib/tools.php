@@ -37,6 +37,7 @@ function tool_catalog(): array
         $t('event-invitees', 'My Event Invitees', 'Recruitment', 'event-invitees', ['basic' => true]),
         $t('million-income', 'Million Income Calculator', 'Recruitment', 'million-income', ['basic' => true]),
         $t('action-plan', 'Action Plan', 'Coaching', 'action-plan'),
+        $t('internship', 'Internship', 'Coaching', 'internship'),
         $t('activity', 'Team Activity', 'Leader', 'activity'),
         $t('team', 'Team', 'Leader', 'team'),
         $t('agency-report', 'Agency Report Generator', 'Leader', 'agency-report'),
