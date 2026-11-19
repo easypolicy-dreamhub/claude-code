@@ -49,6 +49,7 @@ function tool_catalog(): array
         $t('events', 'Events', 'Site Admin', 'events', ['locked' => true]),
         $t('site-settings', 'Site Settings', 'Site Admin', 'site-settings', ['locked' => true]),
         $t('access', 'Members & Access', 'Site Admin', 'access', ['locked' => true]),
+        $t('visitor-stats', 'Visitor Stats', 'Site Admin', 'visitor-stats', ['locked' => true]),
     ];
 }
 

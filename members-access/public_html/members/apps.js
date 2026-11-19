@@ -234,6 +234,7 @@ const APPS = [
     adminOnly: true
   },
   {
+    key:   "visitor-stats",
     name:  "Visitor Stats",
     url:   "/members/visitor-stats/",
     icon:  "👣",
