@@ -1,6 +1,6 @@
 # Handover: Members page revamp (E3 Advisor Toolkit)
 
-Status: **mockups only. Nothing is built, packaged or uploaded.** Waiting for the owner's `apps.js` (and the current members index) before building.
+Status: **mockups only. Nothing is built, packaged or uploaded.** `apps.js` received. Waiting for the current members index before building.
 
 ## Why
 The current `/members/` page has about 20 or more tools in 7 categories (Servicing, Sales, Recruitment, Leader, Admin, Coaching, Site Admin). Cards are tall with empty space, so the page is a long scroll.
@@ -9,7 +9,7 @@ The current `/members/` page has about 20 or more tools in 7 categories (Servici
 - **Look:** the first mock (light grey ground, slate ink, small cards, Poppins and DM Sans). Not the dark website-styled version.
 - **Layouts:** Grid, Side menu and List, with a switch under the search box.
 - **Default layout:** Grid. Remember each member's last choice (browser storage is fine).
-- **Notes under cards** (for example "Agents only"): **remove all**, to keep it sleek.
+- **Notes under cards** (the `note` field in `apps.js`): **remove all**, to keep it sleek.
 - **Favourites:**
   - Star on each card.
   - Shown at the top **on every category and in every layout**, hidden only while the search box has text.
@@ -19,12 +19,21 @@ The current `/members/` page has about 20 or more tools in 7 categories (Servici
 - **Login animation:** a short welcome band (about 3 seconds, "Welcome back, <name>") slides across the header once per login. Tap to skip. Skipped when the device asks for reduced motion.
   - Real page: play once per login. Check how the members system in `private/` handles login first. Fallback: once per browser session.
 
-## Tools seen so far (from the owner's screenshot)
-- Servicing: GE Panel Finder, Great Journey Finder, Client Portal
-- Sales: Protection Needs Calculator, Sum Assured Calculator, Legacy Planner, plus 2 not yet seen
-- Recruitment, Leader, Admin, Coaching, Site Admin: tools not yet seen
+## Tools (from the owner's `apps.js`, 26 tools in 7 groups)
+- Servicing (3): GE Panel Finder, Great Journey Finder, Client Portal (`/client-portal/`, outside `/members/`)
+- Sales (5): Protection Needs Calculator, Sum Assured Calculator, Legacy Planner, CI Poster Generator, Policy Summary
+- Recruitment (5): Career Code, Career Code Candidates, Event Invite Links, My Event Invitees, Million Income Calculator
+- Leader (4): Team Activity, Team, Agency Report Generator, Monthly Report Messages
+- Admin (1): Nominee Form Filler
+- Coaching (3): HNW Coach (external Gemini link, so open in a new tab), Action Plan, Internship
+- Site Admin (5, `adminOnly: true`): Testimonials, Events, Site Settings, Members & Access, Visitor Stats
 
-The real list comes from `/members/apps.js`. Each tool's `key` ties to Members & Access and `private/lib/tools.php`.
+How `apps.js` works (the real page must keep this):
+- It defines `APPS` (fields: `key`, `name`, `url`, `icon` as one emoji, `about`, `group`, optional `note`, optional `adminOnly`), plus `PAGE_TITLE` ("E3 Advisor Toolkit") and `PAGE_INTRO` ("Every tool the team uses, in one place.").
+- The owner edits `apps.js` to add or change tools. The new page must read `APPS` and must not hard-code the list.
+- Who sees which card is decided on the server from the ticks in Members & Access. Hiding a card is only tidiness; each tool page is also checked on the server. The new page must keep using whatever the current members index does for this. **Still to read: the current members index.**
+- Keep using the emoji `icon`. Ignore `note` (decision: no notes on cards). Leave `apps.js` itself unchanged.
+- Group order to keep: Servicing, Sales, Recruitment, Leader, Admin, Coaching, Site Admin. A new group typed in `apps.js` should still appear (after the known ones).
 
 ## Mockups (private claude.ai links, for reference only)
 - First look with 3 layouts: https://claude.ai/artifact/Px3RHWASYmwgQFQHEi55Ty
@@ -39,10 +48,9 @@ The real list comes from `/members/apps.js`. Each tool's `key` ties to Members &
 - Test-extract the zip into a fake `public_html`, list where each file landed, and confirm files that must not change are not in it.
 
 ## Open questions
-1. `apps.js` contents (all tools, folders, keys, icons, categories).
-2. File type and location of the current members index (confirm the real path under `public_html/members/`).
-3. How login is handled, so the once-per-login animation can use it.
-4. Whether the tool icons should be kept (the mock only uses initials).
+1. The current members index file (type, real path under `public_html/members/`, and how it asks the server which cards to show). `apps.js` has been received.
+2. How login is handled, so the once-per-login animation can use it.
+3. Whether Monthly Report Messages should stay under Leader (as in `apps.js`).
 
 ## Not tested
 Mockups were not opened in a browser by the assistant. Phone and desktop layout, the animation, and dark or light behaviour still need a real check after the build.
