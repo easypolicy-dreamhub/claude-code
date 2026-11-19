@@ -159,6 +159,15 @@ const APPS = [
     note:  "Your leader assigns it. Suggested weeks are a guide, not a deadline."
   },
   {
+    key:   "internship",
+    name:  "Internship",
+    url:   "/members/internship/",
+    icon:  "🎓",
+    about: "Your internship week by week: what to do each day, your Google Drive link, and your supervisor's weekly review",
+    group: "Coaching",
+    note:  "Your supervisor releases each week. Homework stays in your own Google Drive."
+  },
+  {
     key:   "team",
     name:  "Team",
     url:   "/members/team/",
@@ -222,6 +231,15 @@ const APPS = [
     about: "Who can log in, what to call them, and which tools each person can use",
     group: "Site Admin",
     note:  "Super admin only. Adds and removes people on Cloudflare too.",
+    adminOnly: true
+  },
+  {
+    name:  "Visitor Stats",
+    url:   "/members/visitor-stats/",
+    icon:  "👣",
+    about: "How many people visit the landing page and which buttons they tap",
+    group: "Site Admin",
+    note:  "Super admin only.",
     adminOnly: true
   },
   {
