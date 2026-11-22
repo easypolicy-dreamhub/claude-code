@@ -28,5 +28,6 @@ Every toolkit page loads the shared stylesheet `/members/e3-toolkit.css` (do not
 
 ## Working style
 
+- **Never build or edit a tool's file from the copy in this repo.** The repo copy may be out of date. Before changing any file, ask the owner for their current live copy of it, and build from that. This applies to every file, including shared ones (`tools.php`, `apps.js`, `.htaccess`).
 - Say what was and was not tested. Do not say something cannot be done before checking.
 - Keep a handover note per tool (see `HANDOVER-agency-report-generator.md`) and update it when behaviour changes.
