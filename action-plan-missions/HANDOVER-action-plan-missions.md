@@ -54,3 +54,8 @@ Before extracting, in cPanel File Manager copy `private/lib/actionplan.php` to `
 - **API:** POST `resource_add` (with `plan` = one person, coach or super admin; without `plan` = template, super admin), `work_add` and `folder_set` (the agent), `link_remove` (rules as above). The Template and plan payloads carry `resources`; plan items also carry `work`, `can_see_work`, `folder_url`.
 - Files in the zip: `private/lib/actionplan.php`, `private/schema_phase19.sql`, `public_html/members/action-plan/index.html`. Run the SQL first; zip into the HOME folder. Built from the live files pasted on 22 Nov (12 distinctive lines matched the previous zip).
 - Tested: PHP syntax; link rules with sqlite (58 checks: address safety, limits, who can see work, clean-up); stage/reward/icon logic (43); the page in a browser with a simulated server (31 for links, 35 for the rest). Not tested against the real database or with real Google links.
+
+## Update 22 Nov 2026 (last): preview shows where "Share a link to my work" will be
+- In "What <name> sees" (the read-only agent preview) each open task now shows a greyed-out "+ Share a link to my work" button (tooltip "Preview only: the agent shares their work here"), the same way the "Open <tool> ›" button is greyed out. It is not shown on skipped or approved tasks, does nothing when clicked, and does not appear in "Your view". Real agents are unaffected.
+- Page-only change: the zip holds just `public_html/members/action-plan/index.html`. No SQL, no server file.
+- Tested: page syntax; 4 new browser checks (greyed button on the 2 open tasks, not on the approved one, tooltip, click does nothing, absent in your own view); all earlier browser (35 + 35) and server (58 + 43) checks still pass.
