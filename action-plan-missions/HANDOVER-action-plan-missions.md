@@ -59,3 +59,8 @@ Before extracting, in cPanel File Manager copy `private/lib/actionplan.php` to `
 - In "What <name> sees" (the read-only agent preview) each open task now shows a greyed-out "+ Share a link to my work" button (tooltip "Preview only: the agent shares their work here"), the same way the "Open <tool> ›" button is greyed out. It is not shown on skipped or approved tasks, does nothing when clicked, and does not appear in "Your view". Real agents are unaffected.
 - Page-only change: the zip holds just `public_html/members/action-plan/index.html`. No SQL, no server file.
 - Tested: page syntax; 4 new browser checks (greyed button on the 2 open tasks, not on the approved one, tooltip, click does nothing, absent in your own view); all earlier browser (35 + 35) and server (58 + 43) checks still pass.
+
+## Update 22 Nov 2026 (very last): the preview also shows the "My work folder" card
+- In "What <name> sees", when the agent has NOT saved a folder, the preview shows the "My work folder" card with a switched-off box and Save and the note "Preview only: the agent saves their work folder here." (same idea as the greyed share button). If the agent has saved a folder, the preview shows the real Open link as before. It is not shown in "Your view" or in "What <coach> sees" (they only see a folder once one is saved). Real agents are unaffected.
+- Page-only change: the zip holds just `public_html/members/action-plan/index.html`. No SQL, no server file.
+- Tested: page syntax; 7 new browser checks (greyed card, switched-off box and Save do nothing, position on the page, not in the other views, real link when a folder is saved); all earlier browser (42 + 35) and server (58 + 43) checks pass.
