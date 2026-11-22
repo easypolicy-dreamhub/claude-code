@@ -37,3 +37,10 @@ Day-90 review logo: the pasted logo line was too long to copy exactly, so the lo
 
 ## Roll back
 Before extracting, in cPanel File Manager copy `private/lib/actionplan.php` to `actionplan-backup.php` and `public_html/members/action-plan/index.html` to `index-backup.html` (same folders). To roll back, delete the new file and rename the backup. The database additions can stay; the old code ignores them.
+
+## Update 22 Nov 2026 (later): badge icons and the icon picker (schema_phase18.sql)
+- Each stage has a **badge icon**, chosen on the Template screen (✎ on a stage > "Badge icon", 12 choices: leap, book, bolt, flag, scout, shield, cup, star, rocket, team, target, heart). Style A: a solid gold medal with a white line icon; unearned badges are grey with the title still visible.
+- Shown on: the Badges strip, the congratulations pop-up, the Rewards tab, the Template stage headers, and the Day-90 review ("Badges earned"). No icon, or an unknown one, shows the star.
+- Stored in `ap_sections.badge_icon` (`schema_phase18.sql` adds the column and sets the starting icons for the seven original sections). The server accepts only the 12 keys in `AP_BADGE_ICONS` (`actionplan.php`); the drawings live in `ICONS` in `index.html`. **Keep the two lists the same** when adding an icon.
+- Built from the live files pasted by the owner on 22 Nov (checked against the previous zip; 12 distinctive lines matched). Files in the zip: `private/lib/actionplan.php`, `private/schema_phase18.sql`, `public_html/members/action-plan/index.html`. Upload: run the SQL first; zip into the HOME folder (holds `public_html` and `private`).
+- Tested: PHP syntax; stage / reward / icon logic with sqlite (43 checks, including: unlisted icon refused and a refused save changes nothing); the page in a browser with a simulated server (35 checks, picker included). Not tested against the real database.
