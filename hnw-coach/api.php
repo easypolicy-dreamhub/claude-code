@@ -159,7 +159,8 @@ switch ($action) {
         if (!empty($in['clear_key'])) {
             $changes['GEMINI_API_KEY'] = null;
         } elseif ($key !== '') {
-            if (!preg_match('/^[A-Za-z0-9_\-]{20,200}$/', $key)) {
+            // Any run of 20-300 visible ASCII characters with no spaces or line breaks (Google's newer key formats contain dots and more).
+            if (!preg_match('/^[\x21-\x7E]{20,300}$/', $key)) {
                 coach_fail(422, 'That does not look like an API key. Copy the whole key from Google AI Studio, with no spaces.');
             }
             $changes['GEMINI_API_KEY'] = $key;
