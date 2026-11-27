@@ -195,6 +195,7 @@ switch ($action) {
             'fields' => array_keys($raw),
             'role' => $raw['role'] ?? null,
             'is_super_admin' => $raw['is_super_admin'] ?? null,
+            'is_admin' => $raw['is_admin'] ?? null,
             'treated_as_super_admin' => $isAdmin,
         ]);
 
