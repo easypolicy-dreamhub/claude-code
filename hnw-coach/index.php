@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+define('HNWCOACH_PAGE', true); // tells the login bridge to show a readable page, not JSON, when it refuses someone
 require __DIR__ . '/lib/bootstrap.php';
 coach_boot(); // existing member login: signed-out visitors never get the page
 header('Cache-Control: no-store');

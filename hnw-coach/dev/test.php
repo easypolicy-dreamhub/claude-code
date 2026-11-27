@@ -52,6 +52,7 @@ file_put_contents("$tmp/notes.txt", 'not a pdf');
 
 echo "\n== Sign-in and admin gate (server-side) ==\n";
 [$c] = req('', 'GET', 'me');                         ok($c === 401, 'signed-out visitor is refused on the API', "got $c");
+[$c] = req('gone', 'GET', 'me');                         ok($c === 403, 'an inactive member is refused even if they were an admin');
 [$c, $d] = req('notool', 'GET', 'me');               ok($c === 403, 'member without the HNW Coach tool is refused', "got $c");
 [$c] = req('notool', 'POST', 'chat', '', ['message' => 'hi']); ok($c === 403, 'member without the tool cannot chat');
 [$c] = req('alan', 'GET', 'me', '', null);           ok($c === 200, 'agent can load the coach');
@@ -160,7 +161,7 @@ echo "\n== Rate limit ==\n";
 $last = 0; for ($i = 1; $i <= 22; $i++) { [$last] = req('carol', 'POST', 'chat', '', ['message' => "q$i"]); if ($last === 429) break; }
 ok($last === 429 && $i === 21, 'agent is limited after 20 messages in an hour', "stopped at $i with $last");
 // daily limit: plant 30 messages sent 2 hours ago (outside the hourly window, inside the day)
-$mid = substr(hash('sha256', 'erin@example.com'), 0, 32);
+$mid = substr(hash('sha256', '14'), 0, 32); // memory is keyed by the member's id (Erin = 14)
 $dir = getenv('TEST_DATA_DIR') . "/members/$mid"; @mkdir($dir, 0700, true);
 file_put_contents("$dir/chat.json", json_encode(['messages' => [], 'notes' => '', 'notes_upto' => 0, 'recent' => array_fill(0, 30, time() - 7200)]));
 [$c, $d] = req('erin', 'POST', 'chat', '', ['message' => 'one more']); ok($c === 429 && str_contains($d['error'] ?? '', 'today'), 'daily message limit stops an advisor after 30 in a day');
@@ -180,18 +181,33 @@ ok(count(array_filter($d['questions'], fn($q) => $q['handoff'])) === 2, 'handoff
 echo "\n== Setup helper ==\n";
 [$c, $d] = req('alan', 'GET', 'whoami'); ok($c === 200 && $d['treated_as_super_admin'] === false && !str_contains(json_encode($d), 'alan@example.com'), 'whoami works for a member and shows no personal data');
 [$c, $d] = req('boss', 'GET', 'whoami'); ok($d['treated_as_super_admin'] === true, 'whoami: the super admin is recognised');
-[$c, $d] = req('teamadmin', 'GET', 'whoami'); ok($d['treated_as_super_admin'] === false, 'whoami: a team admin is not treated as super admin');
+[$c, $d] = req('teamadmin', 'GET', 'whoami'); ok($d['treated_as_super_admin'] === false && $d['is_team_admin'] === 1, 'whoami: a team admin is not treated as super admin');
 
 echo "\n== Page and secrets ==\n";
 $h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $html = curl_exec($h); $c = curl_getinfo($h, CURLINFO_RESPONSE_CODE);
 ok($c === 200 && str_contains($html, 'HNW Coach'), 'page loads for a signed-in member');
 ok(str_contains($html, '/members/e3-toolkit.css') && str_contains($html, '<div class="e3-bar">') && str_contains($html, '<header class="topbar">') && !str_contains($html, '.e3-bar{'), 'page uses the shared stylesheet and standard header');
 ok(!str_contains($html, 'test-key-123') && !str_contains($html, 'AIza'), 'API key is not in the page');
+$h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: notool'], CURLOPT_RETURNTRANSFER => true]); $html2 = curl_exec($h);
+ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 403 && str_contains($html2, '<header class="topbar">') && str_contains($html2, 'switched on') && !str_starts_with(trim($html2), '{'), 'a member without the tool sees a readable page, not raw JSON');
 $h = curl_init("$base/index.php"); curl_setopt($h, CURLOPT_RETURNTRANSFER, true); curl_exec($h); ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 401, 'page refuses a signed-out visitor');
 ok(!str_contains($allBodies, 'test-key-123'), 'API key never appears in any API response');
 $dataDir = getenv('TEST_DATA_DIR'); $docRoot = realpath(__DIR__ . '/..');
 ok(!str_starts_with(realpath($dataDir), $docRoot), 'private data folder is outside the web folder');
 ok(!glob("$docRoot/*.pdf") && !glob("$docRoot/**/*.pdf"), 'no PDFs stored in the web folder');
+
+echo "\n== Settings come from private/hnw-coach-config.php (no constants) ==\n";
+$bc = getenv('APP_BASE_CFGFILE');
+$r2 = function (string $user, string $method, string $action, $body = null) use ($bc) {
+    $ch = curl_init("$bc/api.php?action=$action"); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
+    if ($body !== null) { $h[] = 'Content-Type: application/json'; curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body)); }
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $h, CURLOPT_RETURNTRANSFER => true]);
+    $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? []];
+};
+[$c] = $r2('boss', 'POST', 'save_instructions', ['text' => 'cfg test']); ok($c === 200, 'instructions saved on the settings-file copy');
+[$c, $d] = $r2('boss', 'GET', 'settings'); ok($d['warnings'] === [], 'no missing-key warning: the key and WhatsApp number were read from hnw-coach-config.php', json_encode($d['warnings'] ?? null));
+[$c, $d] = $r2('boss', 'POST', 'chat', ['message' => 'hello from cfg']); ok($c === 200 && str_starts_with($d['reply'] ?? '', 'COACH-REPLY'), 'a real chat round-trip works with settings read from the file', json_encode($d));
+[$c, $d] = $r2('alan', 'GET', 'me'); ok($d['whatsapp'] === '60123456789', 'WhatsApp number comes from the settings file');
 
 echo "\n== Data folder inside the web folder is refused ==\n";
 $base2 = getenv('APP_BASE_BADDIR');

@@ -3,9 +3,14 @@
 // memory and the usage log. Everything lives in the PRIVATE data folder, never
 // under public_html.
 
+/** A setting: a constant if one is defined (local tests), else private/hnw-coach-config.php, else the main config array's 'hnw_coach' entry. */
 function coach_const(string $name, $default)
 {
-    return defined($name) ? constant($name) : $default;
+    if (defined($name)) {
+        return constant($name);
+    }
+    $cfg = $GLOBALS['coach_cfg'] ?? [];
+    return array_key_exists($name, $cfg) ? $cfg[$name] : $default;
 }
 
 function coach_fail(int $code, string $message, array $extra = [])
@@ -27,12 +32,12 @@ function coach_data_root(): string
     $doc = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
     if ($dir === '') {
         if ($doc === '') {
-            coach_fail(500, 'COACH_DATA_DIR is not set in config.php.');
+            coach_fail(500, 'COACH_DATA_DIR is not set in private/hnw-coach-config.php.');
         }
         $dir = dirname(rtrim($doc, '/')) . '/e3-hnw-coach';
     }
     if (!is_dir($dir) && !@mkdir($dir, 0700, true)) {
-        coach_fail(500, 'Cannot create the private data folder. Set COACH_DATA_DIR in config.php to a writable folder above public_html.');
+        coach_fail(500, 'Cannot create the private data folder. Set COACH_DATA_DIR in private/hnw-coach-config.php to a writable folder above public_html.');
     }
     $real = realpath($dir);
     $docReal = $doc !== '' ? realpath($doc) : false;

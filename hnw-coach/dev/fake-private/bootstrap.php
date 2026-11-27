@@ -4,14 +4,19 @@
 // the request itself with 401/403 for signed-out people and for writes that do not come from the site.
 function dev_users(): array
 {
+    // Same shape as the real members row after authenticate_member(): ints for id / is_admin / is_active / is_team_admin.
+    $row = fn(int $id, string $email, string $name, int $admin = 0, int $team = 0) =>
+        ['id' => $id, 'email' => $email, 'name' => $name, 'is_admin' => $admin, 'is_active' => 1, 'is_team_admin' => $team, 'upline_id' => null];
     return [
-        'alan'      => ['email' => 'alan@example.com',  'name' => 'Alan',       'role' => 'member',      'tools' => ['hnw-coach']],
-        'brenda'    => ['email' => 'brenda@example.com','name' => 'Brenda',     'role' => 'member',      'tools' => ['hnw-coach']],
-        'carol'     => ['email' => 'carol@example.com', 'name' => 'Carol',      'role' => 'member',      'tools' => ['hnw-coach']],
-        'erin'      => ['email' => 'erin@example.com',  'name' => 'Erin',       'role' => 'member',      'tools' => ['hnw-coach']],
-        'teamadmin' => ['email' => 'ta@example.com',    'name' => 'Team Admin', 'role' => 'admin',       'tools' => ['hnw-coach']],
-        'notool'    => ['email' => 'nt@example.com',    'name' => 'No Tool',    'role' => 'member',      'tools' => []],
-        'boss'      => ['email' => 'boss@example.com',  'name' => 'Boss',       'role' => 'super_admin', 'tools' => []],
+        'alan'      => $row(11, 'alan@example.com', 'Alan'),
+        'brenda'    => $row(12, 'brenda@example.com', 'Brenda'),
+        'carol'     => $row(13, 'carol@example.com', 'Carol'),
+        'erin'      => $row(14, 'erin@example.com', 'Erin'),
+        'dora'      => $row(16, 'dora@example.com', 'Dora'),
+        'teamadmin' => $row(15, 'ta@example.com', 'Team Admin', 0, 1),
+        'notool'    => $row(17, 'nt@example.com', 'No Tool'),
+        'boss'      => $row(1, 'boss@example.com', 'Boss', 1),
+        'gone'      => ['is_active' => 0] + $row(18, 'gone@example.com', 'Gone', 1),
     ];
 }
 function dev_fail(int $code, string $msg): void

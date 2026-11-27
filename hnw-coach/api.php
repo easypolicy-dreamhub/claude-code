@@ -119,10 +119,10 @@ switch ($action) {
         $cur = coach_instr_current();
         $warnings = [];
         if ((string) coach_const('GEMINI_API_KEY', '') === '') {
-            $warnings[] = 'GEMINI_API_KEY is missing in config.php, so the coach cannot answer yet.';
+            $warnings[] = 'GEMINI_API_KEY is missing from private/hnw-coach-config.php, so the coach cannot answer yet.';
         }
         if (preg_replace('/\D/', '', (string) coach_const('COACH_WHATSAPP_NUMBER', '')) === '') {
-            $warnings[] = 'COACH_WHATSAPP_NUMBER is not set in config.php, so the "Ask my leader" button has no number.';
+            $warnings[] = 'COACH_WHATSAPP_NUMBER is not set in private/hnw-coach-config.php, so the "Ask my leader" button has no number.';
         }
         $out([
             'instructions' => $cur,
@@ -193,9 +193,8 @@ switch ($action) {
         $raw = $member['raw'];
         $out([
             'fields' => array_keys($raw),
-            'role' => $raw['role'] ?? null,
-            'is_super_admin' => $raw['is_super_admin'] ?? null,
             'is_admin' => $raw['is_admin'] ?? null,
+            'is_team_admin' => $raw['is_team_admin'] ?? null,
             'treated_as_super_admin' => $isAdmin,
         ]);
 

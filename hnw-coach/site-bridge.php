@@ -36,31 +36,43 @@ function coach_boot(): array
     if (!$allowed) {
         coach_bridge_fail(403, 'Your account does not have the HNW Coach tool switched on. Ask your admin to switch it on in Members & Access.');
     }
-    $m = is_array($me) ? $me : (is_object($me) ? (array) $me : []);
-    $email = strtolower((string) ($m['email'] ?? ''));
-    if ($email === '') {
+    $m = is_array($me) ? $me : [];
+    $id = (string) ($m['id'] ?? '');
+    if ($id === '') {
         coach_bridge_fail(401, 'Please sign in.');
     }
-    $name = trim((string) ($m['name'] ?? $m['full_name'] ?? $m['display_name'] ?? ''));
+    $email = strtolower((string) ($m['email'] ?? ''));
+    $name = trim((string) ($m['name'] ?? ''));
+
+    // Settings (the Gemini key, the leader's WhatsApp number): a NEW file next to config.php, so config.php itself is never edited.
+    $cfg = [];
+    $extra = $private . '/hnw-coach-config.php';
+    if (is_file($extra)) {
+        $x = require $extra;
+        if (is_array($x)) {
+            $cfg = $x;
+        }
+    }
+    if (is_array($config['hnw_coach'] ?? null)) {
+        $cfg += $config['hnw_coach'];
+    }
+    $GLOBALS['coach_cfg'] = $cfg;
+
     return $GLOBALS['coach_ctx'] = [
-        'id' => $email, // memory is keyed by the signed-in email, never by anything the browser sends
+        'id' => $id, // memory is keyed by the signed-in member's id, never by anything the browser sends
         'name' => $name !== '' ? $name : (string) strstr($email, '@', true),
         'raw' => $m,
-        'config' => $config,
     ];
 }
 
 /**
- * True only for the SUPER admin (the team leader). Team admins and ordinary members must NOT pass.
- * ADJUST: this reads the usual field names from the member record that boot_member_request() returns.
- * If the Settings and Usage tabs do not appear for the super admin, open
- * /members/hnw-coach/api.php?action=whoami while signed in and send me what it shows.
+ * True only for the SUPER admin: the same rule as tool_is_super() in private/lib/tools.php
+ * (is_admin and active). Team admins (is_team_admin) and ordinary members do NOT pass.
  */
 function coach_is_super_admin(array $member): bool
 {
     $m = $member['raw'];
-    return !empty($m['is_super_admin']) || !empty($m['super_admin'])
-        || in_array(strtolower((string) ($m['role'] ?? '')), ['super_admin', 'superadmin', 'super-admin'], true);
+    return !empty($m['is_admin']) && !empty($m['is_active']);
 }
 
 /** Server-side gate for every upload / save / delete / restore / usage action. */
@@ -80,8 +92,18 @@ function coach_list_members(): array
 function coach_bridge_fail(int $code, string $message)
 {
     http_response_code($code);
-    header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
+    if (defined('HNWCOACH_PAGE')) { // the page itself (index.php): a readable message instead of raw JSON
+        header('Content-Type: text/html; charset=utf-8');
+        $m = htmlspecialchars($message === 'members_system_missing' ? 'The members system could not be found. Please tell your admin.' : $message, ENT_QUOTES);
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<meta name="robots" content="noindex, nofollow"><title>HNW Coach</title>'
+            . '<link rel="stylesheet" href="/members/e3-toolkit.css"></head><body>'
+            . '<div class="e3-bar"><a href="/members/">E3 Toolkit</a><span class="e3-brand">Dream<span>Hub</span> E3</span></div>'
+            . '<header class="topbar"><h1>HNW Coach<small>' . $m . '</small></h1></header></body></html>';
+        exit;
+    }
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['error' => $message]);
     exit;
 }

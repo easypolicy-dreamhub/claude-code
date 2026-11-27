@@ -18,6 +18,9 @@ php -S 127.0.0.1:18099 "$HERE/mock-gemini.php" >/dev/null 2>&1 & PIDS+=($!)
 php -d auto_prepend_file="$HERE/dev-site.php" -S 127.0.0.1:18098 -t "$APP" >"$WORK/app.log" 2>&1 & PIDS+=($!)
 # second copy whose data folder sits INSIDE the web folder (must be refused)
 TEST_DATA_DIR="$APP/dev-baddir-test" php -d auto_prepend_file="$HERE/dev-site.php" -S 127.0.0.1:18097 -t "$APP" >/dev/null 2>&1 & PIDS+=($!)
+# fourth copy: no constants at all, so the key and API address must come from private/hnw-coach-config.php
+export APP_BASE_CFGFILE="http://127.0.0.1:18096"
+TEST_DATA_DIR="$WORK/private-cfg" TEST_CFG_FILE_ONLY=1 php -d auto_prepend_file="$HERE/dev-site.php" -S 127.0.0.1:18096 -t "$APP" >/dev/null 2>&1 & PIDS+=($!)
 sleep 1.5
 php "$HERE/test.php"; RC=$?
 rm -rf "$APP/dev-baddir-test"
