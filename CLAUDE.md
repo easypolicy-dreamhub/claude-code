@@ -4,7 +4,7 @@ These tools run on the owner's cPanel hosting, not from this repo. The owner upl
 
 ## Packaging a zip for upload (always)
 
-1. **Zip root = `public_html`.** Every file inside the zip carries its full path from `public_html`, for example `members/agency-report/index.html`. Never a flat zip, never a zip that only works from inside a tool's own folder.
+1. **Zip root = `public_html`.** Every file inside the zip carries its full path from `public_html`, for example `members/agency-report/index.html`. Never a flat zip, never a zip that only works from inside a tool's own folder. **The zip must NOT contain a `public_html/` folder of its own: the owner extracts it inside `public_html`, so entries start with `members/...`. Prove it by extracting INTO a fake `public_html` folder (not beside it) and checking nothing lands in `public_html/public_html`.**
 2. **One instruction, always the same:** upload the zip into `public_html`, tap **Extract**, check the destination says `/public_html`. The files then land in their own folders by themselves.
 3. **Back up first, every time:** before extracting, copy each file that will be overwritten to `<name>-backup.html` (or `.php`) in its folder. Say how to roll back.
 4. **Prove it before sending:** extract the zip into a fake `public_html` and list where each file landed. Confirm files that must not change (for example `photos.php`) are not in the zip. Say so in the message.
