@@ -213,6 +213,31 @@ $r2 = function (string $user, string $method, string $action, $body = null) use 
 [$c, $d] = $r2('boss', 'POST', 'chat', ['message' => 'hello from cfg']); ok($c === 200 && str_starts_with($d['reply'] ?? '', 'COACH-REPLY'), 'a real chat round-trip works with settings read from the file', json_encode($d));
 [$c, $d] = $r2('alan', 'GET', 'me'); ok($d['whatsapp'] === '60123456789', 'WhatsApp number comes from the settings file');
 
+echo "\n== Key pasted in Settings > Connection (no key anywhere else) ==\n";
+$bn = getenv('APP_BASE_NOKEY');
+$r3 = function (string $user, string $method, string $action, $body = null) use ($bn) {
+    $ch = curl_init("$bn/api.php?action=$action"); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
+    if ($body !== null) { $h[] = 'Content-Type: application/json'; curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body)); }
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $h, CURLOPT_RETURNTRANSFER => true]);
+    $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? [], (string) $raw];
+};
+$r3('boss', 'POST', 'save_instructions', ['text' => 'nokey test']);
+[$c, $d] = $r3('boss', 'POST', 'chat', ['message' => 'before key']); ok($c === 502, 'with no key the coach cannot answer yet');
+[$c, $d] = $r3('boss', 'GET', 'settings'); ok(count($d['warnings']) === 2 && $d['connection']['key_set'] === false, 'Settings warns that the key and WhatsApp number are missing');
+[$c] = $r3('alan', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length']); ok($c === 403, 'an ordinary member cannot save the key');
+[$c] = $r3('teamadmin', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length']); ok($c === 403, 'a team admin cannot save the key');
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['gemini_api_key' => 'too short']); ok($c === 422, 'a badly shaped key is refused');
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['whatsapp' => '12']); ok($c === 422, 'a badly shaped WhatsApp number is refused');
+[$c, $d, $raw] = $r3('boss', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length', 'whatsapp' => '+60 12-345 6789']);
+ok($c === 200 && $d['connection']['key_set'] === true && $d['connection']['key_last4'] === 'ngth' && $d['connection']['whatsapp'] === '60123456789', 'super admin saves the key and number (number cleaned to digits)', $raw);
+ok(!str_contains($raw, 'test-key-123'), 'the save response never contains the key');
+[$c, $d, $raw] = $r3('boss', 'GET', 'settings'); ok(!str_contains($raw, 'test-key-123') && $d['warnings'] === [], 'Settings never returns the key and no longer warns');
+[$c, $d] = $r3('boss', 'POST', 'chat', ['message' => 'after key']); ok($c === 200 && str_starts_with($d['reply'] ?? '', 'COACH-REPLY'), 'the coach answers using the key saved in Settings');
+[$c, $d, $raw] = $r3('alan', 'GET', 'me'); ok($d['whatsapp'] === '60123456789' && !str_contains($raw, 'test-key-123'), 'members get the WhatsApp number, never the key');
+$f = getenv('TEST_DATA_DIR') . '-nokey/settings.json'; $f = dirname(getenv('TEST_DATA_DIR')) . '/private-nokey/settings.json';
+ok(is_file($f) && (fileperms($f) & 0077) === 0 && !str_starts_with(realpath($f), $docRoot), 'settings file is private (owner-only) and outside the web folder');
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['clear_key' => true]); ok($d['connection']['key_set'] === false, 'the super admin can remove the saved key');
+
 echo "\n== Data folder inside the web folder is refused ==\n";
 $base2 = getenv('APP_BASE_BADDIR');
 $ch = curl_init("$base2/api.php?action=me"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $raw = curl_exec($ch);

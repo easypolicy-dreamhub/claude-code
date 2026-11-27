@@ -7,7 +7,7 @@ $hdr = ['x-goog-api-key' => $_SERVER['HTTP_X_GOOG_API_KEY'] ?? ''];
 file_put_contents($log, json_encode(['path' => strtok($_SERVER['REQUEST_URI'], '?'), 'query' => $_SERVER['QUERY_STRING'] ?? '', 'headers' => $hdr, 'body' => $body], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
 
 header('Content-Type: application/json');
-if ($hdr['x-goog-api-key'] !== 'test-key-123') {
+if (!str_starts_with($hdr['x-goog-api-key'], 'test-key-123')) {
     http_response_code(403);
     exit(json_encode(['error' => ['code' => 403, 'message' => 'bad key', 'status' => 'PERMISSION_DENIED']]));
 }

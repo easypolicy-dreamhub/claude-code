@@ -53,6 +53,7 @@ h2{font:600 18px/1.2 Poppins,"DM Sans",sans-serif;margin:0 0 4px}
 #msg{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:11px 14px;font:inherit;min-height:48px;max-height:160px;background:#fff;color:var(--ink)}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer;min-height:40px;text-align:left}
+.txt{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font:inherit;background:#fff;color:var(--ink);margin:6px 0}
 .note{color:var(--muted);font-size:13px;margin:10px 0 0}
 /* settings + usage */
 textarea.big{width:100%;min-height:260px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;font-size:15px;background:#fff;color:var(--ink);resize:vertical}
@@ -111,7 +112,14 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 
   <section class="panel" id="p-settings">
     <div id="set-warn"></div>
-    <h2>Coach instructions</h2>
+    <h2>Connection</h2>
+    <p class="sub">Paste the Gemini API key from Google AI Studio here. It is kept on the server, never shown again and never sent to members. Leave the key box empty to keep the saved key.</p>
+    <p class="sub" id="conn-status"></p>
+    <input class="txt" id="key" type="password" autocomplete="new-password" spellcheck="false" placeholder="Paste a new Gemini API key">
+    <input class="txt" id="wa" type="tel" inputmode="numeric" placeholder="Leader's WhatsApp number, country code first (e.g. 60123456789)">
+    <div class="row"><button class="btn" id="save-conn">Save connection</button><button class="btn ghost" id="clear-key" type="button">Remove saved key</button><span id="conn-msg" class="sub" style="margin:0"></span></div>
+
+    <h2 style="margin-top:26px">Coach instructions</h2>
     <p class="sub">How the coach should behave: who it is, how it coaches, and what it must never do. Changes apply from the next message any agent sends.</p>
     <textarea class="big" id="instr" placeholder="Paste the coach instructions here: who the coach is, how it coaches, what it must never do, and the language to reply in."></textarea>
     <div class="row"><button class="btn" id="save-instr">Save instructions</button><span id="instr-msg" class="sub" style="margin:0"></span></div>
@@ -236,8 +244,26 @@ async function loadSettings(){
   $('#versions').innerHTML=s.versions.length?s.versions.map((v,i)=>
     '<div class="item"><div class="grow"><b>Version '+v.version+'</b>'+(i===0?' (current)':'')+(v.restored_from?' (restored from '+v.restored_from+')':'')+'<small>'+esc(when(v.saved_at))+' · '+esc(v.saved_by)+'</small><small>'+esc(v.preview)+'</small></div>'
     +(i===0?'':'<button class="btn ghost small" data-restore="'+v.version+'">Restore</button>')+'</div>').join(''):'<div class="item">Nothing saved yet.</div>';
+  renderConn(s.connection);
   renderKb(s);
 }
+function renderConn(c){
+  $('#conn-status').innerHTML=c.key_set?('Gemini key saved (ends in <b>'+esc(c.key_last4)+'</b>)'+(c.key_from_server_file?'. It comes from a file on the server, so it cannot be changed here.':'.')):'<b class="warn">No Gemini key yet.</b> The coach cannot answer until you add one.';
+  if(document.activeElement!==$('#wa'))$('#wa').value=c.whatsapp||'';
+  $('#clear-key').classList.toggle('hide',!c.key_set||c.key_from_server_file);
+}
+$('#save-conn').addEventListener('click',async()=>{
+  const b=$('#save-conn');b.disabled=true;
+  try{const r=await api('save_settings',{method:'POST',json:{gemini_api_key:$('#key').value.trim(),whatsapp:$('#wa').value}});
+    $('#key').value='';renderConn(r.connection);$('#conn-msg').textContent='Saved.';await loadSettings()}
+  catch(e){$('#conn-msg').innerHTML='<span class="bad">'+esc(e.message)+'</span>'}
+  b.disabled=false;
+});
+$('#clear-key').addEventListener('click',async()=>{
+  if(!confirm('Remove the saved Gemini key? The coach stops answering until you add one again.'))return;
+  try{const r=await api('save_settings',{method:'POST',json:{clear_key:true}});renderConn(r.connection);$('#conn-msg').textContent='Key removed.';await loadSettings()}
+  catch(e){$('#conn-msg').innerHTML='<span class="bad">'+esc(e.message)+'</span>'}
+});
 function renderKb(s){
   $('#kb').innerHTML=s.knowledge.length?s.knowledge.map(f=>
     '<div class="item"><div class="grow">'+esc(f.name)+'<small>'+mb(f.size)+(f.pages?' · '+f.pages+' pages':'')+' · '+esc(when(f.uploaded_at))+'</small></div><button class="btn ghost small" data-del="'+esc(f.name)+'">Delete</button></div>').join(''):'<div class="item">No PDFs yet.</div>';

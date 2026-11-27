@@ -3,9 +3,9 @@
 
 function coach_api(string $model, array $body): array
 {
-    $key = (string) coach_const('GEMINI_API_KEY', '');
+    $key = coach_setting('GEMINI_API_KEY');
     if ($key === '') {
-        return ['ok' => false, 'status' => 0, 'type' => 'not_configured', 'message' => 'GEMINI_API_KEY is missing from private/hnw-coach-config.php.'];
+        return ['ok' => false, 'status' => 0, 'type' => 'not_configured', 'message' => 'The Gemini API key is not set. The super admin adds it in Settings > Connection.'];
     }
     @ini_set('memory_limit', '512M'); // the PDFs go up base64-encoded
     $base = rtrim((string) coach_const('COACH_API_BASE', 'https://generativelanguage.googleapis.com'), '/');

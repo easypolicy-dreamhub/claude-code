@@ -21,6 +21,9 @@ TEST_DATA_DIR="$APP/dev-baddir-test" php -d auto_prepend_file="$HERE/dev-site.ph
 # fourth copy: no constants at all, so the key and API address must come from private/hnw-coach-config.php
 export APP_BASE_CFGFILE="http://127.0.0.1:18096"
 TEST_DATA_DIR="$WORK/private-cfg" TEST_CFG_FILE_ONLY=1 php -d auto_prepend_file="$HERE/dev-site.php" -S 127.0.0.1:18096 -t "$APP" >/dev/null 2>&1 & PIDS+=($!)
+# fifth copy: no key anywhere, so it must come from the Settings > Connection box
+export APP_BASE_NOKEY="http://127.0.0.1:18095"
+TEST_DATA_DIR="$WORK/private-nokey" TEST_CFG_FILE_ONLY=1 TEST_NO_KEY=1 php -d auto_prepend_file="$HERE/dev-site.php" -S 127.0.0.1:18095 -t "$APP" >/dev/null 2>&1 & PIDS+=($!)
 sleep 1.5
 php "$HERE/test.php"; RC=$?
 rm -rf "$APP/dev-baddir-test"

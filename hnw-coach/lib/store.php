@@ -22,6 +22,42 @@ function coach_fail(int $code, string $message, array $extra = [])
     exit;
 }
 
+/* ---------- Connection settings saved from the Settings tab (Gemini key, leader's WhatsApp number) ---------- */
+
+function coach_settings_read(): array
+{
+    $d = coach_read_json(coach_data_root() . '/settings.json', []);
+    return is_array($d) ? $d : [];
+}
+
+/** A setting by name: server file / constant first, else what the super admin saved in Settings. */
+function coach_setting(string $name): string
+{
+    $v = coach_const($name, '');
+    if (is_string($v) && $v !== '') {
+        return $v;
+    }
+    return (string) (coach_settings_read()[$name] ?? '');
+}
+
+/** Save or (with null) remove settings. The file sits in the private data folder, mode 0600. */
+function coach_settings_save(array $changes): void
+{
+    coach_with_lock(coach_data_root() . '/.settings.lock', function () use ($changes) {
+        $s = coach_settings_read();
+        foreach ($changes as $k => $v) {
+            if ($v === null) {
+                unset($s[$k]);
+            } else {
+                $s[$k] = $v;
+            }
+        }
+        $path = coach_data_root() . '/settings.json';
+        coach_write_json($path, $s);
+        @chmod($path, 0600);
+    });
+}
+
 function coach_data_root(): string
 {
     static $root = null;

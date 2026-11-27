@@ -10,8 +10,8 @@ $member = coach_boot();          // existing member login; fails closed
 $action = (string) ($_GET['action'] ?? '');
 $isPost = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
 
-const COACH_ADMIN_ACTIONS = ['settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
-const COACH_POST_ACTIONS = ['chat', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
+const COACH_ADMIN_ACTIONS = ['settings', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
+const COACH_POST_ACTIONS = ['chat', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
 
 // Admin actions are checked on the SERVER before anything else happens.
 if (in_array($action, COACH_ADMIN_ACTIONS, true)) {
@@ -34,13 +34,26 @@ $out = static function (array $d): void {
 };
 $isAdmin = coach_is_super_admin($member);
 
+/** What the Connection box shows. Never includes the key itself, only whether it is set and its last 4 characters. */
+function coach_connection_info(): array
+{
+    $fromFile = coach_const('GEMINI_API_KEY', '') !== '';
+    $key = coach_setting('GEMINI_API_KEY');
+    return [
+        'key_set' => $key !== '',
+        'key_last4' => $key !== '' ? substr($key, -4) : '',
+        'key_from_server_file' => $fromFile,
+        'whatsapp' => preg_replace('/\D/', '', coach_setting('COACH_WHATSAPP_NUMBER')),
+    ];
+}
+
 switch ($action) {
     case 'me':
         $out([
             'name' => $member['name'],
             'is_admin' => $isAdmin,
             'ready' => coach_instr_current() !== null,
-            'whatsapp' => preg_replace('/\D/', '', (string) coach_const('COACH_WHATSAPP_NUMBER', '')),
+            'whatsapp' => preg_replace('/\D/', '', coach_setting('COACH_WHATSAPP_NUMBER')),
         ]);
 
     case 'history':
@@ -118,13 +131,14 @@ switch ($action) {
     case 'settings':
         $cur = coach_instr_current();
         $warnings = [];
-        if ((string) coach_const('GEMINI_API_KEY', '') === '') {
-            $warnings[] = 'GEMINI_API_KEY is missing from private/hnw-coach-config.php, so the coach cannot answer yet.';
+        if (coach_setting('GEMINI_API_KEY') === '') {
+            $warnings[] = 'The Gemini API key is not set, so the coach cannot answer yet. Add it under Connection below.';
         }
-        if (preg_replace('/\D/', '', (string) coach_const('COACH_WHATSAPP_NUMBER', '')) === '') {
-            $warnings[] = 'COACH_WHATSAPP_NUMBER is not set in private/hnw-coach-config.php, so the "Ask my leader" button has no number.';
+        if (preg_replace('/\D/', '', coach_setting('COACH_WHATSAPP_NUMBER')) === '') {
+            $warnings[] = 'The leader\'s WhatsApp number is not set, so the "Ask my leader" button has no number. Add it under Connection below.';
         }
         $out([
+            'connection' => coach_connection_info(),
             'instructions' => $cur,
             'versions' => array_map(fn($v) => [
                 'version' => $v['version'], 'saved_at' => $v['saved_at'], 'saved_by' => $v['saved_by'],
@@ -137,6 +151,30 @@ switch ($action) {
             'keep_versions' => (int) coach_const('COACH_INSTR_KEEP', 5),
             'php_limits' => ['upload_max_filesize' => ini_get('upload_max_filesize'), 'post_max_size' => ini_get('post_max_size')],
         ]);
+
+    case 'save_settings':
+        $in = $json();
+        $changes = [];
+        $key = trim((string) ($in['gemini_api_key'] ?? ''));
+        if (!empty($in['clear_key'])) {
+            $changes['GEMINI_API_KEY'] = null;
+        } elseif ($key !== '') {
+            if (!preg_match('/^[A-Za-z0-9_\-]{20,200}$/', $key)) {
+                coach_fail(422, 'That does not look like an API key. Copy the whole key from Google AI Studio, with no spaces.');
+            }
+            $changes['GEMINI_API_KEY'] = $key;
+        }
+        if (array_key_exists('whatsapp', $in)) {
+            $wa = preg_replace('/\D/', '', (string) $in['whatsapp']);
+            if ($wa !== '' && (strlen($wa) < 8 || strlen($wa) > 15)) {
+                coach_fail(422, 'The WhatsApp number should be 8 to 15 digits, country code first (for example 60123456789).');
+            }
+            $changes['COACH_WHATSAPP_NUMBER'] = $wa === '' ? null : $wa;
+        }
+        if ($changes) {
+            coach_settings_save($changes);
+        }
+        $out(['ok' => true, 'connection' => coach_connection_info()]);
 
     case 'save_instructions':
         $rec = coach_instr_save((string) ($json()['text'] ?? ''), $member);
