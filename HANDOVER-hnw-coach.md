@@ -13,29 +13,36 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 ## How it is built
 | Part | Notes |
 |---|---|
-| Access | `site-bridge.php`: `boot_member_request()` then `can_use_tool($pdo, $me, 'hnw-coach')` from `private/` (same pattern as `agency-report/photos.php`). Nobody is listed in any file. |
-| Super admin | `coach_is_super_admin()` reads `is_super_admin`, `super_admin` or `role` = `super_admin` from the member record. **Unverified guess** (the real record was not available). Fails closed. If the Settings tab does not show for the super admin, open `/members/hnw-coach/api.php?action=whoami` while signed in and use what it shows to adjust this one function. |
-| Writes | JSON only with `X-Requested-With: fetch` (the members system refuses anything else). PDFs are therefore sent as base64 inside JSON, one request per file. |
+| Access | `site-bridge.php`. The page uses `boot_member_page()` and `render_denied()` from `private/lib/gate.php` (same friendly pages as every tool); the API uses `boot_member_request()`. Both then call `can_use_tool($pdo, $me, 'hnw-coach')`. Nobody is listed in any file. |
+| Super admin | Same rule as `tool_is_super()`: `is_admin` and `is_active`. Team admins (`is_team_admin`) do not pass. Settings, Usage and every admin action are checked on the server. |
+| Member id | Private memory is keyed on the member's numeric `id` from the members row. |
+| Gate | `hnw-coach` is NOT in the folder list in `members/.htaccess` and `tool_catalog()` still has `dir => ''` for it, so `/members/hnw-coach/` is served directly and enforces access itself. `tools.php`, `.htaccess`, `gate.php`, `config.php` are not edited. |
+| Settings | New file `private/hnw-coach-config.php` returning an array (`GEMINI_API_KEY`, `COACH_WHATSAPP_NUMBER`, optional tuning). Sample in `config.sample.php` (not in the zip). `config.php` is never edited. |
+| Writes | JSON only with `X-Requested-With: fetch`. PDFs travel as base64 inside JSON, one request per file. |
 | Gemini | `lib/gemini.php`, plain cURL to `generativelanguage.googleapis.com`, key in the `x-goog-api-key` header. All PDFs are sent with every question. |
 | Storage | `/home/<cpanel user>/e3-hnw-coach/` (above `public_html`). Refuses to run if inside `public_html`. Back it up: instructions, PDFs, chats. |
-| Page | Shared `/members/e3-toolkit.css`, standard `e3-bar` and `topbar` header. |
+| Page | Shared `/members/e3-toolkit.css`, standard `e3-bar` and `topbar` header, and the same `/members/tool-tab.js` line the gate adds to other tools. |
+| Card | `members/apps.js`: only the HNW Coach entry changed (url `/members/hnw-coach/`, new grey note). |
 
 ## Setup on the server (in this order)
-1. Upload the zip into `public_html`, tap Extract, destination `/public_html`.
-2. Add to the existing `config.php` (outside `public_html`, never in a zip): `GEMINI_API_KEY` and `COACH_WHATSAPP_NUMBER`. Lines are in `config.sample.php`.
-3. Add the tool: key `hnw-coach` in `private/lib/tools.php`, and the folder `hnw-coach` in `/members/apps.js` (needs the owner's current files; not in this repo).
-4. cPanel: PHP 8.0 or newer with the `curl` extension. MultiPHP INI Editor: `post_max_size` at least 16M and `memory_limit` at least 256M (PDFs travel as base64 inside JSON).
-5. Switch the tool on for the people who should have it in Members & Access.
-6. Sign in as super admin, open `/members/hnw-coach/`. Settings: paste `starter-instructions.txt`, Save, upload the six PDFs, test in Chat.
-7. Google AI Studio: API billing, spend cap or prepaid balance with auto-reload off.
+1. Copy `members/apps.js` to `members/apps-backup.js`. Upload the zip into `public_html`, tap Extract, destination `/public_html`.
+2. Create a NEW file `/home/<cpanel user>/private/hnw-coach-config.php` (see `config.sample.php`) with the Gemini key and the leader's WhatsApp number.
+3. cPanel: PHP 8.1 or newer with the `curl` extension. MultiPHP INI Editor: `post_max_size` at least 16M and `memory_limit` at least 256M.
+4. Members & Access: tick HNW Coach for the people who should use it (the super admin always has it).
+5. Sign in as super admin, open `/members/hnw-coach/`. Settings: paste `starter-instructions.txt`, Save, upload the six PDFs, test in Chat.
+6. Google AI Studio: API billing as a prepaid balance with auto-reload off.
+7. Optional, later: in `private/lib/tools.php` the `hnw-coach` line still says "Opens in Gemini" and `link_only`. That only affects the label in Members & Access.
 
-## Tested (local, `hnw-coach/dev/run-tests.sh`, 74 checks)
-Against a fake Gemini and a fake members system: sign-in, tool switch, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, rate limits, API key never in page or responses, data folder must be outside the web folder. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
+## Tested (local, `hnw-coach/dev/run-tests.sh`, 82 checks)
+Against a fake Gemini and a stand-in for the members system (same shapes as the real `boot_member_request`, `boot_member_page`, `can_use_tool`, member row): sign-in, tool ticks, unknown/inactive members, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, hourly and daily limits, key and WhatsApp number read from the settings file with no constants, API key never in page or responses, data folder must be outside the web folder, standard no-access page, tool-tab.js line present. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
 
 ## NOT tested
-- A real call to Gemini (no key here). The request shape follows Google's documented `generateContent` format; the model name `gemini-2.5-flash` and the notes model `gemini-2.5-flash-lite` must be checked against Google's current list (`COACH_MODEL`, `COACH_NOTES_MODEL`).
-- The real members system (`private/`), including the super-admin field names, and the shared header on a phone.
-- Whether the host lets the reply finish after sending it (the notes update runs after the reply; if the host does not support that, notes may not update).
+- A real call to Gemini (no key here). The request follows Google's documented `generateContent` format; check `gemini-2.5-flash` and `gemini-2.5-flash-lite` against Google's current model list (`COACH_MODEL`, `COACH_NOTES_MODEL`).
+- The real members system end to end (tests used stand-ins built from the real files you pasted: bootstrap.php, auth.php, db.php, tools.php, gate.php, members/gate.php, members/.htaccess, apps.js, members/index.html).
+- `/members/e3-toolkit.css` (never seen): my page's own styles (`.card`, `.chip`, `.btn`, `.tabs`) could clash with it.
+- `/members/tool-icons.js` and `tool-tab.js` (never seen): the card icon for key `hnw-coach`, and the back link closing the tab.
+- A phone screen.
+- Whether the host lets the reply finish after it is sent (the coaching-notes update runs after the reply).
 
 ## Roll back
-Nothing existing is overwritten (new folder). To remove: delete `public_html/members/hnw-coach/`, and take the tool key and the `apps.js` entry out again. Chats and PDFs stay in `e3-hnw-coach/` until you delete that folder.
+Only `members/apps.js` is overwritten: copy `apps-backup.js` back over it. To remove the tool: delete `public_html/members/hnw-coach/` and `private/hnw-coach-config.php`. Chats and PDFs stay in `e3-hnw-coach/` until you delete that folder.

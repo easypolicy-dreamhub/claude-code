@@ -24,9 +24,26 @@ function coach_boot(): array
     require_once $private . '/bootstrap.php';
     require_once $private . '/lib/tools.php';
 
-    // Ends the request itself (401/403) if not a signed-in, active, unpaused member,
-    // or if a write does not come from this site.
-    [$config, $pdo, $me] = boot_member_request();
+    $page = defined('HNWCOACH_PAGE');
+    if ($page && is_file($private . '/lib/gate.php')) {
+        require_once $private . '/lib/gate.php'; // your standard "no access" page: render_denied() and boot_member_page()
+    }
+    if ($page && function_exists('boot_member_page') && function_exists('render_denied')) {
+        // The page: same checks as boot_member_request(), but a proper page instead of JSON, like every other tool page.
+        $config = [];
+        try {
+            [$config, $pdo, $me] = boot_member_page();
+        } catch (HttpError $e) {
+            render_denied($e->status === 401 ? 401 : 403, $e->status === 401 ? 'Please sign in' : 'No access', $e->getMessage(), $config);
+        } catch (Throwable $e) {
+            error_log('hnw-coach boot: ' . $e->getMessage());
+            render_denied(500, 'Something went wrong', 'Please try again in a moment.', $config);
+        }
+    } else {
+        // The API: ends the request itself (401/403, JSON) if not a signed-in, active, unpaused member,
+        // or if a write does not come from this site.
+        [$config, $pdo, $me] = boot_member_request();
+    }
     try {
         $allowed = can_use_tool($pdo, $me, HNWCOACH_TOOL_KEY);
     } catch (Throwable $e) {
@@ -34,6 +51,9 @@ function coach_boot(): array
         coach_bridge_fail(500, 'The members system could not check your access. Please tell your admin.');
     }
     if (!$allowed) {
+        if ($page && function_exists('render_denied')) {
+            render_denied(403, "You don't have access to HNW Coach", 'Ask the super admin if you need it.', $config);
+        }
         coach_bridge_fail(403, 'Your account does not have the HNW Coach tool switched on. Ask your admin to switch it on in Members & Access.');
     }
     $m = is_array($me) ? $me : [];

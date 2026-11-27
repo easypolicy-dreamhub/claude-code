@@ -189,7 +189,11 @@ ok($c === 200 && str_contains($html, 'HNW Coach'), 'page loads for a signed-in m
 ok(str_contains($html, '/members/e3-toolkit.css') && str_contains($html, '<div class="e3-bar">') && str_contains($html, '<header class="topbar">') && !str_contains($html, '.e3-bar{'), 'page uses the shared stylesheet and standard header');
 ok(!str_contains($html, 'test-key-123') && !str_contains($html, 'AIza'), 'API key is not in the page');
 $h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: notool'], CURLOPT_RETURNTRANSFER => true]); $html2 = curl_exec($h);
-ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 403 && str_contains($html2, '<header class="topbar">') && str_contains($html2, 'switched on') && !str_starts_with(trim($html2), '{'), 'a member without the tool sees a readable page, not raw JSON');
+ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 403 && str_contains($html2, 'access to HNW Coach') && !str_starts_with(trim($html2), '{'), 'a member without the tool sees the standard no-access page, not raw JSON');
+$h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: gone'], CURLOPT_RETURNTRANSFER => true]); $html3 = curl_exec($h);
+ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 403 && str_contains($html3, 'inactive') && !str_starts_with(trim($html3), '{'), 'an inactive member sees the standard page, not JSON');
+$h = curl_init("$base/index.php"); curl_setopt_array($h, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $html4 = curl_exec($h);
+ok(str_contains($html4, '<script src="/members/tool-tab.js" defer></script>'), 'page loads the same tool-tab.js the gate adds to other tools');
 $h = curl_init("$base/index.php"); curl_setopt($h, CURLOPT_RETURNTRANSFER, true); curl_exec($h); ok(curl_getinfo($h, CURLINFO_RESPONSE_CODE) === 401, 'page refuses a signed-out visitor');
 ok(!str_contains($allBodies, 'test-key-123'), 'API key never appears in any API response');
 $dataDir = getenv('TEST_DATA_DIR'); $docRoot = realpath(__DIR__ . '/..');
