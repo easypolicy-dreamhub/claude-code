@@ -6,7 +6,7 @@ coach_boot(); // existing member login: signed-out visitors never get the page
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 ?><!DOCTYPE html>
-<html lang="zh-Hant" data-theme="light">
+<html lang="zh-Hans" data-theme="light">
 <head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light only">
@@ -15,13 +15,13 @@ header('X-Content-Type-Options: nosniff');
 <title>HNW Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/members/e3-toolkit.css">
 <style>
 :root{--bg:#F4F2EF;--surface:#fff;--ink:#24333A;--muted:#5C6870;--line:#E2DDD8;--accent:#24333A;--accent-ink:#fff;--chip:#EFEAE5;--warn:#b45309;--bad:#c0262d;--good:#15803d;--wa:#1f9d55}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:400 16px/1.5 "DM Sans","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;min-height:100vh;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.5 "DM Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;min-height:100vh;-webkit-text-size-adjust:100%}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 6px 24px rgba(36,51,58,.08);padding:18px;margin:16px 16px 0}
 .card+.card{margin-top:16px}
 .card.plain{margin-top:16px}
@@ -158,46 +158,46 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
- sub:'實戰教練 · 拆解反對意見、優化話術、客戶演練',lang_btn:'English',
- tab_chat:'教練對話',tab_settings:'設定',tab_usage:'使用情況',
- ph_msg:'輸入你的問題…',send:'發送',typing:'教練輸入中…',
- chip1:'客戶說保險不如投資，怎麼回？',chip2:'我想演練 A 型創一代，難度 2',
- note:'演練中輸入「暫停」取得提示，輸入「結束演練」取得評分卡。⚠️ 請勿輸入真實客戶姓名或個資。你的對話只有你自己看得到；團隊領袖能看到你提出的問題，但看不到教練的回答。',
- hi:n=>'你好 '+n+'！今天想練習哪個情境，或想拆解哪個反對意見？',
- setup:'教練正在設定中，請稍後再回來。',
- notset_admin:'尚未設定完成：請到「設定」加入教練指示。你仍可在此對話測試。',
- wa_btn:'在 WhatsApp 詢問我的團隊領袖',ask_leader:'這個問題請直接詢問你的團隊領袖。',
- wa_msg:(n,q)=>'你好，我是 '+n+'。我問了 HNW 教練：「'+q+'」，需要你的協助。',
- conn_h:'連線設定',conn_p:'在此貼上 Google AI Studio 的 Gemini API 金鑰。金鑰只保存在伺服器，之後不會再顯示，也不會傳給成員。金鑰欄留空即保留已儲存的金鑰。',
- key_ph:'貼上新的 Gemini API 金鑰',wa_ph:'團隊領袖的 WhatsApp 號碼（國碼開頭，例如 60123456789）',
- save_conn:'儲存連線設定',clear_key:'移除已儲存的金鑰',saved:'已儲存。',key_removed:'已移除金鑰。',
- key_saved:l=>'Gemini 金鑰已儲存（結尾為 <b>'+l+'</b>）',key_file:'。此金鑰來自伺服器檔案，無法在此更改。',
- key_none:'<b class="warn">尚未設定 Gemini 金鑰。</b>加入之前，教練無法回答。',
- confirm_clear:'要移除已儲存的 Gemini 金鑰嗎？重新加入之前，教練會停止回答。',
- instr_h:'教練指示',instr_p:'設定教練是誰、如何輔導、禁止做什麼。儲存後，從下一則訊息起套用到所有成員。',
- instr_ph:'在此貼上教練指示：教練是誰、如何輔導、不可以做什麼，以及回覆語言。',save_instr:'儲存指示',
- instr_line:(v,w,b)=>'第 '+v+' 版，由 '+b+' 於 '+w+' 儲存',
- ver_h:'歷史版本',ver_p:k=>'保留最近 '+k+' 次儲存。還原某一版會將它另存為最新版本。',
- ver:v=>'第 '+v+' 版',cur:'（目前）',rest_from:v=>'（還原自第 '+v+' 版）',restore:'還原',none_saved:'尚無儲存紀錄。',
- confirm_restore:v=>'要還原第 '+v+' 版嗎？它會成為新的目前版本。',
- kb_h:'知識庫（PDF 文件）',kb_p:'教練每次回答都會閱讀全部文件。上傳同名檔案會取代舊檔。可隨時新增、取代或刪除，下一則訊息就會使用新內容。',
- drop:'點選選擇 PDF，或一次拖放多個檔案到這裡',kb_none:'尚未有 PDF。',pages:'頁',del:'刪除',
- confirm_del:n=>'要從教練的知識庫刪除「'+n+'」嗎？',
- kb_status:(n,sz,pg)=>n+' 份 PDF，'+sz+'，約 '+pg+' 頁（估算）。',
- kb_usage:(i,c)=>' 上一個問題使用了 '+i+' 個輸入 token（其中 '+c+' 個來自 Gemini 快取）。',
- kb_big:' 內容偏大，建議移除不再需要的文件。',
- uploading:'上傳中…',added:'已新增',replaced:'已取代',failed:'失敗',
- notset_banner:'尚未設定：儲存教練指示之前，成員會看到「教練正在設定中」。你隨時可在「教練對話」分頁測試。',
- r7:'最近 7 天',r30:'最近 30 天',rall:'全部時間',
- t_q:'提問數',t_a:'使用人數',t_h:'轉交領袖',
- nudge_h:'需要提醒',nudge_p:'7 天內沒有向教練提問的成員。',nudge_none:'目前沒有人需要提醒。',
- last_asked:w=>'上次提問 '+w,never_used:'從未使用',
- ppl_h:'成員',ppl_p:'點選名字查看提問。你只會看到問題，看不到教練的回答。',
- th_name:'姓名',th_q:'提問數',th_h:'轉交',th_last:'最後活動',no_q:'尚無提問。',
- loading:'載入中…',to_leader:'已轉交領袖',no_q_period:'此期間沒有提問。',never:'從未',loc:'zh-TW'
+ sub:'实战教练 · 拆解反对意见、优化话术、客户演练',lang_btn:'English',
+ tab_chat:'教练对话',tab_settings:'设置',tab_usage:'使用情况',
+ ph_msg:'输入你的问题…',send:'发送',typing:'教练输入中…',
+ chip1:'客户说保险不如投资，怎么回？',chip2:'我想演练 A 型创一代，难度 2',
+ note:'演练中输入「暂停」取得提示，输入「结束演练」取得评分卡。⚠️ 请勿输入真实客户姓名或个资。你的对话只有你自己看得到；团队领袖能看到你提出的问题，但看不到教练的回答。',
+ hi:n=>'你好 '+n+'！今天想练习哪个情境，或想拆解哪个反对意见？',
+ setup:'教练正在设置中，请稍后再回来。',
+ notset_admin:'尚未设置完成：请到「设置」加入教练指示。你仍可在此对话测试。',
+ wa_btn:'在 WhatsApp 询问我的团队领袖',ask_leader:'这个问题请直接询问你的团队领袖。',
+ wa_msg:(n,q)=>'你好，我是 '+n+'。我问了 HNW 教练：「'+q+'」，需要你的协助。',
+ conn_h:'连接设置',conn_p:'在此粘贴 Google AI Studio 的 Gemini API 密钥。密钥只保存在服务器，之后不会再显示，也不会传给成员。密钥栏留空即保留已保存的密钥。',
+ key_ph:'粘贴新的 Gemini API 密钥',wa_ph:'团队领袖的 WhatsApp 号码（国码开头，例如 60123456789）',
+ save_conn:'保存连接设置',clear_key:'移除已保存的密钥',saved:'已保存。',key_removed:'已移除密钥。',
+ key_saved:l=>'Gemini 密钥已保存（结尾为 <b>'+l+'</b>）',key_file:'。此密钥来自服务器文件，无法在此更改。',
+ key_none:'<b class="warn">尚未设置 Gemini 密钥。</b>加入之前，教练无法回答。',
+ confirm_clear:'要移除已保存的 Gemini 密钥吗？重新加入之前，教练会停止回答。',
+ instr_h:'教练指示',instr_p:'设置教练是谁、如何辅导、禁止做什么。保存后，从下一则消息起套用到所有成员。',
+ instr_ph:'在此粘贴教练指示：教练是谁、如何辅导、不可以做什么，以及回复语言。',save_instr:'保存指示',
+ instr_line:(v,w,b)=>'第 '+v+' 版，由 '+b+' 于 '+w+' 保存',
+ ver_h:'历史版本',ver_p:k=>'保留最近 '+k+' 次保存。还原某一版会将它另存为最新版本。',
+ ver:v=>'第 '+v+' 版',cur:'（目前）',rest_from:v=>'（还原自第 '+v+' 版）',restore:'还原',none_saved:'尚无保存纪录。',
+ confirm_restore:v=>'要还原第 '+v+' 版吗？它会成为新的目前版本。',
+ kb_h:'知识库（PDF 文档）',kb_p:'教练每次回答都会阅读全部文档。上传同名文件会取代旧档。可随时添加、取代或删除，下一则消息就会使用新内容。',
+ drop:'点击选择 PDF，或一次拖放多个文件到这里',kb_none:'尚未有 PDF。',pages:'页',del:'删除',
+ confirm_del:n=>'要从教练的知识库删除「'+n+'」吗？',
+ kb_status:(n,sz,pg)=>n+' 份 PDF，'+sz+'，约 '+pg+' 页（估算）。',
+ kb_usage:(i,c)=>' 上一个问题使用了 '+i+' 个输入 token（其中 '+c+' 个来自 Gemini 缓存）。',
+ kb_big:' 内容偏大，建议移除不再需要的文档。',
+ uploading:'上传中…',added:'已添加',replaced:'已取代',failed:'失败',
+ notset_banner:'尚未设置：保存教练指示之前，成员会看到「教练正在设置中」。你随时可在「教练对话」分页测试。',
+ r7:'最近 7 天',r30:'最近 30 天',rall:'全部时间',
+ t_q:'提问数',t_a:'使用人数',t_h:'转交领袖',
+ nudge_h:'需要提醒',nudge_p:'7 天内没有向教练提问的成员。',nudge_none:'目前没有人需要提醒。',
+ last_asked:w=>'上次提问 '+w,never_used:'从未使用',
+ ppl_h:'成员',ppl_p:'点击名字查看提问。你只会看到问题，看不到教练的回答。',
+ th_name:'姓名',th_q:'提问数',th_h:'转交',th_last:'最后活动',no_q:'尚无提问。',
+ loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
- sub:'Objection handling, better scripts, client role-play',lang_btn:'繁體中文',
+ sub:'Objection handling, better scripts, client role-play',lang_btn:'简体中文',
  tab_chat:'Chat',tab_settings:'Settings',tab_usage:'Usage',
  ph_msg:'Type your question…',send:'Send',typing:'Coach is typing…',
  chip1:'A client says insurance is worse than investing. How do I reply?',chip2:'I want to practise with a type A founder, difficulty 2',
@@ -255,7 +255,7 @@ async function api(action,{method='GET',json,query=''}={}){
 
 /* ---- language ---- */
 function applyLang(){
-  document.documentElement.lang=LANG==='zh'?'zh-Hant':'en';
+  document.documentElement.lang=LANG==='zh'?'zh-Hans':'en';
   document.querySelectorAll('[data-i]').forEach(e=>{e.textContent=t(e.dataset.i)});
   document.querySelectorAll('[data-ip]').forEach(e=>{e.placeholder=t(e.dataset.ip)});
   $('#lang').textContent=t('lang_btn');

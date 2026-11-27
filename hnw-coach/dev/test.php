@@ -125,19 +125,19 @@ ok(str_contains(end($lead)['text'], 'Advisor: Alan') && ($b['contents'][1]['role
 ok(!str_contains($d['reply'], 'thinking...'), 'Gemini thinking text is not shown to the advisor');
 ok(!str_contains(json_encode($b), 'alan@example.com'), 'the advisor\'s email is not sent to Gemini');
 
-echo "\n== Language: Traditional Chinese by default for members, English on request ==\n";
+echo "\n== Language: Simplified Chinese by default for members, English on request ==\n";
 file_put_contents($mockLog, '');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'language test'], ['lang' => 'zh']);
 $sysz = json_encode(mocklog()[0]['body']['system_instruction'] ?? [], JSON_UNESCAPED_UNICODE);
-ok($c === 200 && str_contains($sysz, 'Traditional Chinese (繁體中文)') && !str_contains($sysz, 'English version'), 'Chinese page: the coach is told to reply in Traditional Chinese');
+ok($c === 200 && str_contains($sysz, 'Simplified Chinese (简体中文)') && !str_contains($sysz, 'English version'), 'Chinese page: the coach is told to reply in Simplified Chinese');
 file_put_contents($mockLog, '');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'language test'], ['lang' => 'en']);
 $syse = json_encode(mocklog()[0]['body']['system_instruction'] ?? [], JSON_UNESCAPED_UNICODE);
 ok($c === 200 && str_contains($syse, 'English version') && str_contains($syse, 'end drill') && str_contains($syse, 'TEST COACH'), 'English page: the coach replies in English, accepts "pause" / "end drill", and still follows the leader\'s instructions');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'BLOCKME again'], ['lang' => 'zh']);
-ok(str_contains($d['reply'] ?? '', '團隊領袖'), 'Chinese page: fallback replies are in Chinese');
+ok(str_contains($d['reply'] ?? '', '团队领袖'), 'Chinese page: fallback replies are in Chinese');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'FAIL429 x'], ['lang' => 'zh']);
-ok($c === 502 && str_contains($d['error'] ?? '', '教練'), 'Chinese page: error messages are in Chinese');
+ok($c === 502 && str_contains($d['error'] ?? '', '教练'), 'Chinese page: error messages are in Chinese');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => str_repeat('x', 4001)], ['lang' => 'zh']);
 ok($c === 422 && str_contains($d['error'] ?? '', '4000'), 'Chinese page: "message too long" is in Chinese');
 
@@ -154,7 +154,7 @@ ok(!str_contains($bj, 'hello coach') && !str_contains($bj, 'second question') &&
 
 echo "\n== Handoff, language, errors ==\n";
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'UNKNOWN topic please']);
-ok($d['handoff'] === true && !str_contains($d['reply'], '[[HANDOFF]]') && str_contains($d['reply'], '我的資料裡沒有這個'), 'handoff flagged, marker removed, Traditional Chinese kept intact');
+ok($d['handoff'] === true && !str_contains($d['reply'], '[[HANDOFF]]') && str_contains($d['reply'], '我的数据里没有这个'), 'handoff flagged, marker removed, Simplified Chinese kept intact');
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'BLOCKME please']); ok($c === 200 && $d['handoff'] === true && str_contains($d['reply'], 'check with your team leader'), 'a Gemini safety block gives a polite reply and a leader handoff');
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'LONGREPLY please']); ok(str_contains($d['reply'], 'cut short'), 'a reply cut off at the token limit says so');
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => '你好，请帮我']); ok(str_contains($d['reply'] ?? '', '你好'), 'Chinese passes through intact');

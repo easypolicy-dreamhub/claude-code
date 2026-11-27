@@ -29,9 +29,9 @@ if ($isNotes) {
 } elseif (strpos($last, 'LONGREPLY') !== false) {
     $text = 'partial answer'; $finish = 'MAX_TOKENS';
 } elseif (strpos($last, 'UNKNOWN') !== false) {
-    $text = "我的資料裡沒有這個。\n[[HANDOFF]]";
+    $text = "我的数据里没有这个。\n[[HANDOFF]]";
 } elseif (preg_match('/[\x{4e00}-\x{9fff}]/u', $last)) {
-    $text = '你好！我是你的實戰教練。';
+    $text = '你好！我是你的实战教练。';
 } else {
     $text = 'COACH-REPLY to: ' . substr($last, 0, 40);
 }

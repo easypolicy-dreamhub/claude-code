@@ -67,7 +67,7 @@ function coach_text_of(array $data): string
 function coach_system_text(string $leaderInstructions): string
 {
     $langRule = coach_lang() === 'zh'
-        ? "Language for this chat (the advisor chose the Traditional Chinese version): reply in Traditional Chinese (繁體中文)."
+        ? "Language for this chat (the advisor chose the Simplified Chinese version, and this overrides any language rule above, even one that asks for Traditional Chinese): reply in Simplified Chinese (简体中文), including role-play, feedback and the scorecard. The advisor may type 暂停 or 结束演练 (or the traditional 暫停 / 結束演練); treat them the same."
         : "Language for this chat (the advisor chose the English version, and this overrides any language rule above): reply in English, including role-play, feedback and the scorecard. Chinese industry terms may stay in brackets after the English. The advisor may type \"pause\" or \"end drill\" instead of 暫停 or 結束演練; treat them the same.";
     return <<<TXT
 You are the HNW Coach inside the DreamHub E3 advisor toolkit. You coach individual insurance advisors in a private chat.

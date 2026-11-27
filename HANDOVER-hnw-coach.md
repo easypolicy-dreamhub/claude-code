@@ -11,10 +11,10 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 - Limits per member: 30 messages an hour, 120 a day (`COACH_RATE_PER_HOUR`, `COACH_RATE_PER_DAY`).
 
 ## Language
-- The page is in Traditional Chinese by default. A button in the top bar switches to English and remembers the choice in the browser. Every page text, the quick-start chips, WhatsApp pre-filled message and member-facing error messages exist in both languages (`index.php` dictionary `T`, `coach_msg()` in `lib/store.php`).
-- The page sends `X-Coach-Lang` (`zh` or `en`) with every request. The coach is told (in the system instruction, after the leader's instructions) to reply in Traditional Chinese for `zh`, and in English for `en`, overriding any language line in the leader's instructions. In English mode the coach also accepts "pause" / "end drill" for 暫停 / 結束演練. A request with no header counts as English.
+- The page is in **Simplified Chinese** by default. A button in the top bar switches to English and remembers the choice in the browser. Every page text, the quick-start chips, the WhatsApp pre-filled message and the member-facing error messages exist in both languages (`index.php` dictionary `T`, `coach_msg()` in `lib/store.php`). Traditional Chinese is not offered (the owner asked for Simplified).
+- The page sends `X-Coach-Lang` (`zh` or `en`) with every request. The coach is told (system instruction, after the leader's instructions) to reply in Simplified Chinese for `zh`, and in English for `en`, overriding any language line in the leader's instructions. It accepts 暂停 / 结束演练 (and the traditional forms) in Chinese mode, and "pause" / "end drill" in English mode. A request with no header counts as English.
 - Admin-only error messages (for example a badly shaped key) are still English.
-- The leader's instructions text (starter-instructions.txt) is unchanged and says to always reply in Traditional Chinese; the Chinese button follows it, the English button overrides it.
+- Instructions: `starter-instructions-simplified.txt` is the Simplified version of the Gem instructions (converted automatically, then fixed by hand where the converter picked the wrong word, e.g. 核心, 建立). `starter-instructions.txt` is the original Traditional text. Either works; the language button overrides their language line.
 
 ## How it is built
 | Part | Notes |
