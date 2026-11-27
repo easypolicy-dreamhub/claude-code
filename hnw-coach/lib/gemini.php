@@ -66,6 +66,9 @@ function coach_text_of(array $data): string
 /** Fixed rules that sit on top of the leader's instructions (which are edited in Settings). */
 function coach_system_text(string $leaderInstructions): string
 {
+    $langRule = coach_lang() === 'zh'
+        ? "Language for this chat (the advisor chose the Traditional Chinese version): reply in Traditional Chinese (繁體中文)."
+        : "Language for this chat (the advisor chose the English version, and this overrides any language rule above): reply in English, including role-play, feedback and the scorecard. Chinese industry terms may stay in brackets after the English. The advisor may type \"pause\" or \"end drill\" instead of 暫停 or 結束演練; treat them the same.";
     return <<<TXT
 You are the HNW Coach inside the DreamHub E3 advisor toolkit. You coach individual insurance advisors in a private chat.
 
@@ -79,6 +82,8 @@ Operating rules (they apply on top of the team leader's coaching instructions be
 The team leader's coaching instructions:
 
 {$leaderInstructions}
+
+{$langRule}
 TXT;
 }
 
@@ -136,15 +141,15 @@ function coach_reply(array $member, array $chat, string $userMessage, string $in
     $blocked = isset($data['promptFeedback']['blockReason'])
         || in_array($finish, ['SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII', 'RECITATION'], true);
     if ($blocked && $text === '') {
-        return ['ok' => true, 'reply' => "Sorry, I can't help with that one. Please check with your team leader.", 'handoff' => true, 'usage' => $usage];
+        return ['ok' => true, 'reply' => coach_msg('blocked'), 'handoff' => true, 'usage' => $usage];
     }
     $handoff = (bool) preg_match('/\[\[HANDOFF\]\]/', $text);
     $text = trim(preg_replace('/\s*\[\[HANDOFF\]\]\s*/', "\n", $text));
     if ($text === '') {
-        $text = 'Sorry, I could not come up with an answer. Please try asking again.';
+        $text = coach_msg('noanswer');
     }
     if ($finish === 'MAX_TOKENS') {
-        $text .= "\n\n(This reply was cut short. Ask me to continue.)";
+        $text .= "\n\n" . coach_msg('cut');
     }
     return ['ok' => true, 'reply' => $text, 'handoff' => $handoff, 'usage' => $usage];
 }

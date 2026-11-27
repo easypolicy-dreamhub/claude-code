@@ -64,15 +64,15 @@ switch ($action) {
     case 'chat':
         $instr = coach_instr_current();
         if ($instr === null && !$isAdmin) {
-            coach_fail(409, 'The coach is being set up. Check back soon.');
+            coach_fail(409, coach_msg('setup'));
         }
         $text = trim((string) ($json()['message'] ?? ''));
         if ($text === '') {
-            coach_fail(422, 'Type a message first.');
+            coach_fail(422, coach_msg('type'));
         }
         $max = (int) coach_const('COACH_MAX_MSG_CHARS', 4000);
         if (mb_strlen($text) > $max) {
-            coach_fail(422, "That message is too long (limit $max characters).");
+            coach_fail(422, coach_msg('too_long', [$max]));
         }
         $instrText = $instr['text'] ?? 'No instructions have been saved yet. Act as a friendly, practical coach for insurance agents.';
 
@@ -83,18 +83,18 @@ switch ($action) {
             $chat['recent'] = array_values(array_filter($chat['recent'] ?? [], fn($t) => $t > $now - 86400));
             $lastHour = count(array_filter($chat['recent'], fn($t) => $t > $now - 3600));
             if ($lastHour >= (int) coach_const('COACH_RATE_PER_HOUR', 30)) {
-                coach_fail(429, 'You have sent a lot of messages this hour. Please try again a little later.');
+                coach_fail(429, coach_msg('rate_hour'));
             }
             if (count($chat['recent']) >= (int) coach_const('COACH_RATE_PER_DAY', 120)) {
-                coach_fail(429, 'You have reached today\'s message limit. Please try again tomorrow.');
+                coach_fail(429, coach_msg('rate_day'));
             }
 
             $res = coach_reply($member, $chat, $text, $instrText);
             coach_log_question($member, $text, $res['ok'] && $res['handoff'], $res['ok']);
             if (!$res['ok']) {
                 $msg = match (true) {
-                    $res['status'] === 429 || $res['status'] === 529 => 'The coach is very busy right now. Please try again in a minute.',
-                    default => 'The coach could not answer just now. Please try again.',
+                    $res['status'] === 429 || $res['status'] === 529 => coach_msg('busy'),
+                    default => coach_msg('failed'),
                 };
                 coach_fail(502, $msg, $isAdmin ? ['detail' => $res['error']] : []);
             }
@@ -132,10 +132,10 @@ switch ($action) {
         $cur = coach_instr_current();
         $warnings = [];
         if (coach_setting('GEMINI_API_KEY') === '') {
-            $warnings[] = 'The Gemini API key is not set, so the coach cannot answer yet. Add it under Connection below.';
+            $warnings[] = coach_msg('w_key');
         }
         if (preg_replace('/\D/', '', coach_setting('COACH_WHATSAPP_NUMBER')) === '') {
-            $warnings[] = 'The leader\'s WhatsApp number is not set, so the "Ask my leader" button has no number. Add it under Connection below.';
+            $warnings[] = coach_msg('w_wa');
         }
         $out([
             'connection' => coach_connection_info(),

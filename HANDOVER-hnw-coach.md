@@ -10,6 +10,12 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 - Private memory per signed-in member (keyed by their login email, never by anything the browser sends). WhatsApp hand-off button when the answer is not in the PDFs.
 - Limits per member: 30 messages an hour, 120 a day (`COACH_RATE_PER_HOUR`, `COACH_RATE_PER_DAY`).
 
+## Language
+- The page is in Traditional Chinese by default. A button in the top bar switches to English and remembers the choice in the browser. Every page text, the quick-start chips, WhatsApp pre-filled message and member-facing error messages exist in both languages (`index.php` dictionary `T`, `coach_msg()` in `lib/store.php`).
+- The page sends `X-Coach-Lang` (`zh` or `en`) with every request. The coach is told (in the system instruction, after the leader's instructions) to reply in Traditional Chinese for `zh`, and in English for `en`, overriding any language line in the leader's instructions. In English mode the coach also accepts "pause" / "end drill" for 暫停 / 結束演練. A request with no header counts as English.
+- Admin-only error messages (for example a badly shaped key) are still English.
+- The leader's instructions text (starter-instructions.txt) is unchanged and says to always reply in Traditional Chinese; the Chinese button follows it, the English button overrides it.
+
 ## How it is built
 | Part | Notes |
 |---|---|
@@ -32,7 +38,7 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 5. Sign in as super admin, open `/members/hnw-coach/`, Settings: paste the key and the WhatsApp number under Connection and Save; paste `starter-instructions.txt` under Coach instructions and Save; upload the six PDFs; test in Chat.
 7. Optional, later: in `private/lib/tools.php` the `hnw-coach` line still says "Opens in Gemini" and `link_only`. That only affects the label in Members & Access.
 
-## Tested (local, `hnw-coach/dev/run-tests.sh`, 95 checks)
+## Tested (local, `hnw-coach/dev/run-tests.sh`, 100 checks)
 Against a fake Gemini and a stand-in for the members system (same shapes as the real `boot_member_request`, `boot_member_page`, `can_use_tool`, member row): sign-in, tool ticks, unknown/inactive members, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, hourly and daily limits, key and WhatsApp number read from the optional settings file with no constants, key pasted in Settings > Connection (admin only, never echoed back, owner-only file outside the web folder, coach answers with it, can be removed), API key never in page or responses, data folder must be outside the web folder, standard no-access page, tool-tab.js line present. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
 
 ## NOT tested
@@ -40,7 +46,7 @@ Against a fake Gemini and a stand-in for the members system (same shapes as the 
 - The real members system end to end (tests used stand-ins built from the real files you pasted: bootstrap.php, auth.php, db.php, tools.php, gate.php, members/gate.php, members/.htaccess, apps.js, members/index.html).
 - `/members/e3-toolkit.css` (never seen): my page's own styles (`.card`, `.chip`, `.btn`, `.tabs`) could clash with it.
 - `/members/tool-icons.js` and `tool-tab.js` (never seen): the card icon for key `hnw-coach`, and the back link closing the tab.
-- A phone screen.
+- Your real header styling (`e3-toolkit.css` was never seen). The page was checked in a headless browser on a phone-sized screen, in Chinese and English, without that file.
 - Whether the host lets the reply finish after it is sent (the coaching-notes update runs after the reply).
 
 ## Roll back

@@ -22,6 +22,34 @@ function coach_fail(int $code, string $message, array $extra = [])
     exit;
 }
 
+/* ---------- Language: the page sends X-Coach-Lang (zh = Traditional Chinese, the default for members; en = English) ---------- */
+
+function coach_lang(): string
+{
+    return (($_SERVER['HTTP_X_COACH_LANG'] ?? '') === 'zh') ? 'zh' : 'en';
+}
+
+/** Messages members can see, in both languages. Admin-only messages stay in English. */
+function coach_msg(string $key, array $args = []): string
+{
+    static $m = [
+        'setup'     => ['zh' => '教練正在設定中，請稍後再回來。', 'en' => 'The coach is being set up. Check back soon.'],
+        'type'      => ['zh' => '請先輸入訊息。', 'en' => 'Type a message first.'],
+        'too_long'  => ['zh' => '訊息太長（上限 %d 字）。', 'en' => 'That message is too long (limit %d characters).'],
+        'rate_hour' => ['zh' => '你這個小時發送了很多訊息，請稍後再試。', 'en' => 'You have sent a lot of messages this hour. Please try again a little later.'],
+        'rate_day'  => ['zh' => '你今天的訊息已達上限，請明天再試。', 'en' => "You have reached today's message limit. Please try again tomorrow."],
+        'busy'      => ['zh' => '教練現在很忙，請一分鐘後再試。', 'en' => 'The coach is very busy right now. Please try again in a minute.'],
+        'failed'    => ['zh' => '教練暫時無法回答，請再試一次。', 'en' => 'The coach could not answer just now. Please try again.'],
+        'blocked'   => ['zh' => '抱歉，這個問題我無法協助，請向你的團隊領袖確認。', 'en' => "Sorry, I can't help with that one. Please check with your team leader."],
+        'noanswer'  => ['zh' => '抱歉，我想不出答案，請再問一次。', 'en' => 'Sorry, I could not come up with an answer. Please try asking again.'],
+        'cut'       => ['zh' => '（這則回覆被截斷了，請輸入「繼續」。）', 'en' => '(This reply was cut short. Ask me to continue.)'],
+        'w_key'     => ['zh' => '尚未設定 Gemini API 金鑰，教練暫時無法回答。請在下方「連線設定」加入。', 'en' => 'The Gemini API key is not set, so the coach cannot answer yet. Add it under Connection below.'],
+        'w_wa'      => ['zh' => '尚未設定團隊領袖的 WhatsApp 號碼，「詢問領袖」按鈕沒有號碼。請在下方「連線設定」加入。', 'en' => 'The leader\'s WhatsApp number is not set, so the "Ask my leader" button has no number. Add it under Connection below.'],
+    ];
+    $t = $m[$key][coach_lang()] ?? $m[$key]['en'] ?? $key;
+    return $args ? vsprintf($t, $args) : $t;
+}
+
 /* ---------- Connection settings saved from the Settings tab (Gemini key, leader's WhatsApp number) ---------- */
 
 function coach_settings_read(): array

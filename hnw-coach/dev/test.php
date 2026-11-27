@@ -12,6 +12,7 @@ function req(string $user, string $method, string $action, string $query = '', $
     if ($user !== '') $h[] = "X-Dev-User: $user";
     if (!isset($opt['nocsrf'])) $h[] = 'X-Requested-With: fetch';
     if (isset($opt['origin'])) $h[] = 'Origin: ' . $opt['origin'];
+    if (isset($opt['lang'])) $h[] = 'X-Coach-Lang: ' . $opt['lang'];
     if (isset($opt['multipart'])) { // a normal file upload: the members system must refuse it
         $method = 'POST';
         curl_setopt($ch, CURLOPT_POSTFIELDS, ['pdf' => new CURLFile($opt['multipart'], 'application/pdf', 'x.pdf')]);
@@ -124,6 +125,22 @@ ok(str_contains(end($lead)['text'], 'Advisor: Alan') && ($b['contents'][1]['role
 ok(!str_contains($d['reply'], 'thinking...'), 'Gemini thinking text is not shown to the advisor');
 ok(!str_contains(json_encode($b), 'alan@example.com'), 'the advisor\'s email is not sent to Gemini');
 
+echo "\n== Language: Traditional Chinese by default for members, English on request ==\n";
+file_put_contents($mockLog, '');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'language test'], ['lang' => 'zh']);
+$sysz = json_encode(mocklog()[0]['body']['system_instruction'] ?? [], JSON_UNESCAPED_UNICODE);
+ok($c === 200 && str_contains($sysz, 'Traditional Chinese (繁體中文)') && !str_contains($sysz, 'English version'), 'Chinese page: the coach is told to reply in Traditional Chinese');
+file_put_contents($mockLog, '');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'language test'], ['lang' => 'en']);
+$syse = json_encode(mocklog()[0]['body']['system_instruction'] ?? [], JSON_UNESCAPED_UNICODE);
+ok($c === 200 && str_contains($syse, 'English version') && str_contains($syse, 'end drill') && str_contains($syse, 'TEST COACH'), 'English page: the coach replies in English, accepts "pause" / "end drill", and still follows the leader\'s instructions');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'BLOCKME again'], ['lang' => 'zh']);
+ok(str_contains($d['reply'] ?? '', '團隊領袖'), 'Chinese page: fallback replies are in Chinese');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'FAIL429 x'], ['lang' => 'zh']);
+ok($c === 502 && str_contains($d['error'] ?? '', '教練'), 'Chinese page: error messages are in Chinese');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => str_repeat('x', 4001)], ['lang' => 'zh']);
+ok($c === 422 && str_contains($d['error'] ?? '', '4000'), 'Chinese page: "message too long" is in Chinese');
+
 echo "\n== Memory is private per agent ==\n";
 req('alan', 'POST', 'chat', '', ['message' => 'second question from alan']);
 $logs = mocklog(); $second = end($logs)['body']['contents'];
@@ -170,7 +187,7 @@ echo "\n== Usage (questions only) ==\n";
 [$c, $d] = req('boss', 'GET', 'usage', '&range=7');
 $names = array_column($d['people'], 'name');
 ok(in_array('Alan', $names) && in_array('Brenda', $names), 'people table lists agents who asked');
-ok($d['tiles']['handoffs'] === 2 && $d['tiles']['questions'] >= 5 && $d['tiles']['agents_using'] >= 3, 'tiles: questions, agents using, handoffs', json_encode($d['tiles']));
+ok($d['tiles']['handoffs'] === 3 && $d['tiles']['questions'] >= 5 && $d['tiles']['agents_using'] >= 3, 'tiles: questions, agents using, handoffs', json_encode($d['tiles']));
 $alan = array_values(array_filter($d['people'], fn($p) => $p['name'] === 'Alan'))[0];
 [$c, $d, $raw] = req('boss', 'GET', 'usage_member', '&m=' . $alan['mid'], null);
 ok(str_contains($raw, 'hello coach') && str_contains($raw, 'UNKNOWN topic'), 'leader sees Alan\'s questions');
