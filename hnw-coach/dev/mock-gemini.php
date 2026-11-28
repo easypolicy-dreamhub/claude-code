@@ -7,6 +7,16 @@ $hdr = ['x-goog-api-key' => $_SERVER['HTTP_X_GOOG_API_KEY'] ?? ''];
 file_put_contents($log, json_encode(['path' => strtok($_SERVER['REQUEST_URI'], '?'), 'query' => $_SERVER['QUERY_STRING'] ?? '', 'headers' => $hdr, 'body' => $body], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
 
 header('Content-Type: application/json');
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && str_ends_with(strtok($_SERVER['REQUEST_URI'], '?'), '/v1beta/models')) {
+    if (!str_starts_with($hdr['x-goog-api-key'], 'test-key-123')) { http_response_code(403); exit(json_encode(['error' => ['code' => 403, 'message' => 'bad key', 'status' => 'PERMISSION_DENIED']])); }
+    if (($_GET['pageToken'] ?? '') === '') {
+        exit(json_encode(['models' => [
+            ['name' => 'models/gemini-3.8-flash', 'displayName' => 'Gemini 3.8 Flash', 'description' => 'Fast model.', 'supportedGenerationMethods' => ['generateContent', 'countTokens']],
+            ['name' => 'models/text-embedding-9', 'displayName' => 'Embedding', 'description' => 'Not a chat model.', 'supportedGenerationMethods' => ['embedContent']],
+        ], 'nextPageToken' => 'page2']));
+    }
+    exit(json_encode(['models' => [['name' => 'models/gemini-flash-lite-latest', 'displayName' => 'Flash-Lite latest', 'description' => 'Alias.', 'supportedGenerationMethods' => ['generateContent']]]]));
+}
 if (!str_starts_with($hdr['x-goog-api-key'], 'test-key-123')) {
     http_response_code(403);
     exit(json_encode(['error' => ['code' => 403, 'message' => 'bad key', 'status' => 'PERMISSION_DENIED']]));

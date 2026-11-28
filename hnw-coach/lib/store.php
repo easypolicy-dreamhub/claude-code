@@ -74,7 +74,7 @@ function coach_setting(string $name): string
 function coach_model(): string
 {
     $m = coach_setting('COACH_MODEL');
-    return $m !== '' ? $m : 'gemini-3.8-flash';
+    return $m !== '' ? $m : 'gemini-flash-lite-latest';
 }
 
 /** The model that writes each member's short coaching notes (defaults to the same model). */

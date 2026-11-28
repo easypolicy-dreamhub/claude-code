@@ -18,8 +18,8 @@ return [
 //     'COACH_DATA_DIR' => '/home/YOUR-CPANEL-USER/e3-hnw-coach',
 
 // Optional tuning (defaults shown).
-//     'COACH_MODEL' => 'gemini-3.8-flash',        // the coach. Normally set in Settings > Connection instead.
-//     'COACH_NOTES_MODEL' => 'gemini-3.8-flash',   // writes each advisor's short coaching notes (defaults to the same model)
+//     'COACH_MODEL' => 'gemini-flash-lite-latest',        // the coach. Normally set in Settings > Connection instead.
+//     'COACH_NOTES_MODEL' => 'gemini-flash-lite-latest',   // writes each advisor's short coaching notes (defaults to the same model)
 //     'COACH_MAX_TOKENS' => 8192,                 // longest single reply (includes Gemini's thinking)
 //     'COACH_TEMPERATURE' => 0.8,
 //     'COACH_HISTORY_MSGS' => 24,                 // recent messages sent with each question

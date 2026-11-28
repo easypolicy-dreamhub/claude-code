@@ -120,6 +120,8 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
     <input class="txt" id="wa" type="tel" inputmode="numeric" data-ip="wa_ph">
     <input class="txt" id="model" type="text" autocomplete="off" spellcheck="false" data-ip="model_ph">
     <p class="sub" data-i="model_p"></p>
+    <div class="row"><button class="btn ghost" id="list-models" type="button" data-i="models_btn"></button></div>
+    <div id="models-out"></div>
     <div class="row"><button class="btn" id="save-conn" data-i="save_conn"></button><button class="btn ghost" id="clear-key" type="button" data-i="clear_key"></button><span id="conn-msg" class="sub" style="margin:0"></span></div>
     <div class="row"><button class="btn ghost" id="test-conn" type="button" data-i="test_btn"></button></div>
     <div id="test-out"></div>
@@ -162,9 +164,10 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ models_btn:'显示可用模型',models_loading:'正在向 Google 查询…',models_none:'没有找到可用的聊天模型。',use_model:'使用',cur_tag:'（目前使用）',models_hint:'点「使用」会把名称填进上面的模型框，然后请点「保存连接设置」。',
  slow:'教练回复花了太长时间，请稍后刷新页面查看，或再试一次。',
  testing_pdf:'基础检查完成，正在用全部 PDF 测试…（最多约 1 分钟）',
- model_ph:'Gemini 模型名称（留空使用默认值）',model_p:'默认模型是 gemini-3.8-flash。如果测试连接提示某个模型已停用，在这里改成 Google 建议的新名称即可，不需要重新上传文件。',
+ model_ph:'Gemini 模型名称（留空使用默认值）',model_p:'默认模型是 gemini-flash-lite-latest。如果测试连接提示某个模型已停用，在这里改成 Google 建议的新名称即可，不需要重新上传文件。',
  test_btn:'测试连接',testing:'测试中…（最多约 1 分钟）',test_all_ok:'全部正常。',test_bad:'有问题，请把这个结果截图给开发者。',
  sub:'实战教练 · 拆解反对意见、优化话术、客户演练',lang_btn:'English',
  tab_chat:'教练对话',tab_settings:'设置',tab_usage:'使用情况',
@@ -205,9 +208,10 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ models_btn:'Show available models',models_loading:'Asking Google…',models_none:'No chat models were found.',use_model:'Use',cur_tag:' (current)',models_hint:'Tap Use to fill the model box above, then tap Save connection.',
  slow:'The coach is taking too long. Refresh the page later to see the reply, or try again.',
  testing_pdf:'Basic checks done. Now testing with all the PDFs… (up to about a minute)',
- model_ph:'Gemini model name (leave empty for the default)',model_p:'The default model is gemini-3.8-flash. If Test connection says a model is retired, type the new name Google recommends here. No new upload needed.',
+ model_ph:'Gemini model name (leave empty for the default)',model_p:'The default model is gemini-flash-lite-latest. If Test connection says a model is retired, type the new name Google recommends here. No new upload needed.',
  test_btn:'Test connection',testing:'Testing… (up to about a minute)',test_all_ok:'Everything works.',test_bad:'Something is wrong. Send a screenshot of this result.',
  sub:'Objection handling, better scripts, client role-play',lang_btn:'简体中文',
  tab_chat:'Chat',tab_settings:'Settings',tab_usage:'Usage',
@@ -401,6 +405,14 @@ $('#test-conn').addEventListener('click',async()=>{
   if(!rows.some(x=>!x.ok))await run('pdf');
   draw();b.disabled=false;
 });
+$('#list-models').addEventListener('click',async()=>{
+  const b=$('#list-models'),out=$('#models-out');b.disabled=true;out.innerHTML='<p class="sub">'+esc(t('models_loading'))+'</p>';
+  try{const r=await api('list_models',{method:'POST',json:{}});
+    out.innerHTML=r.models.length?('<p class="sub">'+esc(t('models_hint'))+'</p><div class="list">'+r.models.map(m=>'<div class="item"><div class="grow"><b>'+esc(m.name)+'</b>'+(m.name===r.current?esc(t('cur_tag')):'')+'<small>'+esc(m.title)+'</small><small>'+esc(m.about)+'</small></div><button class="btn ghost small" data-model="'+esc(m.name)+'">'+esc(t('use_model'))+'</button></div>').join('')+'</div>'):'<p class="sub">'+esc(t('models_none'))+'</p>'}
+  catch(e){out.innerHTML='<div class="banner bad">'+esc(e.message+(e.detail?' ['+e.detail+']':''))+'</div>'}
+  b.disabled=false;
+});
+$('#models-out').addEventListener('click',e=>{const m=e.target.dataset.model;if(!m)return;$('#model').value=m;$('#model').focus();window.scrollTo({top:$('#model').getBoundingClientRect().top+scrollY-140,behavior:'smooth'})});
 $('#clear-key').addEventListener('click',async()=>{
   if(!confirm(t('confirm_clear')))return;
   try{const r=await api('save_settings',{method:'POST',json:{clear_key:true}});renderConn(r.connection);$('#conn-msg').textContent=t('key_removed');await loadSettings()}

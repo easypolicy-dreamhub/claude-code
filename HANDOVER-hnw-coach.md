@@ -16,6 +16,12 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 - Admin-only error messages (for example a badly shaped key) are still English.
 - Instructions: `starter-instructions-simplified.txt` is the Simplified version of the Gem instructions (converted automatically, then fixed by hand where the converter picked the wrong word, e.g. 核心, 建立). `starter-instructions.txt` is the original Traditional text. Either works; the language button overrides their language line.
 
+## Choosing the model
+- Settings > Connection > **Show available models** asks Google (`GET /v1beta/models`, with the saved key, server side) which models the key can use, keeps only those that support `generateContent`, lists them with a **Use** button that fills the Model box (the owner then taps Save connection). The key never reaches the browser.
+- Test connection's tiny-question step now also says which model actually answered (an alias such as `-latest` resolves to a real model).
+- The built-in default is now `gemini-flash-lite-latest` (it answered in 1.1 s on the owner's key; `gemini-3.8-flash` was very slow that day). A model saved in Settings always wins over the default.
+- Adding or removing PDFs needs no test: the PDFs are read fresh on every message. Run Test connection only after a big change in size, or when replies get slow.
+
 ## Finding problems
 - Settings > Connection has a **Test connection** button (super admin only). It checks PHP version, cURL, PHP limits, the private data folder, the PDFs, that a key is saved, then makes a tiny real call to Google and a second one with all PDFs attached, and shows HTTP status and Google's own message for any failure. It never shows the key.
 - Test connection runs as two short requests (quick checks + a tiny Google call, then one call with all the PDFs) so a slow Google answer cannot kill one long request, and the first result still shows if the second fails.
@@ -47,7 +53,7 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 5. Sign in as super admin, open `/members/hnw-coach/`, Settings: paste the key and the WhatsApp number under Connection and Save; paste `starter-instructions.txt` under Coach instructions and Save; upload the six PDFs; test in Chat.
 7. Optional, later: in `private/lib/tools.php` the `hnw-coach` line still says "Opens in Gemini" and `link_only`. That only affects the label in Members & Access.
 
-## Tested (local, `hnw-coach/dev/run-tests.sh`, 124 checks)
+## Tested (local, `hnw-coach/dev/run-tests.sh`, 127 checks)
 Against a fake Gemini and a stand-in for the members system (same shapes as the real `boot_member_request`, `boot_member_page`, `can_use_tool`, member row): sign-in, tool ticks, unknown/inactive members, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, hourly and daily limits, key and WhatsApp number read from the optional settings file with no constants, key pasted in Settings > Connection (admin only, never echoed back, owner-only file outside the web folder, coach answers with it, can be removed), API key never in page or responses, data folder must be outside the web folder, standard no-access page, tool-tab.js line present. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
 
 ## NOT tested

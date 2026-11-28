@@ -53,6 +53,55 @@ function coach_api(string $model, array $body): array
     return $res;
 }
 
+/** Asks Google which models this key can use (only those that can chat, i.e. generateContent). */
+function coach_list_models(): array
+{
+    $key = coach_setting('GEMINI_API_KEY');
+    if ($key === '') {
+        return ['ok' => false, 'message' => 'No Gemini key saved yet.'];
+    }
+    $base = rtrim((string) coach_const('COACH_API_BASE', 'https://generativelanguage.googleapis.com'), '/');
+    $found = [];
+    $token = '';
+    for ($page = 0; $page < 6; $page++) {
+        $url = $base . '/v1beta/models?pageSize=100' . ($token !== '' ? '&pageToken=' . rawurlencode($token) : '');
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => ['x-goog-api-key: ' . $key],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        $raw = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+        if ($raw === false) {
+            return ['ok' => false, 'message' => 'Could not reach Google: ' . $err];
+        }
+        $d = json_decode($raw, true);
+        if ($status !== 200 || !is_array($d)) {
+            return ['ok' => false, 'message' => 'HTTP ' . $status . ' ' . ($d['error']['status'] ?? '') . ': ' . ($d['error']['message'] ?? 'unexpected answer')];
+        }
+        foreach ($d['models'] ?? [] as $m) {
+            if (!in_array('generateContent', $m['supportedGenerationMethods'] ?? [], true)) {
+                continue;
+            }
+            $found[] = [
+                'name' => preg_replace('#^models/#', '', (string) ($m['name'] ?? '')),
+                'title' => (string) ($m['displayName'] ?? ''),
+                'about' => mb_substr((string) ($m['description'] ?? ''), 0, 160),
+            ];
+        }
+        $token = (string) ($d['nextPageToken'] ?? '');
+        if ($token === '') {
+            break;
+        }
+    }
+    usort($found, fn($a, $b) => strcmp($a['name'], $b['name']));
+    return ['ok' => true, 'models' => $found];
+}
+
 function coach_text_of(array $data): string
 {
     $text = '';

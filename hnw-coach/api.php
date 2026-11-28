@@ -10,8 +10,8 @@ $member = coach_boot();          // existing member login; fails closed
 $action = (string) ($_GET['action'] ?? '');
 $isPost = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
 
-const COACH_ADMIN_ACTIONS = ['test_connection', 'settings', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
-const COACH_POST_ACTIONS = ['test_connection', 'chat', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
+const COACH_ADMIN_ACTIONS = ['list_models', 'test_connection', 'settings', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
+const COACH_POST_ACTIONS = ['list_models', 'test_connection', 'chat', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
 
 // Admin actions are checked on the SERVER before anything else happens.
 if (in_array($action, COACH_ADMIN_ACTIONS, true)) {
@@ -215,7 +215,7 @@ switch ($action) {
             $mdl = trim((string) $in['model']);
             $mdl = preg_replace('#^models/#', '', $mdl);
             if ($mdl !== '' && !preg_match('/^[A-Za-z0-9._\-]{3,80}$/', $mdl)) {
-                coach_fail(422, 'That does not look like a model name. Use a name such as gemini-3.8-flash, or leave it empty for the default.');
+                coach_fail(422, 'That does not look like a model name. Use a name such as gemini-flash-lite-latest, or leave it empty for the default.');
             }
             $changes['COACH_MODEL'] = $mdl === '' ? null : $mdl;
         }
@@ -281,6 +281,14 @@ switch ($action) {
         $range = in_array($_GET['range'] ?? '7', ['7', '30', 'all'], true) ? (string) $_GET['range'] : '7';
         $out(['questions' => coach_usage_member($mid, $range)]);
 
+    case 'list_models':
+        // Super admin only. The key stays on the server; the page only receives model names.
+        $lm = coach_list_models();
+        if (!$lm['ok']) {
+            coach_fail(502, $lm['message']);
+        }
+        $out(['models' => $lm['models'], 'current' => coach_model()]);
+
     case 'test_connection':
         // Super admin only: checks each part in turn so a failure shows exactly where it is. Never returns the key.
         $GLOBALS['coach_cfg']['COACH_API_TIMEOUT'] = 45; // end with a clear message before a host or CDN cuts the connection
@@ -308,7 +316,7 @@ switch ($action) {
             $t0 = microtime(true);
             $r = coach_call($model, ['contents' => [['role' => 'user', 'parts' => [['text' => 'Reply with the single word OK.']]]], 'generationConfig' => ['maxOutputTokens' => 256]]);
             $secs = round(microtime(true) - $t0, 1);
-            $add("Google answers a tiny question ($model)", $r['ok'], $r['ok'] ? "yes, in {$secs}s" : 'HTTP ' . $r['status'] . ' ' . $r['type'] . ': ' . $r['message']);
+            $add("Google answers a tiny question ($model)", $r['ok'], $r['ok'] ? "yes, in {$secs}s, answered by " . ($r['data']['modelVersion'] ?? 'an unnamed model') : 'HTTP ' . $r['status'] . ' ' . $r['type'] . ': ' . $r['message']);
         }
         if ($step === 'pdf' && $hasKey && function_exists('curl_init')) {
             if (!$kb) {
