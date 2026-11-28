@@ -53,5 +53,14 @@ Against a fake Gemini and a stand-in for the members system (same shapes as the 
 - Your real header styling (`e3-toolkit.css` was never seen). The page was checked in a headless browser on a phone-sized screen, in Chinese and English, without that file.
 - Whether the host lets the reply finish after it is sent (the coaching-notes update runs after the reply).
 
+## Pending change (approved by the owner, NOT built yet)
+**Team leaders see their own team's questions in Usage.**
+- Who: anyone who has people under them in the team tree (option "a": "I can see who I recruit, even if I am only an agent, I can see my agents"). Not limited to team admins. Matches how the Team Activity page works: you see yourself and your team, nothing from other teams.
+- What: the same Usage view the super admin has, limited to that person's own team (their downline) plus their own questions. Questions only, never the coach's answers. Still no access to Settings, the instructions, the PDFs or the key.
+- Super admin keeps seeing everyone.
+- The note under the chat box changes to say the team leader and the super admin can see the questions members ask (both languages).
+- Needs from the owner: `private/lib/tree.php` (how a member's team/downline is found), so the existing logic is reused and not guessed. Do not build until that file has been seen.
+- Tests to add: a leader sees only their team's questions; an agent with nobody under them sees only their own; a leader cannot see another team's questions or any answers; Settings stays super-admin only.
+
 ## Roll back
 Only `members/apps.js` is overwritten: copy `apps-backup.js` back over it. To remove the tool: delete `public_html/members/hnw-coach/`. Chats and PDFs stay in `e3-hnw-coach/` until you delete that folder.
