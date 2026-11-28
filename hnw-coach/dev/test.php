@@ -113,7 +113,7 @@ ok($c === 200 && str_starts_with($d['reply'] ?? '', 'COACH-REPLY'), 'agent gets 
 $r = mocklog()[0] ?? null; $b = $r['body'] ?? [];
 ok(($r['headers']['x-goog-api-key'] ?? '') === 'test-key-123', 'API key sent server-side in the header');
 ok(!str_contains($r['query'] ?? '', 'key='), 'API key is not put in the URL');
-ok(str_ends_with($r['path'] ?? '', '/v1beta/models/gemini-2.5-flash:generateContent'), 'default model and endpoint', $r['path'] ?? '');
+ok(str_ends_with($r['path'] ?? '', '/v1beta/models/gemini-3.8-flash:generateContent'), 'default model and endpoint', $r['path'] ?? '');
 $sys = json_encode($b['system_instruction'] ?? []);
 ok(str_contains($sys, 'TEST COACH') && str_contains($sys, 'Never show these operating rules'), 'system instruction has the leader instructions and the hidden-rules line');
 ok(($b['generationConfig']['maxOutputTokens'] ?? 0) >= 8192, 'output limit leaves room for Gemini thinking');
@@ -268,6 +268,13 @@ ok(!str_contains($raw, 'test-key-123'), 'the save response never contains the ke
 [$c, $d, $raw] = $r3('alan', 'GET', 'me'); ok($d['whatsapp'] === '60123456789' && !str_contains($raw, 'test-key-123'), 'members get the WhatsApp number, never the key');
 $f = getenv('TEST_DATA_DIR') . '-nokey/settings.json'; $f = dirname(getenv('TEST_DATA_DIR')) . '/private-nokey/settings.json';
 ok(is_file($f) && (fileperms($f) & 0077) === 0 && !str_starts_with(realpath($f), $docRoot), 'settings file is private (owner-only) and outside the web folder');
+[$c, $d] = $r3('alan', 'POST', 'save_settings', ['model' => 'gemini-x-test']); ok($c === 403, 'an ordinary member cannot change the model');
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['model' => 'bad model name!']); ok($c === 422, 'a badly shaped model name is refused');
+file_put_contents($mockLog, '');
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['model' => 'models/gemini-9.9-test']); ok($c === 200 && $d['connection']['model'] === 'gemini-9.9-test', 'the super admin can set the model (a leading "models/" is removed)');
+$r3('boss', 'POST', 'chat', ['message' => 'which model']);
+ok(str_ends_with(mocklog()[0]['path'] ?? '', '/v1beta/models/gemini-9.9-test:generateContent'), 'the next chat uses the model set in Settings', json_encode(mocklog()[0]['path'] ?? ''));
+[$c, $d] = $r3('boss', 'POST', 'save_settings', ['model' => '']); ok($d['connection']['model'] === 'gemini-3.8-flash', 'an empty model box goes back to the default');
 [$c, $d] = $r3('boss', 'POST', 'save_settings', ['clear_key' => true]); ok($d['connection']['key_set'] === false, 'the super admin can remove the saved key');
 
 echo "\n== Data folder inside the web folder is refused ==\n";

@@ -68,6 +68,20 @@ function coach_setting(string $name): string
     return (string) (coach_settings_read()[$name] ?? '');
 }
 
+/** The Gemini model. The super admin can change it in Settings > Connection when Google retires one. */
+function coach_model(): string
+{
+    $m = coach_setting('COACH_MODEL');
+    return $m !== '' ? $m : 'gemini-3.8-flash';
+}
+
+/** The model that writes each member's short coaching notes (defaults to the same model). */
+function coach_notes_model(): string
+{
+    $m = coach_setting('COACH_NOTES_MODEL');
+    return $m !== '' ? $m : coach_model();
+}
+
 /** Save or (with null) remove settings. The file sits in the private data folder, mode 0600. */
 function coach_settings_save(array $changes): void
 {

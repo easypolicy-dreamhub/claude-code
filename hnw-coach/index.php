@@ -118,6 +118,8 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
     <p class="sub" id="conn-status"></p>
     <input class="txt" id="key" type="password" autocomplete="new-password" spellcheck="false" data-ip="key_ph">
     <input class="txt" id="wa" type="tel" inputmode="numeric" data-ip="wa_ph">
+    <input class="txt" id="model" type="text" autocomplete="off" spellcheck="false" data-ip="model_ph">
+    <p class="sub" data-i="model_p"></p>
     <div class="row"><button class="btn" id="save-conn" data-i="save_conn"></button><button class="btn ghost" id="clear-key" type="button" data-i="clear_key"></button><span id="conn-msg" class="sub" style="margin:0"></span></div>
     <div class="row"><button class="btn ghost" id="test-conn" type="button" data-i="test_btn"></button></div>
     <div id="test-out"></div>
@@ -160,6 +162,7 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ model_ph:'Gemini 模型名称（留空使用默认值）',model_p:'默认模型是 gemini-3.8-flash。如果测试连接提示某个模型已停用，在这里改成 Google 建议的新名称即可，不需要重新上传文件。',
  test_btn:'测试连接',testing:'测试中…（最多约 1 分钟）',test_all_ok:'全部正常。',test_bad:'有问题，请把这个结果截图给开发者。',
  sub:'实战教练 · 拆解反对意见、优化话术、客户演练',lang_btn:'English',
  tab_chat:'教练对话',tab_settings:'设置',tab_usage:'使用情况',
@@ -200,6 +203,7 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ model_ph:'Gemini model name (leave empty for the default)',model_p:'The default model is gemini-3.8-flash. If Test connection says a model is retired, type the new name Google recommends here. No new upload needed.',
  test_btn:'Test connection',testing:'Testing… (up to about a minute)',test_all_ok:'Everything works.',test_bad:'Something is wrong. Send a screenshot of this result.',
  sub:'Objection handling, better scripts, client role-play',lang_btn:'简体中文',
  tab_chat:'Chat',tab_settings:'Settings',tab_usage:'Usage',
@@ -359,11 +363,12 @@ async function loadSettings(){
 function renderConn(c){
   $('#conn-status').innerHTML=c.key_set?(t('key_saved',esc(c.key_last4))+(c.key_from_server_file?esc(t('key_file')):'')):t('key_none');
   if(document.activeElement!==$('#wa'))$('#wa').value=c.whatsapp||'';
+  if(document.activeElement!==$('#model'))$('#model').value=c.model_custom||'';
   $('#clear-key').classList.toggle('hide',!c.key_set||c.key_from_server_file);
 }
 $('#save-conn').addEventListener('click',async()=>{
   const b=$('#save-conn');b.disabled=true;
-  try{const r=await api('save_settings',{method:'POST',json:{gemini_api_key:$('#key').value.trim(),whatsapp:$('#wa').value}});
+  try{const r=await api('save_settings',{method:'POST',json:{gemini_api_key:$('#key').value.trim(),whatsapp:$('#wa').value,model:$('#model').value}});
     $('#key').value='';renderConn(r.connection);$('#conn-msg').textContent=t('saved');await loadSettings()}
   catch(e){$('#conn-msg').innerHTML='<span class="bad">'+esc(e.message)+'</span>'}
   b.disabled=false;

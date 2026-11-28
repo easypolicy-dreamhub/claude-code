@@ -90,7 +90,7 @@ TXT;
 /** One coaching turn. Returns ['ok'=>true,'reply'=>..,'handoff'=>bool,'usage'=>..] or ['ok'=>false,'error'=>..]. */
 function coach_reply(array $member, array $chat, string $userMessage, string $instructions): array
 {
-    $model = (string) coach_const('COACH_MODEL', 'gemini-2.5-flash');
+    $model = coach_model();
     $window = max(2, (int) coach_const('COACH_HISTORY_MSGS', 24));
 
     $notes = trim((string) ($chat['notes'] ?? ''));
@@ -173,7 +173,7 @@ function coach_update_notes(string $oldNotes, array $oldMessages): ?string
         ]],
         'generationConfig' => ['maxOutputTokens' => 4096, 'temperature' => 0.2],
     ];
-    $r = coach_api((string) coach_const('COACH_NOTES_MODEL', 'gemini-2.5-flash-lite'), $body);
+    $r = coach_api(coach_notes_model(), $body);
     if (!$r['ok']) {
         return null;
     }

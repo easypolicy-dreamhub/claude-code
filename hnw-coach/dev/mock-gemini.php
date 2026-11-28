@@ -15,7 +15,7 @@ $contents = $body['contents'] ?? [];
 $lastParts = $contents[count($contents) - 1]['parts'] ?? [];
 $last = '';
 foreach ($lastParts as $p) { $last .= $p['text'] ?? ''; }
-$isNotes = strpos($_SERVER['REQUEST_URI'], 'flash-lite') !== false;
+$isNotes = strpos(json_encode($body['system_instruction'] ?? []), 'private coaching notes') !== false;
 
 if (strpos($last, 'FAIL429') !== false) {
     http_response_code(429);

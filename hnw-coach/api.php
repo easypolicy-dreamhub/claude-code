@@ -55,6 +55,8 @@ function coach_connection_info(): array
         'key_last4' => $key !== '' ? substr($key, -4) : '',
         'key_from_server_file' => $fromFile,
         'whatsapp' => preg_replace('/\D/', '', coach_setting('COACH_WHATSAPP_NUMBER')),
+        'model' => coach_model(),
+        'model_custom' => coach_setting('COACH_MODEL'),
     ];
 }
 
@@ -176,6 +178,14 @@ switch ($action) {
             }
             $changes['GEMINI_API_KEY'] = $key;
         }
+        if (array_key_exists('model', $in)) {
+            $mdl = trim((string) $in['model']);
+            $mdl = preg_replace('#^models/#', '', $mdl);
+            if ($mdl !== '' && !preg_match('/^[A-Za-z0-9._\-]{3,80}$/', $mdl)) {
+                coach_fail(422, 'That does not look like a model name. Use a name such as gemini-3.8-flash, or leave it empty for the default.');
+            }
+            $changes['COACH_MODEL'] = $mdl === '' ? null : $mdl;
+        }
         if (array_key_exists('whatsapp', $in)) {
             $wa = preg_replace('/\D/', '', (string) $in['whatsapp']);
             if ($wa !== '' && (strlen($wa) < 8 || strlen($wa) > 15)) {
@@ -252,7 +262,7 @@ switch ($action) {
         $kb = coach_kb_list();
         $add('Private data folder', is_writable(coach_data_root()), is_writable(coach_data_root()) ? 'writable, outside public_html' : 'NOT writable');
         $add('PDFs', true, count($kb) . ' file(s), ' . round(array_sum(array_column($kb, 'size')) / 1048576, 2) . ' MB');
-        $model = (string) coach_const('COACH_MODEL', 'gemini-2.5-flash');
+        $model = coach_model();
         $hasKey = coach_setting('GEMINI_API_KEY') !== '';
         $add('Gemini key saved', $hasKey, $hasKey ? 'yes' : 'no: add it above');
         if ($hasKey && function_exists('curl_init')) {
