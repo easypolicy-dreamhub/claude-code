@@ -67,5 +67,11 @@ Against a fake Gemini and a stand-in for the members system (same shapes as the 
 - Needs from the owner: `private/lib/tree.php` (how a member's team/downline is found), so the existing logic is reused and not guessed. Do not build until that file has been seen.
 - Tests to add: a leader sees only their team's questions; an agent with nobody under them sees only their own; a leader cannot see another team's questions or any answers; Settings stays super-admin only.
 
+## Live findings (28 Nov, owner's server)
+- Test connection with the default `gemini-3.8-flash`: first a 503 "high demand", then 50 s for a tiny question, then a 45 s timeout with 0 bytes received. Google was overloaded or slow, not the server.
+- The owner set the model to `gemini-flash-lite-latest` in Settings > Connection: tiny question 1.1 s, question with all 6 PDFs 3.4 s (12,356 input tokens), "Everything works". The model name lives in the saved settings, so it is not lost when the code is re-uploaded.
+- `-latest` names are Google aliases and can move to a newer model without notice. If answers change in quality or style, check the model name first. Still to compare: answer quality of flash-lite against `gemini-flash-latest` on the coach's role-play and scorecard.
+- Still to do: first real chat answer through the page; billing before real members (free key: chats may be used by Google); tick HNW Coach for members; the leaders' Usage view (needs `private/lib/tree.php`).
+
 ## Roll back
 Only `members/apps.js` is overwritten: copy `apps-backup.js` back over it. To remove the tool: delete `public_html/members/hnw-coach/`. Chats and PDFs stay in `e3-hnw-coach/` until you delete that folder.
