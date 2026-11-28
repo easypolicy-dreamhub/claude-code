@@ -39,7 +39,7 @@ register_shutdown_function(static function (): void {
     $e = error_get_last();
     if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true) && !headers_sent()) {
         error_log('HNW Coach fatal: ' . $e['message'] . ' in ' . basename((string) $e['file']) . ':' . $e['line']);
-        http_response_code(500);
+        http_response_code(424); // not 500: hosts may replace the body of 5xx answers and hide the reason
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['error' => coach_msg('failed')] + (!empty($GLOBALS['coach_is_admin']) ? ['detail' => $e['message']] : []), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     }
@@ -75,6 +75,7 @@ switch ($action) {
         $out(['messages' => array_map(fn($m) => ['role' => $m['r'], 'text' => $m['c'], 'ts' => $m['t'], 'handoff' => !empty($m['h'])], $msgs)]);
 
     case 'chat':
+        @set_time_limit(180); // a reply with all the PDFs attached can take a while
         $instr = coach_instr_current();
         if ($instr === null && !$isAdmin) {
             coach_fail(409, coach_msg('setup'));
@@ -250,27 +251,35 @@ switch ($action) {
 
     case 'test_connection':
         // Super admin only: checks each part in turn so a failure shows exactly where it is. Never returns the key.
+        $step = (string) ($json()['step'] ?? 'basic'); // 'basic' (quick checks + a tiny Google call) or 'pdf' (one call with every PDF): two short requests, not one long one
         $serverMaxExec = ini_get('max_execution_time'); // read before we raise it for this test
         @set_time_limit(180);
         $steps = [];
         $add = static function (string $name, bool $ok, string $detail) use (&$steps): void {
             $steps[] = ['name' => $name, 'ok' => $ok, 'detail' => $detail];
         };
-        $add('PHP version', PHP_VERSION_ID >= 80100, PHP_VERSION);
-        $add('cURL (needed to reach Google)', function_exists('curl_init'), function_exists('curl_init') ? 'available' : 'NOT available: switch on the curl extension in cPanel');
-        $add('PHP limits', true, 'memory_limit ' . ini_get('memory_limit') . ', max_execution_time ' . $serverMaxExec . 's, post_max_size ' . ini_get('post_max_size'));
         $kb = coach_kb_list();
-        $add('Private data folder', is_writable(coach_data_root()), is_writable(coach_data_root()) ? 'writable, outside public_html' : 'NOT writable');
-        $add('PDFs', true, count($kb) . ' file(s), ' . round(array_sum(array_column($kb, 'size')) / 1048576, 2) . ' MB');
         $model = coach_model();
         $hasKey = coach_setting('GEMINI_API_KEY') !== '';
-        $add('Gemini key saved', $hasKey, $hasKey ? 'yes' : 'no: add it above');
-        if ($hasKey && function_exists('curl_init')) {
+        if ($step === 'basic') {
+            $add('PHP version', PHP_VERSION_ID >= 80100, PHP_VERSION);
+            $add('cURL (needed to reach Google)', function_exists('curl_init'), function_exists('curl_init') ? 'available' : 'NOT available: switch on the curl extension in cPanel');
+            $add('PHP limits', true, 'memory_limit ' . ini_get('memory_limit') . ', max_execution_time ' . $serverMaxExec . 's, post_max_size ' . ini_get('post_max_size'));
+            $add('Time allowed for one request', (int) ini_get('max_execution_time') === 0 || (int) ini_get('max_execution_time') >= 120, "server default {$serverMaxExec}s; after asking for more: " . ini_get('max_execution_time') . 's');
+            $add('Private data folder', is_writable(coach_data_root()), is_writable(coach_data_root()) ? 'writable, outside public_html' : 'NOT writable');
+            $add('PDFs', true, count($kb) . ' file(s), ' . round(array_sum(array_column($kb, 'size')) / 1048576, 2) . ' MB');
+            $add('Gemini key saved', $hasKey, $hasKey ? 'yes' : 'no: add it above');
+        }
+        if ($step === 'basic' && $hasKey && function_exists('curl_init')) {
             $t0 = microtime(true);
             $r = coach_api($model, ['contents' => [['role' => 'user', 'parts' => [['text' => 'Reply with the single word OK.']]]], 'generationConfig' => ['maxOutputTokens' => 256]]);
             $secs = round(microtime(true) - $t0, 1);
             $add("Google answers a tiny question ($model)", $r['ok'], $r['ok'] ? "yes, in {$secs}s" : 'HTTP ' . $r['status'] . ' ' . $r['type'] . ': ' . $r['message']);
-            if ($r['ok'] && $kb) {
+        }
+        if ($step === 'pdf' && $hasKey && function_exists('curl_init')) {
+            if (!$kb) {
+                $add('Google answers with all PDFs attached', false, 'no PDFs uploaded yet');
+            } else {
                 $t0 = microtime(true);
                 $parts = coach_kb_parts();
                 $parts[] = ['text' => 'Reply with the single word OK.'];

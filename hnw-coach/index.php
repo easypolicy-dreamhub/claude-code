@@ -162,6 +162,7 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ testing_pdf:'基础检查完成，正在用全部 PDF 测试…（最多约 1 分钟）',
  model_ph:'Gemini 模型名称（留空使用默认值）',model_p:'默认模型是 gemini-3.8-flash。如果测试连接提示某个模型已停用，在这里改成 Google 建议的新名称即可，不需要重新上传文件。',
  test_btn:'测试连接',testing:'测试中…（最多约 1 分钟）',test_all_ok:'全部正常。',test_bad:'有问题，请把这个结果截图给开发者。',
  sub:'实战教练 · 拆解反对意见、优化话术、客户演练',lang_btn:'English',
@@ -203,6 +204,7 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ testing_pdf:'Basic checks done. Now testing with all the PDFs… (up to about a minute)',
  model_ph:'Gemini model name (leave empty for the default)',model_p:'The default model is gemini-3.8-flash. If Test connection says a model is retired, type the new name Google recommends here. No new upload needed.',
  test_btn:'Test connection',testing:'Testing… (up to about a minute)',test_all_ok:'Everything works.',test_bad:'Something is wrong. Send a screenshot of this result.',
  sub:'Objection handling, better scripts, client role-play',lang_btn:'简体中文',
@@ -375,11 +377,14 @@ $('#save-conn').addEventListener('click',async()=>{
 });
 $('#test-conn').addEventListener('click',async()=>{
   const b=$('#test-conn'),out=$('#test-out');b.disabled=true;out.innerHTML='<p class="sub">'+esc(t('testing'))+'</p>';
-  try{const r=await api('test_connection',{method:'POST',json:{}});
-    const bad=r.steps.filter(x=>!x.ok).length;
-    out.innerHTML='<div class="list">'+r.steps.map(x=>'<div class="item"><div class="grow"><b class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✔':'✘')+'</b> '+esc(x.name)+'<small>'+esc(x.detail)+'</small></div></div>').join('')+'</div><p class="sub '+(bad?'bad':'ok')+'">'+esc(bad?t('test_bad'):t('test_all_ok'))+'</p>'}
-  catch(e){out.innerHTML='<div class="banner bad">'+esc(e.message+(e.detail?' ['+e.detail+']':''))+'</div>'}
-  b.disabled=false;
+  const rows=[];
+  const draw=(note)=>{const bad=rows.filter(x=>!x.ok).length;
+    out.innerHTML='<div class="list">'+rows.map(x=>'<div class="item"><div class="grow"><b class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✔':'✘')+'</b> '+esc(x.name)+'<small>'+esc(x.detail)+'</small></div></div>').join('')+'</div>'+(note?'<p class="sub">'+esc(note)+'</p>':'<p class="sub '+(bad?'bad':'ok')+'">'+esc(bad?t('test_bad'):t('test_all_ok'))+'</p>')};
+  const run=async(step)=>{try{const r=await api('test_connection',{method:'POST',json:{step}});rows.push(...r.steps);return true}
+    catch(e){rows.push({ok:false,name:step==='pdf'?'Google answers with all PDFs attached':'Quick checks',detail:e.message+(e.detail?' ['+e.detail+']':'')+(e.status?' (HTTP '+e.status+')':'')});return false}};
+  await run('basic');draw(t('testing_pdf'));
+  if(!rows.some(x=>!x.ok))await run('pdf');
+  draw();b.disabled=false;
 });
 $('#clear-key').addEventListener('click',async()=>{
   if(!confirm(t('confirm_clear')))return;

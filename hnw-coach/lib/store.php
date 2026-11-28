@@ -15,10 +15,12 @@ function coach_const(string $name, $default)
 
 function coach_fail(int $code, string $message, array $extra = [])
 {
-    http_response_code($code);
+    // Some hosts replace the body of any 5xx answer with their own empty error page, which hides the reason.
+    // So server-side problems are sent as 424 (a 4xx code passes through untouched); 'status' keeps the real code.
+    http_response_code($code >= 500 ? 424 : $code);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    echo json_encode(['error' => $message] + $extra, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"error":"Server error"}';
+    echo json_encode(['error' => $message, 'status' => $code] + $extra, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"error":"Server error"}';
     exit;
 }
 

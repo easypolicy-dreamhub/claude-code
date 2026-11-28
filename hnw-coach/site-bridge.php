@@ -111,7 +111,7 @@ function coach_list_members(): array
 
 function coach_bridge_fail(int $code, string $message)
 {
-    http_response_code($code);
+    http_response_code($code >= 500 ? 424 : $code); // see coach_fail(): hosts may hide the body of 5xx answers
     header('Cache-Control: no-store');
     if (defined('HNWCOACH_PAGE')) { // the page itself (index.php): a readable message instead of raw JSON
         header('Content-Type: text/html; charset=utf-8');

@@ -18,6 +18,8 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 
 ## Finding problems
 - Settings > Connection has a **Test connection** button (super admin only). It checks PHP version, cURL, PHP limits, the private data folder, the PDFs, that a key is saved, then makes a tiny real call to Google and a second one with all PDFs attached, and shows HTTP status and Google's own message for any failure. It never shows the key.
+- Test connection runs as two short requests (quick checks + a tiny Google call, then one call with all the PDFs) so a slow Google answer cannot kill one long request, and the first result still shows if the second fails.
+- Server-side errors are sent as HTTP 424 with the message (and the real code in `status`), not 5xx: the owner's host/CDN replaced the body of 500 and 502 answers with an empty page ("Error (502)", "Error (500)" with no reason). 4xx answers pass through untouched.
 - If PHP dies with a fatal error during a request, the API answers with JSON (the technical reason only for the super admin) and writes it to the PHP error log; JSON error bodies can no longer come out empty because of bad UTF-8.
 
 ## How it is built

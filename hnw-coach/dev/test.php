@@ -61,7 +61,7 @@ echo "\n== Sign-in and admin gate (server-side) ==\n";
 [$c, $d] = req('boss', 'GET', 'me');                 ok($d['is_admin'] === true, 'super admin sees admin flag');
 $adminCalls = [
     ['GET', 'settings', '', null], ['GET', 'usage', '&range=7', null], ['GET', 'usage_member', '&m=' . str_repeat('a', 32), null],
-    ['POST', 'test_connection', '', []],
+    ['POST', 'test_connection', '', ['step' => 'basic']],
     ['POST', 'save_instructions', '', ['text' => 'x']], ['POST', 'restore_instructions', '', ['version' => 1]], ['POST', 'delete_pdf', '', ['name' => 'a.pdf']],
 ];
 foreach (['alan' => 'plain agent', 'teamadmin' => 'team admin (not super)'] as $u => $label) {
@@ -138,7 +138,7 @@ ok($c === 200 && str_contains($syse, 'English version') && str_contains($syse, '
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'BLOCKME again'], ['lang' => 'zh']);
 ok(str_contains($d['reply'] ?? '', '团队领袖'), 'Chinese page: fallback replies are in Chinese');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'FAIL429 x'], ['lang' => 'zh']);
-ok($c === 502 && str_contains($d['error'] ?? '', '教练'), 'Chinese page: error messages are in Chinese');
+ok($c === 424 && str_contains($d['error'] ?? '', '教练'), 'Chinese page: error messages are in Chinese');
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => str_repeat('x', 4001)], ['lang' => 'zh']);
 ok($c === 422 && str_contains($d['error'] ?? '', '4000'), 'Chinese page: "message too long" is in Chinese');
 
@@ -160,9 +160,9 @@ ok($d['handoff'] === true && !str_contains($d['reply'], '[[HANDOFF]]') && str_co
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'LONGREPLY please']); ok(str_contains($d['reply'], 'cut short'), 'a reply cut off at the token limit says so');
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => '你好，请帮我']); ok(str_contains($d['reply'] ?? '', '你好'), 'Chinese passes through intact');
 [$c, $d] = req('alan', 'POST', 'chat', '', ['message' => 'FAIL429 test']);
-ok($c === 502 && !isset($d['detail']) && !str_contains(json_encode($d), 'secret detail'), 'API failure: agent gets a friendly error without internals');
+ok($c === 424 && !isset($d['detail']) && !str_contains(json_encode($d), 'secret detail'), 'API failure: agent gets a friendly error without internals');
 [$c, $d] = req('boss', 'POST', 'chat', '', ['message' => 'FAIL429 test']);
-ok($c === 502 && str_contains($d['detail'] ?? '', 'secret detail'), 'API failure: super admin gets the technical detail');
+ok($c === 424 && ($d['status'] ?? 0) === 502 && str_contains($d['detail'] ?? '', 'secret detail'), 'API failure: super admin gets the technical detail');
 [$c, $d] = req('alan', 'GET', 'history'); ok(!str_contains(json_encode($d), 'FAIL429'), 'a failed question is not stored in the chat');
 [$c] = req('alan', 'POST', 'chat', '', ['message' => str_repeat('x', 4001)]); ok($c === 422, 'over-long message refused');
 
@@ -197,11 +197,12 @@ ok(count(array_filter($d['questions'], fn($q) => $q['handoff'])) === 2, 'handoff
 [$c, $d, $raw] = req('boss', 'GET', 'usage_member', '&m=../etc'); ok($c === 422, 'bad agent id refused');
 
 echo "\n== Test connection button ==\n";
-[$c, $d, $raw] = req('boss', 'POST', 'test_connection', '', []);
+[$c, $d, $raw] = req('boss', 'POST', 'test_connection', '', ['step' => 'basic']);
 $names = array_column($d['steps'] ?? [], 'name'); $allok = !array_filter($d['steps'] ?? [], fn($x) => !$x['ok']);
-ok($c === 200 && $allok && count($names) >= 8, 'super admin: every step passes, including a tiny Google call and one with all PDFs attached', json_encode($d['steps'] ?? $d));
-ok(!str_contains($raw, 'test-key-123'), 'the test result never contains the key');
-ok(str_contains($raw, 'input tokens'), 'the PDF step reports the input size');
+ok($c === 200 && $allok && count($names) >= 8, 'quick checks: every step passes, including a tiny Google call', json_encode($d['steps'] ?? $d));
+[$c, $d, $raw2] = req('boss', 'POST', 'test_connection', '', ['step' => 'pdf']);
+ok($c === 200 && count($d['steps'] ?? []) === 1 && $d['steps'][0]['ok'] === true && str_contains($raw2, 'input tokens'), 'PDF check (its own request): passes and reports the input size', $raw2);
+ok(!str_contains($raw . $raw2, 'test-key-123'), 'the test results never contain the key');
 
 echo "\n== Setup helper ==\n";
 [$c, $d] = req('alan', 'GET', 'whoami'); ok($c === 200 && $d['treated_as_super_admin'] === false && !str_contains(json_encode($d), 'alan@example.com'), 'whoami works for a member and shows no personal data');
@@ -247,10 +248,10 @@ $r3 = function (string $user, string $method, string $action, $body = null) use 
     $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? [], (string) $raw];
 };
 $r3('boss', 'POST', 'save_instructions', ['text' => 'nokey test']);
-[$c, $d] = $r3('boss', 'POST', 'test_connection', []);
+[$c, $d] = $r3('boss', 'POST', 'test_connection', ['step' => 'basic']);
 $bad = array_values(array_filter($d['steps'] ?? [], fn($x) => !$x['ok']));
 ok($c === 200 && count($bad) >= 1 && str_contains($bad[0]['name'], 'Gemini key'), 'with no key the test points at the missing key', json_encode($bad));
-[$c, $d] = $r3('boss', 'POST', 'chat', ['message' => 'before key']); ok($c === 502, 'with no key the coach cannot answer yet');
+[$c, $d] = $r3('boss', 'POST', 'chat', ['message' => 'before key']); ok($c === 424, 'with no key the coach cannot answer yet');
 [$c, $d] = $r3('boss', 'GET', 'settings'); ok(count($d['warnings']) === 2 && $d['connection']['key_set'] === false, 'Settings warns that the key and WhatsApp number are missing');
 [$c] = $r3('alan', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length']); ok($c === 403, 'an ordinary member cannot save the key');
 [$c] = $r3('teamadmin', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length']); ok($c === 403, 'a team admin cannot save the key');
@@ -280,7 +281,7 @@ ok(str_ends_with(mocklog()[0]['path'] ?? '', '/v1beta/models/gemini-9.9-test:gen
 echo "\n== Data folder inside the web folder is refused ==\n";
 $base2 = getenv('APP_BASE_BADDIR');
 $ch = curl_init("$base2/api.php?action=me"); curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['X-Dev-User: alan'], CURLOPT_RETURNTRANSFER => true]); $raw = curl_exec($ch);
-ok(curl_getinfo($ch, CURLINFO_RESPONSE_CODE) === 500 && str_contains((string) $raw, 'outside public_html'), 'coach refuses to run if its data folder is under public_html');
+ok(curl_getinfo($ch, CURLINFO_RESPONSE_CODE) === 424 && str_contains((string) $raw, 'outside public_html'), 'coach refuses to run if its data folder is under public_html');
 
 echo "\nResult: $pass passed, $fail failed\n";
 exit($fail ? 1 : 0);
