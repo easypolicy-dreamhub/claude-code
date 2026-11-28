@@ -18,6 +18,8 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 
 ## Choosing the model
 - Settings > Connection > **Show available models** asks Google (`GET /v1beta/models`, with the saved key, server side) which models the key can use, keeps only those that support `generateContent`, lists them with a **Use** button that fills the Model box (the owner then taps Save connection). The key never reaches the browser.
+- The list opens as a panel under the Model box with a **Close** button (it also closes after Use, and the link toggles it). It leads with a **Recommended** group (Gemini Flash-Lite, Flash, Pro; `-latest` names first, then newest version first), each labelled fastest and cheapest / balanced / strongest but slower and costlier. Agents, deep research, computer use, voice, image, embedding and experimental models sit behind "Show the other N models". The panel always states the current model, with a note when Google's list does not show it (aliases are often missing).
+- Settings > Connection layout: key, WhatsApp number, model, hint, "Show available models" link, then Save connection and Test connection side by side, then the test results, then a small red "Remove saved key" link at the bottom.
 - Test connection's tiny-question step now also says which model actually answered (an alias such as `-latest` resolves to a real model).
 - The built-in default is now `gemini-flash-lite-latest` (it answered in 1.1 s on the owner's key; `gemini-3.8-flash` was very slow that day). A model saved in Settings always wins over the default.
 - Adding or removing PDFs needs no test: the PDFs are read fresh on every message. Run Test connection only after a big change in size, or when replies get slow.
@@ -53,7 +55,7 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 5. Sign in as super admin, open `/members/hnw-coach/`, Settings: paste the key and the WhatsApp number under Connection and Save; paste `starter-instructions.txt` under Coach instructions and Save; upload the six PDFs; test in Chat.
 7. Optional, later: in `private/lib/tools.php` the `hnw-coach` line still says "Opens in Gemini" and `link_only`. That only affects the label in Members & Access.
 
-## Tested (local, `hnw-coach/dev/run-tests.sh`, 127 checks)
+## Tested (local, `hnw-coach/dev/run-tests.sh`, 130 checks)
 Against a fake Gemini and a stand-in for the members system (same shapes as the real `boot_member_request`, `boot_member_page`, `can_use_tool`, member row): sign-in, tool ticks, unknown/inactive members, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, hourly and daily limits, key and WhatsApp number read from the optional settings file with no constants, key pasted in Settings > Connection (admin only, never echoed back, owner-only file outside the web folder, coach answers with it, can be removed), API key never in page or responses, data folder must be outside the web folder, standard no-access page, tool-tab.js line present. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
 
 ## NOT tested

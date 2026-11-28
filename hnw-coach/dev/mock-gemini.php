@@ -13,6 +13,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && str_ends_with(strtok($_SERVE
         exit(json_encode(['models' => [
             ['name' => 'models/gemini-3.8-flash', 'displayName' => 'Gemini 3.8 Flash', 'description' => 'Fast model.', 'supportedGenerationMethods' => ['generateContent', 'countTokens']],
             ['name' => 'models/text-embedding-9', 'displayName' => 'Embedding', 'description' => 'Not a chat model.', 'supportedGenerationMethods' => ['embedContent']],
+            ['name' => 'models/antigravity-preview-latest', 'displayName' => 'Antigravity', 'description' => 'An agent.', 'supportedGenerationMethods' => ['generateContent']],
+            ['name' => 'models/gemini-3.5-pro', 'displayName' => 'Gemini 3.5 Pro', 'description' => 'Strong.', 'supportedGenerationMethods' => ['generateContent']],
+            ['name' => 'models/gemini-3.8-flash-live', 'displayName' => 'Flash Live', 'description' => 'Voice.', 'supportedGenerationMethods' => ['generateContent']],
         ], 'nextPageToken' => 'page2']));
     }
     exit(json_encode(['models' => [['name' => 'models/gemini-flash-lite-latest', 'displayName' => 'Flash-Lite latest', 'description' => 'Alias.', 'supportedGenerationMethods' => ['generateContent']]]]));

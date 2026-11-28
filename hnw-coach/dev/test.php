@@ -243,7 +243,11 @@ ok(!str_contains($raw . $raw2, 'test-key-123'), 'the test results never contain 
 echo "\n== Show available models ==\n";
 [$c, $d, $raw] = req('boss', 'POST', 'list_models', '', []);
 $names = array_column($d['models'] ?? [], 'name');
-ok($c === 200 && $names === ['gemini-3.8-flash', 'gemini-flash-lite-latest'], 'lists only chat models, from every page, sorted, without the "models/" prefix', json_encode($names));
+ok($c === 200 && !in_array('text-embedding-9', $names, true) && in_array('gemini-flash-lite-latest', $names, true) && in_array('gemini-3.8-flash', $names, true), 'lists only models that can chat, from every page, without the "models/" prefix', json_encode($names));
+$rec = array_values(array_map(fn($m) => $m['name'], array_filter($d['models'] ?? [], fn($m) => $m['recommended'])));
+ok($rec === ['gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-3.5-pro'], 'recommended group: Flash-Lite first, then Flash, then Pro; agents and voice models are left out of it', json_encode($rec));
+ok(array_search('antigravity-preview-latest', $names) > array_search('gemini-3.5-pro', $names) && array_search('gemini-3.8-flash-live', $names) > array_search('gemini-3.5-pro', $names), 'agent and voice models come after the recommended ones');
+ok(($d['current_in_list'] ?? null) === true, 'says whether the current model appears in Google\'s list');
 ok(($d['current'] ?? '') === 'gemini-flash-lite-latest' && !str_contains($raw, 'test-key-123'), 'shows the current model and never the key');
 
 echo "\n== Setup helper ==\n";

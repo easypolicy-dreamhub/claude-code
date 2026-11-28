@@ -77,6 +77,15 @@ th{color:var(--muted);font-weight:500;border-top:0}
 td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decoration:underline;cursor:pointer;padding:6px 0;text-align:left}
 .q{border-top:1px solid var(--line);padding:9px 0;font-size:14px}.q small{color:var(--muted)}
 .hide{display:none!important}
+.row.tight{margin:2px 0}
+.row.actions{margin:16px 0 6px}
+.link-btn{background:none;border:0;padding:6px 0;min-height:40px;font:inherit;font-size:14px;color:var(--ink);text-decoration:underline;cursor:pointer}
+.link-btn.danger{color:var(--bad)}
+.models{border:1px solid var(--line);border-radius:14px;padding:12px 12px 4px;margin:6px 0 14px;background:#fff}
+.models .mh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.models .mh b{font:600 15px Poppins,"DM Sans",sans-serif}
+.models .list{max-height:320px;overflow:auto;margin-bottom:10px}
+.models .cur{font-size:14px;margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -120,11 +129,11 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
     <input class="txt" id="wa" type="tel" inputmode="numeric" data-ip="wa_ph">
     <input class="txt" id="model" type="text" autocomplete="off" spellcheck="false" data-ip="model_ph">
     <p class="sub" data-i="model_p"></p>
-    <div class="row"><button class="btn ghost" id="list-models" type="button" data-i="models_btn"></button></div>
+    <div class="row tight"><button class="link-btn" id="list-models" type="button" data-i="models_btn"></button></div>
     <div id="models-out"></div>
-    <div class="row"><button class="btn" id="save-conn" data-i="save_conn"></button><button class="btn ghost" id="clear-key" type="button" data-i="clear_key"></button><span id="conn-msg" class="sub" style="margin:0"></span></div>
-    <div class="row"><button class="btn ghost" id="test-conn" type="button" data-i="test_btn"></button></div>
+    <div class="row actions"><button class="btn" id="save-conn" data-i="save_conn"></button><button class="btn ghost" id="test-conn" type="button" data-i="test_btn"></button><span id="conn-msg" class="sub" style="margin:0"></span></div>
     <div id="test-out"></div>
+    <div class="row tight"><button class="link-btn danger" id="clear-key" type="button" data-i="clear_key"></button></div>
 
     <h2 style="margin-top:26px" data-i="instr_h"></h2>
     <p class="sub" data-i="instr_p"></p>
@@ -164,6 +173,7 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ models_rec:'推荐模型',models_close:'关闭',models_all:n=>'显示其余 '+n+' 个模型',models_less:'收起其余模型',cur_line:m=>'目前使用：'+m,cur_note:'Google 的列表没有显示这个名称（别名常常不在列表中）。只要「测试连接」通过，就说明它可用。',kind_lite:'最快、最省（推荐）',kind_flash:'均衡',kind_pro:'最强，但较慢、较贵',models_hide:'收起模型列表',
  models_btn:'显示可用模型',models_loading:'正在向 Google 查询…',models_none:'没有找到可用的聊天模型。',use_model:'使用',cur_tag:'（目前使用）',models_hint:'点「使用」会把名称填进上面的模型框，然后请点「保存连接设置」。',
  slow:'教练回复花了太长时间，请稍后刷新页面查看，或再试一次。',
  testing_pdf:'基础检查完成，正在用全部 PDF 测试…（最多约 1 分钟）',
@@ -208,6 +218,7 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ models_rec:'Recommended models',models_close:'Close',models_all:n=>'Show the other '+n+' models',models_less:'Hide the other models',cur_line:m=>'Currently using: '+m,cur_note:'Google\'s list does not show this name (aliases are often missing from it). If Test connection passes, it works.',kind_lite:'Fastest and cheapest (recommended)',kind_flash:'Balanced',kind_pro:'Strongest, but slower and costlier',models_hide:'Hide the model list',
  models_btn:'Show available models',models_loading:'Asking Google…',models_none:'No chat models were found.',use_model:'Use',cur_tag:' (current)',models_hint:'Tap Use to fill the model box above, then tap Save connection.',
  slow:'The coach is taking too long. Refresh the page later to see the reply, or try again.',
  testing_pdf:'Basic checks done. Now testing with all the PDFs… (up to about a minute)',
@@ -405,14 +416,33 @@ $('#test-conn').addEventListener('click',async()=>{
   if(!rows.some(x=>!x.ok))await run('pdf');
   draw();b.disabled=false;
 });
+let modelsData=null,showOther=false,modelsOpen=false;
+function closeModels(){modelsOpen=false;$('#models-out').innerHTML='';$('#list-models').textContent=t('models_btn')}
+function renderModels(){
+  const r=modelsData;if(!r)return;
+  const row=m=>'<div class="item"><div class="grow"><b>'+esc(m.name)+'</b>'+(m.name===r.current?esc(t('cur_tag')):'')+(m.recommended&&m.kind!=='other'?'<small class="ok">'+esc(t('kind_'+m.kind))+'</small>':'')+'<small>'+esc(m.title)+'</small></div><button class="btn ghost small" data-model="'+esc(m.name)+'">'+esc(t('use_model'))+'</button></div>';
+  const rec=r.models.filter(m=>m.recommended),other=r.models.filter(m=>!m.recommended);
+  $('#models-out').innerHTML='<div class="models"><div class="mh"><b>'+esc(t('models_rec'))+'</b><button class="btn ghost small" id="models-close" type="button">'+esc(t('models_close'))+'</button></div>'
+    +'<p class="cur"><b>'+esc(t('cur_line',r.current))+'</b>'+(r.current_in_list?'':'<br><small class="sub">'+esc(t('cur_note'))+'</small>')+'</p>'
+    +'<p class="sub" style="margin:0 0 8px">'+esc(t('models_hint'))+'</p>'
+    +'<div class="list">'+(rec.length?rec.map(row).join(''):'<div class="item">'+esc(t('models_none'))+'</div>')+'</div>'
+    +(other.length?'<button class="link-btn" id="models-more" type="button">'+esc(showOther?t('models_less'):t('models_all',other.length))+'</button>'+(showOther?'<div class="list">'+other.map(row).join('')+'</div>':''):'')+'</div>';
+  modelsOpen=true;$('#list-models').textContent=t('models_hide');
+}
 $('#list-models').addEventListener('click',async()=>{
-  const b=$('#list-models'),out=$('#models-out');b.disabled=true;out.innerHTML='<p class="sub">'+esc(t('models_loading'))+'</p>';
-  try{const r=await api('list_models',{method:'POST',json:{}});
-    out.innerHTML=r.models.length?('<p class="sub">'+esc(t('models_hint'))+'</p><div class="list">'+r.models.map(m=>'<div class="item"><div class="grow"><b>'+esc(m.name)+'</b>'+(m.name===r.current?esc(t('cur_tag')):'')+'<small>'+esc(m.title)+'</small><small>'+esc(m.about)+'</small></div><button class="btn ghost small" data-model="'+esc(m.name)+'">'+esc(t('use_model'))+'</button></div>').join('')+'</div>'):'<p class="sub">'+esc(t('models_none'))+'</p>'}
+  const b=$('#list-models'),out=$('#models-out');
+  if(modelsOpen){closeModels();return} // tap again to hide
+  b.disabled=true;out.innerHTML='<p class="sub">'+esc(t('models_loading'))+'</p>';
+  try{modelsData=await api('list_models',{method:'POST',json:{}});showOther=false;renderModels()}
   catch(e){out.innerHTML='<div class="banner bad">'+esc(e.message+(e.detail?' ['+e.detail+']':''))+'</div>'}
   b.disabled=false;
 });
-$('#models-out').addEventListener('click',e=>{const m=e.target.dataset.model;if(!m)return;$('#model').value=m;$('#model').focus();window.scrollTo({top:$('#model').getBoundingClientRect().top+scrollY-140,behavior:'smooth'})});
+$('#models-out').addEventListener('click',e=>{
+  if(e.target.id==='models-close'){closeModels();return}
+  if(e.target.id==='models-more'){showOther=!showOther;renderModels();return}
+  const m=e.target.dataset.model;if(!m)return;
+  $('#model').value=m;closeModels();$('#model').focus();$('#model').scrollIntoView({block:'center',behavior:'smooth'});
+});
 $('#clear-key').addEventListener('click',async()=>{
   if(!confirm(t('confirm_clear')))return;
   try{const r=await api('save_settings',{method:'POST',json:{clear_key:true}});renderConn(r.connection);$('#conn-msg').textContent=t('key_removed');await loadSettings()}

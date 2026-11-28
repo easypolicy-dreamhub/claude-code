@@ -98,7 +98,33 @@ function coach_list_models(): array
             break;
         }
     }
-    usort($found, fn($a, $b) => strcmp($a['name'], $b['name']));
+    // Label each model and mark the everyday chat ones as recommended; agents, deep research, voice, image, embeddings etc. are not.
+    $skip = '/(computer-use|tts|image|live|audio|native|embed|robot|veo|imagen|aqa|customtools|deep-research|antigravity|learnlm|gemma|vision|exp)/';
+    $order = ['lite' => 0, 'flash' => 1, 'pro' => 2, 'other' => 3];
+    foreach ($found as &$m) {
+        $n = strtolower($m['name']);
+        $m['kind'] = str_contains($n, 'flash-lite') ? 'lite' : (str_contains($n, 'flash') ? 'flash' : (str_contains($n, 'pro') ? 'pro' : 'other'));
+        $m['recommended'] = str_starts_with($n, 'gemini-') && !preg_match($skip, $n) && $m['kind'] !== 'other';
+    }
+    unset($m);
+    usort($found, function ($a, $b) use ($order) {
+        if ($a['recommended'] !== $b['recommended']) {
+            return $a['recommended'] ? -1 : 1;
+        }
+        if ($a['recommended']) {
+            $k = $order[$a['kind']] <=> $order[$b['kind']];
+            if ($k !== 0) {
+                return $k;
+            }
+            $la = str_contains($a['name'], 'latest') ? 0 : 1;
+            $lb = str_contains($b['name'], 'latest') ? 0 : 1;
+            if ($la !== $lb) {
+                return $la <=> $lb;
+            }
+            return strcmp($b['name'], $a['name']); // newer version numbers first
+        }
+        return strcmp($a['name'], $b['name']);
+    });
     return ['ok' => true, 'models' => $found];
 }
 

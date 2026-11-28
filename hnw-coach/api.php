@@ -287,7 +287,8 @@ switch ($action) {
         if (!$lm['ok']) {
             coach_fail(502, $lm['message']);
         }
-        $out(['models' => $lm['models'], 'current' => coach_model()]);
+        $cur = coach_model();
+        $out(['models' => $lm['models'], 'current' => $cur, 'current_in_list' => in_array($cur, array_column($lm['models'], 'name'), true)]);
 
     case 'test_connection':
         // Super admin only: checks each part in turn so a failure shows exactly where it is. Never returns the key.
