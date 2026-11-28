@@ -67,3 +67,6 @@ Before extracting, in cPanel File Manager copy `private/lib/actionplan.php` to `
 
 ## Preview cleanup (2026-11-22)
 Removed two greyed items from the "What <name> sees" preview only: the greyed "+ Share a link to my work" button and the greyed "My work folder" card. Real agent share button, dialog and My work folder card are unchanged. If a folder is saved, the preview still shows the real "Open the folder" link. Page-only: `public_html/members/action-plan/index.html`. No SQL. Zip: `e3-action-plan-preview-cleanup_2026-11-22.zip`. Rollback: rename `index-backup.html` back to `index.html`.
+
+## Restore (2026-11-28)
+The owner's live `actionplan.php` and `index.html` had been replaced (in another chat) by an older version without coach, stages, badges, links or folder. All function names of the old files exist in this build, so the full build was shipped again: `e3-action-plan-restore-all_2026-11-28.zip` (private/lib/actionplan.php + public_html/members/action-plan/index.html). No SQL (phases 16 to 19 are in the database). Needs `rank_level()` and `nearest_leader()` in the live `private/lib/team.php`. Rollback: `actionplan-backup.php` and `index-backup.html`.
