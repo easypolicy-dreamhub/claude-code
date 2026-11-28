@@ -124,7 +124,7 @@ function coach_data_root(): string
     if ($real === false || ($docReal !== false && ($real === $docReal || str_starts_with($real, $docReal . DIRECTORY_SEPARATOR)))) {
         coach_fail(500, 'The HNW Coach data folder must be outside public_html.');
     }
-    foreach (['instructions', 'knowledge', 'members', 'usage'] as $sub) {
+    foreach (['instructions', 'knowledge', 'members', 'usage', 'jobs'] as $sub) {
         if (!is_dir("$real/$sub")) {
             @mkdir("$real/$sub", 0700, true);
         }
@@ -413,6 +413,37 @@ function coach_with_member(string $memberId, callable $fn)
 function coach_chat_load(string $dir): array
 {
     return coach_read_json("$dir/chat.json", ['messages' => [], 'notes' => '', 'notes_upto' => 0, 'recent' => []]);
+}
+
+/* ---------- Chat jobs: the page starts a reply and then asks for it, so no single request stays open for long ---------- */
+
+function coach_job_path(string $job): string
+{
+    return coach_data_root() . '/jobs/' . $job . '.json';
+}
+
+function coach_job_write(string $job, array $data): void
+{
+    coach_write_json(coach_job_path($job), $data);
+}
+
+function coach_job_read(string $job): ?array
+{
+    if (!preg_match('/^[a-f0-9]{16}$/', $job)) {
+        return null;
+    }
+    $d = coach_read_json(coach_job_path($job));
+    return is_array($d) ? $d : null;
+}
+
+/** Remove finished or abandoned jobs after a day. */
+function coach_jobs_cleanup(): void
+{
+    foreach (glob(coach_data_root() . '/jobs/*.json') ?: [] as $f) {
+        if (filemtime($f) < time() - 86400) {
+            @unlink($f);
+        }
+    }
 }
 
 /* ---------- Usage log (questions only, never the answers) ---------- */

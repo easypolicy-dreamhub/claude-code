@@ -162,6 +162,7 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ slow:'教练回复花了太长时间，请稍后刷新页面查看，或再试一次。',
  testing_pdf:'基础检查完成，正在用全部 PDF 测试…（最多约 1 分钟）',
  model_ph:'Gemini 模型名称（留空使用默认值）',model_p:'默认模型是 gemini-3.8-flash。如果测试连接提示某个模型已停用，在这里改成 Google 建议的新名称即可，不需要重新上传文件。',
  test_btn:'测试连接',testing:'测试中…（最多约 1 分钟）',test_all_ok:'全部正常。',test_bad:'有问题，请把这个结果截图给开发者。',
@@ -204,6 +205,7 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ slow:'The coach is taking too long. Refresh the page later to see the reply, or try again.',
  testing_pdf:'Basic checks done. Now testing with all the PDFs… (up to about a minute)',
  model_ph:'Gemini model name (leave empty for the default)',model_p:'The default model is gemini-3.8-flash. If Test connection says a model is retired, type the new name Google recommends here. No new upload needed.',
  test_btn:'Test connection',testing:'Testing… (up to about a minute)',test_all_ok:'Everything works.',test_bad:'Something is wrong. Send a screenshot of this result.',
@@ -323,6 +325,17 @@ async function loadChat(){
   }
   if(!messages.length)addCoach(ME.ready||ME.is_admin?t('hi',ME.name):t('setup'),false,'');
 }
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function waitJob(job){
+  let fails=0;
+  for(let i=0;i<200;i++){ // up to about 7 minutes
+    await sleep(i<3?1500:2500);
+    let r;try{r=await api('chat_result',{query:'&job='+job});fails=0}catch(e){if(++fails>=4)throw e;continue}
+    if(r.status==='done')return r;
+    if(r.status==='error'){const err=new Error(r.error||'Error');err.detail=r.detail;throw err}
+  }
+  throw new Error(t('slow'));
+}
 function setBusy(b){$('#send').disabled=b;$('#msg').disabled=b}
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -330,7 +343,9 @@ $('#form').addEventListener('submit',async e=>{
   ta.value='';ta.style.height='';addUser(text);
   const ty=document.createElement('div');ty.className='typing';ty.textContent=t('typing');log.appendChild(ty);scrollEnd();
   setBusy(true);
-  try{const d=await api('chat',{method:'POST',json:{message:text}});ty.remove();addCoach(d.reply,d.handoff,text)}
+  try{let d=await api('chat',{method:'POST',json:{message:text}});
+    if(d.job)d=await waitJob(d.job); // the reply is prepared in the background; ask for it every 2 seconds
+    ty.remove();addCoach(d.reply,d.handoff,text)}
   catch(err){ty.remove();addErr(err.message+(err.detail&&ME.is_admin?' ['+err.detail+']':''))}
   setBusy(false);ta.focus();
 });

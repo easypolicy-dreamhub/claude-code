@@ -7,6 +7,7 @@ $pass = 0; $fail = 0; $allBodies = '';
 function req(string $user, string $method, string $action, string $query = '', $body = null, array $opt = []): array
 {
     global $base, $allBodies;
+    if ($action === 'chat' && !isset($opt['async'])) $query .= '&sync=1';
     $ch = curl_init("$base/api.php?action=$action$query");
     $h = [];
     if ($user !== '') $h[] = "X-Dev-User: $user";
@@ -142,6 +143,40 @@ ok($c === 424 && str_contains($d['error'] ?? '', '教练'), 'Chinese page: error
 [$c, $d] = req('dora', 'POST', 'chat', '', ['message' => str_repeat('x', 4001)], ['lang' => 'zh']);
 ok($c === 422 && str_contains($d['error'] ?? '', '4000'), 'Chinese page: "message too long" is in Chinese');
 
+echo "\n== Replies are prepared in the background (no long-open request) ==\n";
+$pollJob = function (string $user, string $job, int $secs = 15) {
+    for ($i = 0; $i < $secs * 2; $i++) {
+        [$c, $d] = req($user, 'GET', 'chat_result', '&job=' . $job);
+        if ($c === 200 && ($d['status'] ?? '') !== 'working') return [$c, $d];
+        usleep(500000);
+    }
+    return [$c ?? 0, $d ?? []];
+};
+$t0 = microtime(true);
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'SLOWREPLY please'], ['async' => 1]);
+$took = microtime(true) - $t0;
+ok($c === 200 && preg_match('/^[a-f0-9]{16}$/', $d['job'] ?? '') && $took < 2.5, 'the chat request answers at once with a job number, long before Gemini finishes', "took " . round($took, 1) . "s");
+$job = $d['job'] ?? '';
+[$c, $d] = req('dora', 'GET', 'chat_result', '&job=' . $job); ok($c === 200 && ($d['status'] ?? '') === 'working', 'while Gemini is still working the result says "working"');
+$t1 = microtime(true); [$c, $d] = req('dora', 'GET', 'history'); ok($c === 200 && (microtime(true) - $t1) < 2, 'the page can still load its history while a reply is being prepared');
+[$c, $d] = req('boss', 'GET', 'chat_result', '&job=' . $job); ok($c === 404, 'another person (even the super admin) cannot read someone else\'s reply');
+[$c, $d] = $pollJob('dora', $job);
+ok(($d['status'] ?? '') === 'done' && str_starts_with($d['reply'] ?? '', 'COACH-REPLY'), 'the finished reply arrives through the result request');
+[$c, $d] = req('dora', 'GET', 'history'); ok(str_contains(json_encode($d), 'SLOWREPLY') && str_contains(json_encode($d), 'COACH-REPLY'), 'the reply is saved in the member\'s chat history');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'FAIL429 async'], ['async' => 1]); [$c, $d] = $pollJob('dora', $d['job'] ?? '');
+ok(($d['status'] ?? '') === 'error' && !isset($d['detail']) || ($d['detail'] ?? null) === null, 'a failed reply: the member gets a friendly message and no technical detail');
+[$c, $d] = req('boss', 'POST', 'chat', '', ['message' => 'FAIL429 async'], ['async' => 1]); [$c, $d] = $pollJob('boss', $d['job'] ?? '');
+ok(($d['status'] ?? '') === 'error' && str_contains($d['detail'] ?? '', 'secret detail'), 'a failed reply: the super admin sees the technical detail');
+[$c] = req('dora', 'GET', 'chat_result', '&job=../../etc/passwd'); ok($c === 404, 'a bad job id is refused');
+file_put_contents($mockLog, '');
+req('dora', 'POST', 'chat', '', ['message' => 'thinking check']);
+$b0 = mocklog()[0]['body'] ?? [];
+ok(($b0['generationConfig']['thinkingConfig']['thinkingLevel'] ?? '') === 'low', 'replies ask Gemini for low thinking so they come back quickly');
+file_put_contents($mockLog, '');
+[$c, $d] = req('dora', 'POST', 'chat', '', ['message' => 'NOTHINK400 old model']);
+$ml = mocklog();
+ok($c === 200 && str_starts_with($d['reply'] ?? '', 'COACH-REPLY') && count($ml) === 2 && isset($ml[0]['body']['generationConfig']['thinkingConfig']) && !isset($ml[1]['body']['generationConfig']['thinkingConfig']), 'an older model that refuses the thinking setting is asked again without it', 'requests: ' . count($ml));
+
 echo "\n== Memory is private per agent ==\n";
 req('alan', 'POST', 'chat', '', ['message' => 'second question from alan']);
 $logs = mocklog(); $second = end($logs)['body']['contents'];
@@ -229,7 +264,7 @@ ok(!glob("$docRoot/*.pdf") && !glob("$docRoot/**/*.pdf"), 'no PDFs stored in the
 echo "\n== Settings come from private/hnw-coach-config.php (no constants) ==\n";
 $bc = getenv('APP_BASE_CFGFILE');
 $r2 = function (string $user, string $method, string $action, $body = null) use ($bc) {
-    $ch = curl_init("$bc/api.php?action=$action"); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
+    $ch = curl_init("$bc/api.php?action=$action" . ($action === 'chat' ? '&sync=1' : '')); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
     if ($body !== null) { $h[] = 'Content-Type: application/json'; curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body)); }
     curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $h, CURLOPT_RETURNTRANSFER => true]);
     $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? []];
@@ -242,7 +277,7 @@ $r2 = function (string $user, string $method, string $action, $body = null) use 
 echo "\n== Key pasted in Settings > Connection (no key anywhere else) ==\n";
 $bn = getenv('APP_BASE_NOKEY');
 $r3 = function (string $user, string $method, string $action, $body = null) use ($bn) {
-    $ch = curl_init("$bn/api.php?action=$action"); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
+    $ch = curl_init("$bn/api.php?action=$action" . ($action === 'chat' ? '&sync=1' : '')); $h = ["X-Dev-User: $user", 'X-Requested-With: fetch'];
     if ($body !== null) { $h[] = 'Content-Type: application/json'; curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body)); }
     curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $h, CURLOPT_RETURNTRANSFER => true]);
     $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? [], (string) $raw];

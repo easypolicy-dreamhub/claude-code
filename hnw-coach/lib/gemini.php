@@ -14,7 +14,8 @@ function coach_api(string $model, array $body): array
     $payload = json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
 
     $res = ['ok' => false, 'status' => 0, 'type' => 'network', 'message' => 'Could not reach the Gemini API.'];
-    for ($attempt = 0; $attempt < 2; $attempt++) {
+    $tries = max(1, (int) coach_const('COACH_API_TRIES', 2));
+    for ($attempt = 0; $attempt < $tries; $attempt++) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
@@ -87,6 +88,27 @@ The team leader's coaching instructions:
 TXT;
 }
 
+/**
+ * A reply-quality call: asks Gemini for low "thinking" so answers come back in seconds, not a minute.
+ * If the model does not know that setting (an older model), it is asked again without it.
+ * Set COACH_THINKING to a level name (minimal, low, medium, high) or to 'off' to send nothing.
+ */
+function coach_call(string $model, array $body): array
+{
+    $level = coach_setting('COACH_THINKING');
+    $level = $level !== '' ? $level : 'low';
+    if ($level === 'off') {
+        return coach_api($model, $body);
+    }
+    $try = $body;
+    $try['generationConfig']['thinkingConfig'] = ['thinkingLevel' => $level];
+    $r = coach_api($model, $try);
+    if (!$r['ok'] && (int) $r['status'] === 400 && stripos((string) $r['message'], 'think') !== false) {
+        return coach_api($model, $body);
+    }
+    return $r;
+}
+
 /** One coaching turn. Returns ['ok'=>true,'reply'=>..,'handoff'=>bool,'usage'=>..] or ['ok'=>false,'error'=>..]. */
 function coach_reply(array $member, array $chat, string $userMessage, string $instructions): array
 {
@@ -123,7 +145,7 @@ function coach_reply(array $member, array $chat, string $userMessage, string $in
         ],
     ];
 
-    $r = coach_api($model, $body);
+    $r = coach_call($model, $body);
     if (!$r['ok']) {
         return ['ok' => false, 'status' => $r['status'], 'error' => $r['message'], 'type' => $r['type']];
     }

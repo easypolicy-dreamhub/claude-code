@@ -21,6 +21,11 @@ if (strpos($last, 'FAIL429') !== false) {
     http_response_code(429);
     exit(json_encode(['error' => ['code' => 429, 'message' => 'Quota exceeded (secret detail)', 'status' => 'RESOURCE_EXHAUSTED']]));
 }
+if (strpos($last, 'SLOWREPLY') !== false) { sleep(3); }
+if (strpos($last, 'NOTHINK400') !== false && isset($body['generationConfig']['thinkingConfig'])) {
+    http_response_code(400);
+    exit(json_encode(['error' => ['code' => 400, 'message' => 'Unknown name "thinkingLevel": Cannot find field.', 'status' => 'INVALID_ARGUMENT']]));
+}
 $finish = 'STOP';
 if ($isNotes) {
     $text = '- likes role-play practice';

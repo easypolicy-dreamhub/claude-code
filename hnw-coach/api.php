@@ -70,7 +70,7 @@ switch ($action) {
         ]);
 
     case 'history':
-        $chat = coach_with_member($member['id'], fn($dir) => coach_chat_load($dir));
+        $chat = coach_chat_load(coach_member_dir($member['id'])); // no lock: a reply being written in the background must not hold the page up
         $msgs = array_slice($chat['messages'], -100);
         $out(['messages' => array_map(fn($m) => ['role' => $m['r'], 'text' => $m['c'], 'ts' => $m['t'], 'handoff' => !empty($m['h'])], $msgs)]);
 
@@ -90,7 +90,9 @@ switch ($action) {
         }
         $instrText = $instr['text'] ?? 'No instructions have been saved yet. Act as a friendly, practical coach for insurance agents.';
 
-        coach_with_member($member['id'], function ($dir) use ($member, $text, $instrText, $out, $isAdmin) {
+        $sync = !empty($_GET['sync']); // used by the local tests only; the page always uses the job flow below
+        coach_jobs_cleanup();
+        coach_with_member($member['id'], function ($dir) use ($member, $text, $instrText, $out, $isAdmin, $sync) {
             $chat = coach_chat_load($dir);
             $chat['name'] = $member['name'];
             $now = time();
@@ -103,13 +105,28 @@ switch ($action) {
                 coach_fail(429, coach_msg('rate_day'));
             }
 
+            // The reply can take a minute, longer than a host or CDN keeps one request open (the browser then says "Load failed").
+            // So answer at once with a job number, keep working in the background, and let the page ask for the result.
+            $job = null;
+            if (!$sync) {
+                $job = bin2hex(random_bytes(8));
+                coach_job_write($job, ['mid' => coach_mid($member['id']), 'status' => 'working', 't' => time()]);
+                coach_respond_then_continue(['job' => $job]);
+                @set_time_limit(300);
+                $GLOBALS['coach_cfg']['COACH_API_TIMEOUT'] = 240;
+            }
+
             $res = coach_reply($member, $chat, $text, $instrText);
             coach_log_question($member, $text, $res['ok'] && $res['handoff'], $res['ok']);
             if (!$res['ok']) {
                 $msg = match (true) {
-                    $res['status'] === 429 || $res['status'] === 529 => coach_msg('busy'),
+                    $res['status'] === 429 || $res['status'] === 529 || $res['status'] === 503 => coach_msg('busy'),
                     default => coach_msg('failed'),
                 };
+                if ($job !== null) {
+                    coach_job_write($job, ['mid' => coach_mid($member['id']), 'status' => 'error', 'error' => $msg, 'detail' => $isAdmin ? $res['error'] : null, 't' => time()]);
+                    exit;
+                }
                 coach_fail(502, $msg, $isAdmin ? ['detail' => $res['error']] : []);
             }
 
@@ -123,7 +140,11 @@ switch ($action) {
             coach_write_json("$dir/chat.json", $chat);
             coach_write_json(coach_data_root() . '/usage/last_usage.json', $res['usage']);
 
-            coach_respond_then_continue(['reply' => $res['reply'], 'handoff' => $res['handoff'], 'ts' => time()]);
+            if ($job !== null) {
+                coach_job_write($job, ['mid' => coach_mid($member['id']), 'status' => 'done', 'reply' => $res['reply'], 'handoff' => $res['handoff'], 'ts' => time(), 't' => time()]);
+            } else {
+                coach_respond_then_continue(['reply' => $res['reply'], 'handoff' => $res['handoff'], 'ts' => time()]);
+            }
 
             // After the reply is on its way: fold older messages into the agent's coaching notes.
             $window = max(2, (int) coach_const('COACH_HISTORY_MSGS', 24));
@@ -141,6 +162,17 @@ switch ($action) {
             exit;
         });
         break;
+
+    case 'chat_result':
+        // The page asks for the reply it started. Only the person who started the job can read it.
+        $j = coach_job_read((string) ($_GET['job'] ?? ''));
+        if ($j === null || ($j['mid'] ?? '') !== coach_mid($member['id'])) {
+            coach_fail(404, coach_msg('failed'));
+        }
+        if (($j['status'] ?? '') === 'working' && time() - (int) ($j['t'] ?? 0) > 600) {
+            $out(['status' => 'error', 'error' => coach_msg('failed'), 'detail' => $isAdmin ? 'The reply took longer than 10 minutes, or the server stopped it.' : null]);
+        }
+        $out(['status' => $j['status'] ?? 'working', 'reply' => $j['reply'] ?? null, 'handoff' => !empty($j['handoff']), 'ts' => $j['ts'] ?? null, 'error' => $j['error'] ?? null, 'detail' => $j['detail'] ?? null]);
 
     case 'settings':
         $cur = coach_instr_current();
@@ -251,6 +283,8 @@ switch ($action) {
 
     case 'test_connection':
         // Super admin only: checks each part in turn so a failure shows exactly where it is. Never returns the key.
+        $GLOBALS['coach_cfg']['COACH_API_TIMEOUT'] = 45; // end with a clear message before a host or CDN cuts the connection
+        $GLOBALS['coach_cfg']['COACH_API_TRIES'] = 1;
         $step = (string) ($json()['step'] ?? 'basic'); // 'basic' (quick checks + a tiny Google call) or 'pdf' (one call with every PDF): two short requests, not one long one
         $serverMaxExec = ini_get('max_execution_time'); // read before we raise it for this test
         @set_time_limit(180);
@@ -272,7 +306,7 @@ switch ($action) {
         }
         if ($step === 'basic' && $hasKey && function_exists('curl_init')) {
             $t0 = microtime(true);
-            $r = coach_api($model, ['contents' => [['role' => 'user', 'parts' => [['text' => 'Reply with the single word OK.']]]], 'generationConfig' => ['maxOutputTokens' => 256]]);
+            $r = coach_call($model, ['contents' => [['role' => 'user', 'parts' => [['text' => 'Reply with the single word OK.']]]], 'generationConfig' => ['maxOutputTokens' => 256]]);
             $secs = round(microtime(true) - $t0, 1);
             $add("Google answers a tiny question ($model)", $r['ok'], $r['ok'] ? "yes, in {$secs}s" : 'HTTP ' . $r['status'] . ' ' . $r['type'] . ': ' . $r['message']);
         }
@@ -283,7 +317,7 @@ switch ($action) {
                 $t0 = microtime(true);
                 $parts = coach_kb_parts();
                 $parts[] = ['text' => 'Reply with the single word OK.'];
-                $r2 = coach_api($model, ['contents' => [['role' => 'user', 'parts' => $parts]], 'generationConfig' => ['maxOutputTokens' => 256]]);
+                $r2 = coach_call($model, ['contents' => [['role' => 'user', 'parts' => $parts]], 'generationConfig' => ['maxOutputTokens' => 256]]);
                 $secs = round(microtime(true) - $t0, 1);
                 $tok = (int) ($r2['data']['usageMetadata']['promptTokenCount'] ?? 0);
                 $add('Google answers with all PDFs attached', $r2['ok'], $r2['ok'] ? "yes, in {$secs}s ($tok input tokens)" : 'HTTP ' . $r2['status'] . ' ' . $r2['type'] . ': ' . $r2['message'] . " (after {$secs}s)");
