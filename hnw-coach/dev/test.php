@@ -61,6 +61,7 @@ echo "\n== Sign-in and admin gate (server-side) ==\n";
 [$c, $d] = req('boss', 'GET', 'me');                 ok($d['is_admin'] === true, 'super admin sees admin flag');
 $adminCalls = [
     ['GET', 'settings', '', null], ['GET', 'usage', '&range=7', null], ['GET', 'usage_member', '&m=' . str_repeat('a', 32), null],
+    ['POST', 'test_connection', '', []],
     ['POST', 'save_instructions', '', ['text' => 'x']], ['POST', 'restore_instructions', '', ['version' => 1]], ['POST', 'delete_pdf', '', ['name' => 'a.pdf']],
 ];
 foreach (['alan' => 'plain agent', 'teamadmin' => 'team admin (not super)'] as $u => $label) {
@@ -195,6 +196,13 @@ ok(!str_contains($raw, 'COACH-REPLY') && !str_contains($raw, 'documents'), 'lead
 ok(count(array_filter($d['questions'], fn($q) => $q['handoff'])) === 2, 'handoff questions are flagged (the unknown topic and the blocked one)');
 [$c, $d, $raw] = req('boss', 'GET', 'usage_member', '&m=../etc'); ok($c === 422, 'bad agent id refused');
 
+echo "\n== Test connection button ==\n";
+[$c, $d, $raw] = req('boss', 'POST', 'test_connection', '', []);
+$names = array_column($d['steps'] ?? [], 'name'); $allok = !array_filter($d['steps'] ?? [], fn($x) => !$x['ok']);
+ok($c === 200 && $allok && count($names) >= 8, 'super admin: every step passes, including a tiny Google call and one with all PDFs attached', json_encode($d['steps'] ?? $d));
+ok(!str_contains($raw, 'test-key-123'), 'the test result never contains the key');
+ok(str_contains($raw, 'input tokens'), 'the PDF step reports the input size');
+
 echo "\n== Setup helper ==\n";
 [$c, $d] = req('alan', 'GET', 'whoami'); ok($c === 200 && $d['treated_as_super_admin'] === false && !str_contains(json_encode($d), 'alan@example.com'), 'whoami works for a member and shows no personal data');
 [$c, $d] = req('boss', 'GET', 'whoami'); ok($d['treated_as_super_admin'] === true, 'whoami: the super admin is recognised');
@@ -239,6 +247,9 @@ $r3 = function (string $user, string $method, string $action, $body = null) use 
     $raw = curl_exec($ch); $c = curl_getinfo($ch, CURLINFO_RESPONSE_CODE); return [$c, json_decode((string) $raw, true) ?? [], (string) $raw];
 };
 $r3('boss', 'POST', 'save_instructions', ['text' => 'nokey test']);
+[$c, $d] = $r3('boss', 'POST', 'test_connection', []);
+$bad = array_values(array_filter($d['steps'] ?? [], fn($x) => !$x['ok']));
+ok($c === 200 && count($bad) >= 1 && str_contains($bad[0]['name'], 'Gemini key'), 'with no key the test points at the missing key', json_encode($bad));
 [$c, $d] = $r3('boss', 'POST', 'chat', ['message' => 'before key']); ok($c === 502, 'with no key the coach cannot answer yet');
 [$c, $d] = $r3('boss', 'GET', 'settings'); ok(count($d['warnings']) === 2 && $d['connection']['key_set'] === false, 'Settings warns that the key and WhatsApp number are missing');
 [$c] = $r3('alan', 'POST', 'save_settings', ['gemini_api_key' => 'test-key-123-padded-for-length']); ok($c === 403, 'an ordinary member cannot save the key');

@@ -119,6 +119,8 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
     <input class="txt" id="key" type="password" autocomplete="new-password" spellcheck="false" data-ip="key_ph">
     <input class="txt" id="wa" type="tel" inputmode="numeric" data-ip="wa_ph">
     <div class="row"><button class="btn" id="save-conn" data-i="save_conn"></button><button class="btn ghost" id="clear-key" type="button" data-i="clear_key"></button><span id="conn-msg" class="sub" style="margin:0"></span></div>
+    <div class="row"><button class="btn ghost" id="test-conn" type="button" data-i="test_btn"></button></div>
+    <div id="test-out"></div>
 
     <h2 style="margin-top:26px" data-i="instr_h"></h2>
     <p class="sub" data-i="instr_p"></p>
@@ -158,6 +160,7 @@ td button.link{background:none;border:0;color:var(--ink);font:inherit;text-decor
 (function(){
 const T={
 zh:{
+ test_btn:'测试连接',testing:'测试中…（最多约 1 分钟）',test_all_ok:'全部正常。',test_bad:'有问题，请把这个结果截图给开发者。',
  sub:'实战教练 · 拆解反对意见、优化话术、客户演练',lang_btn:'English',
  tab_chat:'教练对话',tab_settings:'设置',tab_usage:'使用情况',
  ph_msg:'输入你的问题…',send:'发送',typing:'教练输入中…',
@@ -197,6 +200,7 @@ zh:{
  loading:'加载中…',to_leader:'已转交领袖',no_q_period:'此期间没有提问。',never:'从未',loc:'zh-CN'
 },
 en:{
+ test_btn:'Test connection',testing:'Testing… (up to about a minute)',test_all_ok:'Everything works.',test_bad:'Something is wrong. Send a screenshot of this result.',
  sub:'Objection handling, better scripts, client role-play',lang_btn:'简体中文',
  tab_chat:'Chat',tab_settings:'Settings',tab_usage:'Usage',
  ph_msg:'Type your question…',send:'Send',typing:'Coach is typing…',
@@ -362,6 +366,14 @@ $('#save-conn').addEventListener('click',async()=>{
   try{const r=await api('save_settings',{method:'POST',json:{gemini_api_key:$('#key').value.trim(),whatsapp:$('#wa').value}});
     $('#key').value='';renderConn(r.connection);$('#conn-msg').textContent=t('saved');await loadSettings()}
   catch(e){$('#conn-msg').innerHTML='<span class="bad">'+esc(e.message)+'</span>'}
+  b.disabled=false;
+});
+$('#test-conn').addEventListener('click',async()=>{
+  const b=$('#test-conn'),out=$('#test-out');b.disabled=true;out.innerHTML='<p class="sub">'+esc(t('testing'))+'</p>';
+  try{const r=await api('test_connection',{method:'POST',json:{}});
+    const bad=r.steps.filter(x=>!x.ok).length;
+    out.innerHTML='<div class="list">'+r.steps.map(x=>'<div class="item"><div class="grow"><b class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✔':'✘')+'</b> '+esc(x.name)+'<small>'+esc(x.detail)+'</small></div></div>').join('')+'</div><p class="sub '+(bad?'bad':'ok')+'">'+esc(bad?t('test_bad'):t('test_all_ok'))+'</p>'}
+  catch(e){out.innerHTML='<div class="banner bad">'+esc(e.message+(e.detail?' ['+e.detail+']':''))+'</div>'}
   b.disabled=false;
 });
 $('#clear-key').addEventListener('click',async()=>{

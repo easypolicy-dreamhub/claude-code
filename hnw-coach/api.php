@@ -10,8 +10,8 @@ $member = coach_boot();          // existing member login; fails closed
 $action = (string) ($_GET['action'] ?? '');
 $isPost = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
 
-const COACH_ADMIN_ACTIONS = ['settings', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
-const COACH_POST_ACTIONS = ['chat', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
+const COACH_ADMIN_ACTIONS = ['test_connection', 'settings', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf', 'usage', 'usage_member'];
+const COACH_POST_ACTIONS = ['test_connection', 'chat', 'save_settings', 'save_instructions', 'restore_instructions', 'upload_pdf', 'delete_pdf'];
 
 // Admin actions are checked on the SERVER before anything else happens.
 if (in_array($action, COACH_ADMIN_ACTIONS, true)) {
@@ -33,6 +33,17 @@ $out = static function (array $d): void {
     exit;
 };
 $isAdmin = coach_is_super_admin($member);
+$GLOBALS['coach_is_admin'] = $isAdmin;
+// If PHP dies with a fatal error, answer with JSON (the technical reason only for the super admin) instead of a bare server error page.
+register_shutdown_function(static function (): void {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true) && !headers_sent()) {
+        error_log('HNW Coach fatal: ' . $e['message'] . ' in ' . basename((string) $e['file']) . ':' . $e['line']);
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => coach_msg('failed')] + (!empty($GLOBALS['coach_is_admin']) ? ['detail' => $e['message']] : []), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+});
 
 /** What the Connection box shows. Never includes the key itself, only whether it is set and its last 4 characters. */
 function coach_connection_info(): array
@@ -226,6 +237,40 @@ switch ($action) {
         }
         $range = in_array($_GET['range'] ?? '7', ['7', '30', 'all'], true) ? (string) $_GET['range'] : '7';
         $out(['questions' => coach_usage_member($mid, $range)]);
+
+    case 'test_connection':
+        // Super admin only: checks each part in turn so a failure shows exactly where it is. Never returns the key.
+        $serverMaxExec = ini_get('max_execution_time'); // read before we raise it for this test
+        @set_time_limit(180);
+        $steps = [];
+        $add = static function (string $name, bool $ok, string $detail) use (&$steps): void {
+            $steps[] = ['name' => $name, 'ok' => $ok, 'detail' => $detail];
+        };
+        $add('PHP version', PHP_VERSION_ID >= 80100, PHP_VERSION);
+        $add('cURL (needed to reach Google)', function_exists('curl_init'), function_exists('curl_init') ? 'available' : 'NOT available: switch on the curl extension in cPanel');
+        $add('PHP limits', true, 'memory_limit ' . ini_get('memory_limit') . ', max_execution_time ' . $serverMaxExec . 's, post_max_size ' . ini_get('post_max_size'));
+        $kb = coach_kb_list();
+        $add('Private data folder', is_writable(coach_data_root()), is_writable(coach_data_root()) ? 'writable, outside public_html' : 'NOT writable');
+        $add('PDFs', true, count($kb) . ' file(s), ' . round(array_sum(array_column($kb, 'size')) / 1048576, 2) . ' MB');
+        $model = (string) coach_const('COACH_MODEL', 'gemini-2.5-flash');
+        $hasKey = coach_setting('GEMINI_API_KEY') !== '';
+        $add('Gemini key saved', $hasKey, $hasKey ? 'yes' : 'no: add it above');
+        if ($hasKey && function_exists('curl_init')) {
+            $t0 = microtime(true);
+            $r = coach_api($model, ['contents' => [['role' => 'user', 'parts' => [['text' => 'Reply with the single word OK.']]]], 'generationConfig' => ['maxOutputTokens' => 256]]);
+            $secs = round(microtime(true) - $t0, 1);
+            $add("Google answers a tiny question ($model)", $r['ok'], $r['ok'] ? "yes, in {$secs}s" : 'HTTP ' . $r['status'] . ' ' . $r['type'] . ': ' . $r['message']);
+            if ($r['ok'] && $kb) {
+                $t0 = microtime(true);
+                $parts = coach_kb_parts();
+                $parts[] = ['text' => 'Reply with the single word OK.'];
+                $r2 = coach_api($model, ['contents' => [['role' => 'user', 'parts' => $parts]], 'generationConfig' => ['maxOutputTokens' => 256]]);
+                $secs = round(microtime(true) - $t0, 1);
+                $tok = (int) ($r2['data']['usageMetadata']['promptTokenCount'] ?? 0);
+                $add('Google answers with all PDFs attached', $r2['ok'], $r2['ok'] ? "yes, in {$secs}s ($tok input tokens)" : 'HTTP ' . $r2['status'] . ' ' . $r2['type'] . ': ' . $r2['message'] . " (after {$secs}s)");
+            }
+        }
+        $out(['steps' => $steps]);
 
     case 'whoami':
         // Setup help only: shows the signed-in person which fields their own member record has (no values except role flags).

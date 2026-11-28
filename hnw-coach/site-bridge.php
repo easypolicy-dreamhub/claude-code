@@ -124,6 +124,6 @@ function coach_bridge_fail(int $code, string $message)
         exit;
     }
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => $message]);
+    echo json_encode(['error' => $message], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"error":"Server error"}';
     exit;
 }

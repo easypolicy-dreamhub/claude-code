@@ -16,6 +16,10 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 - Admin-only error messages (for example a badly shaped key) are still English.
 - Instructions: `starter-instructions-simplified.txt` is the Simplified version of the Gem instructions (converted automatically, then fixed by hand where the converter picked the wrong word, e.g. 核心, 建立). `starter-instructions.txt` is the original Traditional text. Either works; the language button overrides their language line.
 
+## Finding problems
+- Settings > Connection has a **Test connection** button (super admin only). It checks PHP version, cURL, PHP limits, the private data folder, the PDFs, that a key is saved, then makes a tiny real call to Google and a second one with all PDFs attached, and shows HTTP status and Google's own message for any failure. It never shows the key.
+- If PHP dies with a fatal error during a request, the API answers with JSON (the technical reason only for the super admin) and writes it to the PHP error log; JSON error bodies can no longer come out empty because of bad UTF-8.
+
 ## How it is built
 | Part | Notes |
 |---|---|
@@ -38,7 +42,7 @@ Built from the earlier `ai-coach/` (which uses Claude); `ai-coach/` is untouched
 5. Sign in as super admin, open `/members/hnw-coach/`, Settings: paste the key and the WhatsApp number under Connection and Save; paste `starter-instructions.txt` under Coach instructions and Save; upload the six PDFs; test in Chat.
 7. Optional, later: in `private/lib/tools.php` the `hnw-coach` line still says "Opens in Gemini" and `link_only`. That only affects the label in Members & Access.
 
-## Tested (local, `hnw-coach/dev/run-tests.sh`, 104 checks)
+## Tested (local, `hnw-coach/dev/run-tests.sh`, 108 checks)
 Against a fake Gemini and a stand-in for the members system (same shapes as the real `boot_member_request`, `boot_member_page`, `can_use_tool`, member row): sign-in, tool ticks, unknown/inactive members, admin actions refused for members and team admins, writes refused without the header / JSON / same origin, 5-version history and restore, same-name replace, bad PDFs refused, per-member privacy, questions-only usage, request shape sent to Gemini, safety block, cut-off reply, hourly and daily limits, key and WhatsApp number read from the optional settings file with no constants, key pasted in Settings > Connection (admin only, never echoed back, owner-only file outside the web folder, coach answers with it, can be removed), API key never in page or responses, data folder must be outside the web folder, standard no-access page, tool-tab.js line present. The six real PDFs were accepted by the upload code (23 pages, 0.86 MB).
 
 ## NOT tested
